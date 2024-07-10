@@ -2,13 +2,13 @@
 {% block content %}
 <div class="shadow-wrap">
     <div class="form-wrap">
-        <h3>Login </h3>
-        <form method="POST">
+        <h3>Login</h3>
+        <form method="POST" onsubmit="submitForm(event)">
             {% csrf_token %}
-            {{form}}
+            {{form.as_p}}
             <button type="submit">Submit</button>
         </form>
-        <a class="signup-link" href='{% url "base_auth:authView" %}'>Signup</a>
+        <a class="signup-link" href='{% url "userauths:signup" %}'>Signup</a>
     </div>
 </div>
 {% endblock content %}

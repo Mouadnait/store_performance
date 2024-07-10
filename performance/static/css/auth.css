@@ -15,9 +15,22 @@ body {
 }
 
 .shadow-wrap {
+    width: 35%;
     border-radius: 5px;
     padding: 25px;
     background-color: #F0F2FB;
+}
+
+.alert {
+    padding: 20px;
+    background-color: #f44336;
+    /* Red */
+    color: white;
+    margin-bottom: 15px;
+}
+
+.alert strong {
+    font-weight: bold;
 }
 
 .form-wrap {
