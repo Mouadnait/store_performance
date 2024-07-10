@@ -1,0 +1,138 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Dashboard -->
+    {% block head %}{% endblock head %}
+    <!-- End of Dashboard -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <!-- Title -->
+    <title>Store Performance</title>
+    <!-- End of Title -->
+</head>
+
+<body>
+    <div class="container">
+        <!-- Sidebar Section -->
+        <aside>
+            <div class="toggle">
+                <div class="logo">
+                    <img src="{% static 'images/logo.png' %}">
+                    <h2>Asmr<span class="danger">Prog</span></h2>
+                </div>
+                <div class="close" id="close-btn">
+                    <span class="material-icons-sharp">
+                        close
+                    </span>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <a href="{% url 'core:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% else %}none{% endif %}">
+                    <span class="material-icons-sharp">
+                        dashboard
+                    </span>
+                    <h3>Dashboard</h3>
+                </a>
+                <a href="{% url 'core:clients' %}" class="{% if request.resolver_match.url_name == 'clients' %}active{% else %}none{% endif %}">
+                    <span class="material-icons-sharp">
+                        person_outline
+                    </span>
+                    <h3>Clients</h3>
+                </a>
+                <a href="{% url 'core:analytics' %}" class="{% if request.resolver_match.url_name == 'analytics' %}active{% else %}none{% endif %}">
+                    <span class="material-icons-sharp">
+                        insights
+                    </span>
+                    <h3>Analytics</h3>
+                </a>
+                <a href="{% url 'core:products' %}" class="{% if request.resolver_match.url_name == 'products' %}active{% else %}none{% endif %}">
+                    <span class="material-icons-sharp">
+                        production_quantity_limits
+                    </span>
+                    <h3>Products</h3>
+                    <span class="message-count">27</span>
+                </a>
+                <a href="{% url 'core:bills' %}" class="{% if request.resolver_match.url_name == 'bills' %}active{% else %}none{% endif %}">
+                    <span class="material-icons-sharp">
+                        inventory
+                    </span>
+                    <h3>Bills</h3>
+                </a>
+                <a href="{% url 'core:reports' %}" class="{% if request.resolver_match.url_name == 'reports' %}active{% else %}none{% endif %}">
+                    <span class="material-icons-sharp">
+                        report_gmailerrorred
+                    </span>
+                    <h3>Reports</h3>
+                </a>
+                <a href="{% url 'core:settings' %}" class="{% if request.resolver_match.url_name == 'settings' %}active{% else %}none{% endif %}">
+                    <span class="material-icons-sharp">
+                        settings
+                    </span>
+                    <h3>Settings</h3>
+                </a>
+                <a href="{% url 'base_auth:logout' %}">
+                    <span class="material-icons-sharp">
+                        logout
+                    </span>
+                    <h3>Logout</h3>
+                </a>
+            </div>
+        </aside>
+        <!-- End of Sidebar Section -->
+
+        <!-- Main Content Block -->
+        <main>
+            <div class="right-section">
+                <!-- Nav -->
+                <div class="nav">
+                    <button id="menu-btn">
+                        <span class="material-icons-sharp">
+                            menu
+                        </span>
+                    </button>
+                    <div class="dark-mode">
+                        <span class="material-icons-sharp active">
+                            light_mode
+                        </span>
+                        <span class="material-icons-sharp">
+                            dark_mode
+                        </span>
+                    </div>
+        
+                    <div class="profile">
+                        <div class="info">
+                            <p>Hey, <b>Reza</b></p>
+                            <small class="text-muted">Admin</small>
+                        </div>
+                        <div class="profile-photo">
+                            <img src="{% static 'images/profile-1.jpg' %}">
+                        </div>
+                    </div>
+                </div>
+                <!-- End of Nav -->
+            </div>
+
+            <!-- Main Content -->
+            {% block content %}{% endblock content %}
+            <!-- End of Main Content -->
+
+            <!-- Right Section -->
+            <div class="right-section">
+                {% block RightSection %}{% endblock RightSection %}
+            </div>
+            <!-- End of Right Section -->
+        </main>
+        <!-- End of Main Content Block -->
+    </div>
+
+    <script src="{% static 'javascript/orders.js' %}"></script>
+    <script src="{% static 'javascript/index.js' %}"></script>
+</body>
+
+</html>
