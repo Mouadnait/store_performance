@@ -14,9 +14,83 @@
     <!-- Title -->
     <title>Store Performance</title>
     <!-- End of Title -->
+    <!-- Alert Style -->
+    <style>
+        header {
+            /* padding: 20px 0; */
+            text-align: center;
+            /* border-bottom: 1px solid #e0e0e0; */
+        }
+    
+        header .alert {
+            padding: 25px;
+            margin-bottom: 15px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            color: #fff;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            z-index: 1000;
+        }
+    
+        header .alert-success {
+            font-size: 25px;
+            background-color: #dff0d8;
+            border-color: #d6e9c6;
+            color: #3c763d;
+        }
+    
+        header .alert-warning {
+            font-size: 25px;
+            background-color: #fcf8e3;
+            border-color: #faebcc;
+            color: #8a6d3b;
+        }
+    
+        header .alert-error {
+            font-size: 25px;
+            background-color: #f2dede;
+            border-color: #ebccd1;
+            color: #a94442;
+        }
+
+        .closebtn {
+            margin-left: 15px;
+            color: #aaaaaa;
+            font-weight: bold;
+            float: right;
+            font-size: 22px;
+            line-height: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .closebtn:hover {
+            color: #000;
+        }
+    </style>
+    <!-- End of Alert Style -->
 </head>
 
 <body>
+    <!-- Header -->
+    <header>
+        <!-- Alert Success / Warning / Error -->
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{message.tags}}">
+            <strong>{{ message }}</strong>
+            <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span>
+        </div>
+        {% endfor %}
+        {% endif %}
+        <!-- End of Alert Success / Warning / Error -->
+    </header>
+    <!-- End of Header -->
+
     <div class="container">
         <!-- Sidebar Section -->
         <aside>
@@ -76,7 +150,7 @@
                     </span>
                     <h3>Settings</h3>
                 </a>
-                <a href="{% url 'userauths:logout' %}">
+                <a href="{% url 'userauths:sign-out' %}">
                     <span class="material-icons-sharp">
                         logout
                     </span>
@@ -104,7 +178,7 @@
                             dark_mode
                         </span>
                     </div>
-        
+
                     <div class="profile">
                         <div class="info">
                             <p>Hey, <b>Reza</b></p>

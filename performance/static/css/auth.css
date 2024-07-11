@@ -21,18 +21,6 @@ body {
     background-color: #F0F2FB;
 }
 
-.alert {
-    padding: 20px;
-    background-color: #f44336;
-    /* Red */
-    color: white;
-    margin-bottom: 15px;
-}
-
-.alert strong {
-    font-weight: bold;
-}
-
 .form-wrap {
     background-color: #fff;
     padding: 70px;

@@ -1,4 +1,5 @@
 {% extends "auth.html" %}
+{% block title %}Sign up{% endblock title %}
 {% block content %}
 <div class="shadow-wrap">
     {% if form.errors %}
@@ -10,13 +11,13 @@
         <h3>Signup</h3>
         <form method="POST">
             {% csrf_token %}
-            <div style="margin-top: 14px;">{{form.username}}</div>
+            <div style="margin-top: 15px;">{{form.username}}</div>
             <div style="margin-top: -6px;">{{form.email}}</div>
             <div style="margin-top: 14px;">{{form.password1}}</div>
             <div style="margin-top: 14px;">{{form.password2}}</div>
-            <button type="submit">Register</button>
+            <button type="submit">Submit & Register</button>
         </form>
-        <a class="signup-link" href='{% url "userauths:login_required" %}'>Login</a>
+        <a class="signup-link" href='{% url "userauths:sign-in" %}'>Login</a>
     </div>
 </div>
 {% endblock content %}
