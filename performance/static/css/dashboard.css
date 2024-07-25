@@ -1,178 +1,65 @@
-.content-area {
-    max-width: 1270px;
-    /* margin: 0 auto; */
-}
-
 /* Container Styles */
-.content-area {
-    padding: 20px;
+.dashboard-area {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    /* Creates a two-column layout */
+    gap: 20px;
+    padding: 30px;
 }
 
-.container-fluid {
-    width: 130%;
-    margin: 0 auto;
-    padding: 0 15px;
-}
-
-/* Row Styles */
-.row {
-    display: flex;
-    flex-wrap: wrap;
-    margin: 0 -15px;
-}
-
-.mt-4 {
-    margin-top: 1.5rem;
-}
-
-.mb-4 {
-    margin-bottom: 1.5rem;
-}
-
-.mt-5 {
-    margin-top: 3rem;
-}
-
-/* Column Styles */
-[class*='col-'] {
-    padding: 0 15px;
-    flex: 1;
-}
-
-.col-md-4 {
-    flex: 0 0 33.3333%;
-    max-width: 33.3333%;
-}
-
-.col-md-6 {
-    flex: 0 0 50%;
-    max-width: 50%;
-}
-
-/* Box Styling */
-.box {
-    padding: 20px;
-    margin-bottom: 20px;
-    border: 1px solid #dee2e6;
-    border-radius: 0.25rem;
-}
-
-/* Utility Classes */
-.mt-4 {
-    margin-top: 1.5rem;
-}
-
-.mb-4 {
-    margin-bottom: 1.5rem;
-}
-
-.mt-5 {
-    margin-top: 3rem;
-}
-
-.mb-5 {
-    margin-bottom: 3rem;
-}
-
-.box {
-    max-height: 444px;
-}
-
-.box .banana {
-    min-height: 404px;
-    background-image: url('images/banana.png');
-    background-size: cover;
-}
-
-.box .map {
-    min-height: 404px;
-    background-image: url('img/map.png');
-    background-size: cover;
-}
-
-.box .cog-icon {
-    cursor: pointer;
-    position: absolute;
-    right: 55px;
-    top: 25px;
-    z-index: 10;
-}
-
-.box {
-    box-shadow: 0px 1px 22px -12px #607D8B;
+/* Chart Styles */
+.dashboard-area>div {
     background-color: #fff;
-    padding: 25px 35px 25px 30px;
+    padding: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    transition: transform 0.3s ease-in-out;
 }
 
-#monthly-earnings-chart #apexcharts-canvas {
-    position: relative;
+.dashboard-area>div:hover {
+    transform: translateY(-5px);
 }
 
-#monthly-earnings-chart #apexcharts-canvas:after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 58%;
-    top: 0;
-    bottom: 0;
-    background: #24bdd3;
-    opacity: 0.65;
+/* Specific Chart Adjustments */
+.dashboard-area .bar_chart {
+    grid-column: 1 / span 1;
+    grid-row: 1;
 }
 
-#monthly-earnings-chart #apexcharts-title-text {
-    font-weight: 600;
+.dashboard-area .pie_chart {
+    grid-column: 2 / span 1;
+    grid-row: 1;
 }
 
-#monthly-earnings-chart #apexcharts-subtitle-text {
-    font-weight: 700;
+.dashboard-area .table_chart {
+    grid-column: 1 / span 2;
+    /* Spans across both columns */
+    grid-row: 2;
 }
 
-.monthly-earnings-text {
-    position: absolute;
-    left: 70px;
-    top: 187px;
-    color: #fff;
-    z-index: 10;
+.dashboard-area .line_chart {
+    grid-column: 1 / span 1;
+    grid-row: 3;
 }
 
-.monthly-earnings-text h6 {
-    font-size: 16px;
+.dashboard-area .map_chart {
+    grid-column: 2 / span 1;
+    grid-row: 3;
 }
 
-.chart-title h5 {
-    font-size: 18px;
-    color: rgba(51, 51, 51, 1);
-    margin-bottom: 38px;
-}
-
-
-@media screen and (max-width:760px) {
-    .box {
-        padding: 25px 0;
+/* Responsive Design */
+@media (max-width: 768px) {
+    .dashboard-area {
+        grid-template-columns: 1fr;
+        /* Switches to a single-column layout */
     }
-}
 
-.sparkboxes .box {
-    padding: 3px 0 0 0;
-    position: relative;
-}
+    .dashboard-area>div {
+        grid-column: 1;
+    }
 
-#spark1,
-#spark2,
-#spark3,
-#spark4 {
-    position: relative;
-    padding-top: 15px;
-    min-height: 200px;
-}
-
-
-/* overrides */
-.sparkboxes #apexcharts-subtitle-text {
-    fill: #8799a2 !important;
-}
-
-
-.spinner-border {
-    display: none;
+    /* Adjust the order for mobile layout if needed */
+    .dashboard-area .table_chart {
+        grid-row: 1;
+    }
 }

@@ -27,7 +27,30 @@ RATING = (
 def user_directory_path(instance, filename):
     return 'user_{0}/{1}'.format(instance.user.id, filename)
 
-class Category (models.Model):
+class Client(models.Model):
+    lid = ShortUUIDField(unique=True, length=10, max_length=20, prefix="cli", alphabet="abcdefgh12345")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='clients')
+
+    profile_image = models.ImageField(upload_to=user_directory_path, default="client.png")
+    full_name = models.CharField(max_length=100)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    address = models.CharField(max_length=100, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    country = models.CharField(max_length=100, blank=True, null=True)
+    postal_code = models.CharField(max_length=10, blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = "Clients"
+
+    def __str__(self):
+        return self.full_name
+
+################################################### Category, Product, Product Images, Tags ###################################################
+################################################### Category, Product, Product Images, Tags ###################################################
+################################################### Category, Product, Product Images, Tags ###################################################
+################################################### Category, Product, Product Images, Tags ###################################################
+
+class Category(models.Model):
     cid = ShortUUIDField(unique=True, length=10, max_length=20, prefix="cat", alphabet="abcdefgh12345")
     title = models.CharField(max_length=100, default="Category Title")
     image = models.ImageField(upload_to="category", default="category.jpg")
@@ -38,53 +61,29 @@ class Category (models.Model):
     def category_image(self):
         return mark_safe('<img src="%s" width="50" height="50" />' % (self.image.url))
 
-    def _str_(self):
+    def __str__(self):
         return self.title
 
 class Tags(models.Model):
     pass
 
-class Vendor (models.Model):
-    vid = ShortUUIDField(unique=True, length=10, max_length=20, prefix="ven", alphabet="abcdefgh12345")
-
-    title = models.CharField(max_length=100, default="Vendor Title")
-    image = models.ImageField(upload_to=user_directory_path, default="Vendor.jpg")
-    description = models.TextField(null=True, blank=True, default='This is a Vender description')
-
-    address = models.CharField(max_length=100, default="123 Main Street")
-    contact = models.CharField(max_length=100, default="+212 655 1212")
-    chat_resp_time = models.CharField(max_length=100, default="100")
-    chipping_on_time = models.CharField(max_length=100, default="100")
-    authentic_rating = models.CharField(max_length=100, default="100")
-    days_return = models.CharField(max_length=100, default="100")
-    warranty_period = models.CharField(max_length=100, default="100")
-
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-
-    class Meta:
-        verbose_name_plural = "Vendor"
-
-    def vendor_image(self):
-        return mark_safe('<img src="%s" width="50" height="50" />' % (self.image.url))
-
-    def _str_(self):
-        return self.title
-
 class Product (models.Model):
     pid = ShortUUIDField(unique=True, length=10, max_length=20, alphabet="abcdefgh12345")
 
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, blank=True, null=True)
 
     title = models.CharField(max_length=100, default="Product Title")
     image = models.ImageField(upload_to=user_directory_path, default="product.jpg")
     description = models.TextField(null=True, blank=True, default='This is a product description')
 
     price = models.DecimalField(max_digits=99999999999, decimal_places=2, default=0.00)
-    old_price = models.DecimalField(max_digits=99999999999, decimal_places=2, default=1.99)
+    old_price = models.DecimalField(max_digits=99999999999, decimal_places=2, default=1.00)
 
     specifications = models.TextField(null=True, blank=True, default='This is a product specification')
-    tags = models.ForeignKey(Tags, on_delete=models.SET_NULL, null=True)
+    tags = models.ForeignKey(Tags, on_delete=models.SET_NULL, blank=True, null=True)
+
+    stock = models.DecimalField(max_digits=99999999999, decimal_places=0, blank=True, null=True)
 
     product_status = models.CharField(choices=STATUS, max_length=20, default='in_review')
 
@@ -104,7 +103,7 @@ class Product (models.Model):
     def product_image(self):
         return mark_safe('<img src="%s" width="50" height="50" />' % (self.image.url))
 
-    def _str_(self):
+    def __str__(self):
         return self.title
     
     def get_percentage(self):
@@ -120,45 +119,10 @@ class ProductImages(models.Model):
     class Meta:
         verbose_name_plural = "Product Images"
 
-
-################################################### Cart, Order, OrderItems And Address ###################################################
-################################################### Cart, Order, OrderItems And Address ###################################################
-################################################### Cart, Order, OrderItems And Address ###################################################
-################################################### Cart, Order, OrderItems And Address ###################################################
-
-
-class CartOrder(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    price = models.DecimalField(max_digits=99999999999, decimal_places=2, default=0.00)
-    paid_status = models.BooleanField(default=False)
-    older_date = models.DateTimeField(auto_now_add=True)
-    product_status = models.CharField(choices=STATUS_CHOICES, max_length=30, default='processing')
-
-    class Meta:
-        verbose_name_plural = "Cart Order"
-
-class CartOrderItems(models.Model):
-    order = models.ForeignKey(CartOrder, on_delete=models.CASCADE)
-    invoice_no = models.CharField(max_length=200)
-    product_status = models.CharField(max_length=200)
-    item = models.CharField(max_length=200)
-    image = models.CharField(max_length=200)
-    qty = models.IntegerField(default=0)
-    price = models.DecimalField(max_digits=99999999999, decimal_places=2, default=0.00)
-    total = models.DecimalField(max_digits=99999999999, decimal_places=2, default=0.00)
-
-    class Meta:
-        verbose_name_plural = "Cart Order Items"
-
-    def order_img(self):
-        return mark_safe('<img src="/media/%s" width="50" height="50" />' % (self.image))
-
-
-################################################### Product Review, Wishlists, Address ###################################################
-################################################### Product Review, Wishlists, Address ###################################################
-################################################### Product Review, Wishlists, Address ###################################################
-################################################### Product Review, Wishlists, Address ###################################################
-
+################################################### Product Review, Bill ###################################################
+################################################### Product Review, Bill ###################################################
+################################################### Product Review, Bill ###################################################
+################################################### Product Review, Bill ###################################################
 
 class ProductReview(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
@@ -170,28 +134,26 @@ class ProductReview(models.Model):
     class Meta:
         verbose_name_plural = "Product Reviews"
 
-    def _str_(self):
-        return self.product.title
+    def __str__(self):
+        return self.title
 
     def get_rating(self):
         return self.rating
 
-class Wishlists(models.Model):
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
-    date = models.DateTimeField(auto_now_add=True)
+class Bill(models.Model):
+    store_name = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bill')
+    client = models.ForeignKey(Client, on_delete=models.CASCADE)
+    date = models.DateField(auto_now_add=True)
+
+    quantity = models.IntegerField()
+    description = models.CharField(max_length=255)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+
 
     class Meta:
-        verbose_name_plural = "Wishlists"
+        verbose_name_plural = "create-bill"
 
-    def _str_(self):
-        return self.product.title
-
-class Address(models.Model):
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    address = models.CharField(max_length=100, null=True)
-    status = models.BooleanField(default=False)
-
-    class Meta:
-        verbose_name_plural = "Address"
-
+    def __str__(self):
+        return f"Bill for {self.client} on {self.date}"

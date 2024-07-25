@@ -1,12 +1,38 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block style-content %}
+    <link rel="stylesheet" href="{% static 'css/settings.css' %}">
+{% endblock style-content %}
+
+{% block title %}Settings | Store Performance{% endblock title %}
+
+{% block content-title %}Settings{% endblock content-title %}
+
 {% block content %}
-<!-- Main Content -->
-<h1>Settings</h1>
 <!-- Settings -->
-
+<div class="content-area">
+    <div class="settings">
+        <div class="settings-body">
+            <div class="settings-body-item">
+                <h3>Profile</h3>
+                <p>Update your profile information</p>
+                <img src="{% static 'images/profile-1.jpg' %}" alt="Profile Image" class="profile-image">
+                <input type="file" id="profile-image-input" accept="image/*">
+                <button onclick="updateProfileImage()" class="btn btn-primary">Update Profile</button>
+            </div>
+            <div class="settings-body-item">
+                <h3>Change Password</h3>
+                <p>Change your password</p>
+                <a href="#" class="btn btn-primary">Change Password</a>
+            </div>
+            <div class="settings-body-item">
+                <h3>Logout</h3>
+                <p>Logout from the system</p>
+                <a href="#" class="btn btn-primary">Logout</a>
+            </div>
+        </div>
+    </div>
+</div>
 <!-- End of Settings -->
-
-<!-- End of Main Content -->
 {% endblock content %}

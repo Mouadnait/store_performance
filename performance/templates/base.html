@@ -2,211 +2,156 @@
 
 <!DOCTYPE html>
 <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Dashboard -->
-    {% block head %}{% endblock head %}
-    <!-- End of Dashboard -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <!-- Title -->
-    <title>Store Performance</title>
-    <!-- End of Title -->
-    <!-- Alert Style -->
-    <style>
-        header {
-            /* padding: 20px 0; */
-            text-align: center;
-            /* border-bottom: 1px solid #e0e0e0; */
-        }
-    
-        header .alert {
-            padding: 25px;
-            margin-bottom: 15px;
-            border: 1px solid transparent;
-            border-radius: 4px;
-            color: #fff;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            text-align: center;
-            z-index: 1000;
-        }
-    
-        header .alert-success {
-            font-size: 25px;
-            background-color: #dff0d8;
-            border-color: #d6e9c6;
-            color: #3c763d;
-        }
-    
-        header .alert-warning {
-            font-size: 25px;
-            background-color: #fcf8e3;
-            border-color: #faebcc;
-            color: #8a6d3b;
-        }
-    
-        header .alert-error {
-            font-size: 25px;
-            background-color: #f2dede;
-            border-color: #ebccd1;
-            color: #a94442;
-        }
+        <!-- ===== Google font icon ===== -->
+        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp">
+        <!----===== Boxicons CSS ===== -->
+        <link href='https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css' rel='stylesheet'>
 
-        .closebtn {
-            margin-left: 15px;
-            color: #aaaaaa;
-            font-weight: bold;
-            float: right;
-            font-size: 22px;
-            line-height: 20px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
+        <!-- ======== CSS ======== -->
+        <link rel="stylesheet" href="{% static 'css/style.css' %}">
+        {% block style-content %}{% endblock style-content %}
 
-        .closebtn:hover {
-            color: #000;
-        }
-    </style>
-    <!-- End of Alert Style -->
-</head>
+        <!-- ===== Title ===== -->
+        <title>{% block title %}{% endblock title %}</title>
+        <!-- === End of Title === -->
+    </head>
 
-<body>
-    <!-- Header -->
-    <header>
-        <!-- Alert Success / Warning / Error -->
-        {% if messages %}
-        {% for message in messages %}
-        <div class="alert alert-{{message.tags}}">
-            <strong>{{ message }}</strong>
-            <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span>
-        </div>
-        {% endfor %}
-        {% endif %}
-        <!-- End of Alert Success / Warning / Error -->
-    </header>
-    <!-- End of Header -->
+    <body>
+        <nav class="sidebar close">
+            <header>
+                <div class="image-text">
+                    <span class="image">
+                        &nbsp;&nbsp; <img src="{{request.user.image.url}}" alt="">
+                    </span>
 
-    <div class="container">
-        <!-- Sidebar Section -->
-        <aside>
-            <div class="toggle">
-                <div class="logo">
-                    <img src="{% static 'images/logo.png' %}">
-                    <h2>Asmr<span class="danger">Prog</span></h2>
-                </div>
-                <div class="close" id="close-btn">
-                    <span class="material-icons-sharp">
-                        close
-                    </span>
-                </div>
-            </div>
-
-            <div class="sidebar">
-                <a href="{% url 'core:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% else %}none{% endif %}">
-                    <span class="material-icons-sharp">
-                        dashboard
-                    </span>
-                    <h3>Dashboard</h3>
-                </a>
-                <a href="{% url 'core:clients' %}" class="{% if request.resolver_match.url_name == 'clients' %}active{% else %}none{% endif %}">
-                    <span class="material-icons-sharp">
-                        person_outline
-                    </span>
-                    <h3>Clients</h3>
-                </a>
-                <a href="{% url 'core:analytics' %}" class="{% if request.resolver_match.url_name == 'analytics' %}active{% else %}none{% endif %}">
-                    <span class="material-icons-sharp">
-                        insights
-                    </span>
-                    <h3>Analytics</h3>
-                </a>
-                <a href="{% url 'core:products' %}" class="{% if request.resolver_match.url_name == 'products' %}active{% else %}none{% endif %}">
-                    <span class="material-icons-sharp">
-                        production_quantity_limits
-                    </span>
-                    <h3>Products</h3>
-                    <span class="message-count">27</span>
-                </a>
-                <a href="{% url 'core:bills' %}" class="{% if request.resolver_match.url_name == 'bills' %}active{% else %}none{% endif %}">
-                    <span class="material-icons-sharp">
-                        inventory
-                    </span>
-                    <h3>Bills</h3>
-                </a>
-                <a href="{% url 'core:reports' %}" class="{% if request.resolver_match.url_name == 'reports' %}active{% else %}none{% endif %}">
-                    <span class="material-icons-sharp">
-                        report_gmailerrorred
-                    </span>
-                    <h3>Reports</h3>
-                </a>
-                <a href="{% url 'core:settings' %}" class="{% if request.resolver_match.url_name == 'settings' %}active{% else %}none{% endif %}">
-                    <span class="material-icons-sharp">
-                        settings
-                    </span>
-                    <h3>Settings</h3>
-                </a>
-                <a href="{% url 'userauths:sign-out' %}">
-                    <span class="material-icons-sharp">
-                        logout
-                    </span>
-                    <h3>Logout</h3>
-                </a>
-            </div>
-        </aside>
-        <!-- End of Sidebar Section -->
-
-        <!-- Main Content Block -->
-        <main>
-            <div class="right-section">
-                <!-- Nav -->
-                <div class="nav">
-                    <button id="menu-btn">
-                        <span class="material-icons-sharp">
-                            menu
-                        </span>
-                    </button>
-                    <div class="dark-mode">
-                        <span class="material-icons-sharp active">
-                            light_mode
-                        </span>
-                        <span class="material-icons-sharp">
-                            dark_mode
-                        </span>
-                    </div>
-
-                    <div class="profile">
-                        <div class="info">
-                            <p>Hey, <b>Reza</b></p>
-                            <small class="text-muted">Admin</small>
-                        </div>
-                        <div class="profile-photo">
-                            <img src="{% static 'images/profile-1.jpg' %}">
-                        </div>
+                    <div class="text logo-text">
+                        <span class="name">&nbsp; {{request.user.username}}</span>
+                        <!-- <span class="profession">Web developer</span> -->
                     </div>
                 </div>
-                <!-- End of Nav -->
+
+                <i class='bx bx-chevron-right toggle'></i>
+            </header>
+
+            <div class="menu-bar">
+                <div class="menu">
+                    <ul class="menu-links" title="Dashboard">
+                        <li class="nav-link">
+                            <a href="{% url 'core:dashboard' %}"
+                                class="{% if request.resolver_match.url_name == 'dashboard' %}active{% else %}none{% endif %}">
+                                <i class='bx bx-home-alt icon'></i>
+                                <h3 class="text nav-text">Dashboard</h3>
+                            </a>
+                        </li>
+
+                        <!-- <li class="nav-link" title="Analytics">
+                            <a href="{% url 'core:analytics' %}"
+                                class="{% if request.resolver_match.url_name == 'analytics' %}active{% else %}none{% endif %}">
+                                <i class='bx bx-pie-chart-alt icon'></i>
+                                <h3 class="text nav-text">Analytics</h3>
+                            </a>
+                        </li> -->
+
+                        <li class="nav-link" title="Clients">
+                            <a href="{% url 'core:clients' %}"
+                                class="{% if request.resolver_match.url_name == 'clients' %}active{% else %}none{% endif %}">
+                                <i class='bx bx-user icon'></i>
+                                <h3 class="text nav-text">Clients</h3>
+                            </a>
+                        </li>
+
+                        <li class="nav-link" title="Products">
+                            <a href="{% url 'core:products' %}"
+                                class="{% if request.resolver_match.url_name == 'products' %}active{% else %}none{% endif %}">
+                                <i class='bx bx-box icon'></i>
+                                <h3 class="text nav-text">Products</h3>
+                            </a>
+                        </li>
+
+                        <li class="nav-link" title="Create Bill">
+                            <a href="{% url 'core:create-bill' %}"
+                                class="{% if request.resolver_match.url_name == 'create-bill' %}active{% else %}none{% endif %}">
+                                <i class='bx bx-money icon'></i>
+                                <h3 class="text nav-text">create-bill</h3>
+                            </a>
+                        </li>
+
+                        <!-- <li class="nav-link" title="Reports">
+                            <a href="{% url 'core:reports' %}"
+                                class="{% if request.resolver_match.url_name == 'reports' %}active{% else %}none{% endif %}">
+                                <i class='bx bx-file icon'></i>
+                                <h3 class="text nav-text">Reports</h3>
+                            </a>
+                        </li> -->
+
+                        <li class="nav-link" title="Settings">
+                            <a href="{% url 'core:settings' %}"
+                                class="{% if request.resolver_match.url_name == 'settings' %}active{% else %}none{% endif %}">
+                                <i class='bx bx-cog icon'></i>
+                                <h3 class="text nav-text">Settings</h3>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bottom-content">
+                    <li class="" title="Logout">
+                        <a href="{% url 'userauths:sign-out' %}">
+                            <i class='bx bx-log-out icon'></i>
+                            <h3 class="text nav-text">Logout</h3>
+                        </a>
+                    </li>
+
+                    <li class="mode" title="Dark mode">
+                        <div class="sun-moon">
+                            <i class='bx bx-moon icon moon'></i>
+                            <i class='bx bx-sun icon sun'></i>
+                        </div>
+                        <span class="mode-text text">Dark mode</span>
+                    
+                        <div class="toggle-switch">
+                            <span class="switch"></span>
+                        </div>
+                    </li>
+
+                </div>
             </div>
 
-            <!-- Main Content -->
+        </nav>
+
+        <section class="home">
+            <div class="message">
+                {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{message.tags}}">
+                    <strong>{{ message }}</strong>
+                    <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span>
+                </div>
+                {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Header Title -->
+            <div class="text">
+                {% block content-title %}{% endblock content-title %}
+            </div>
+            <!-- End of Header Title -->
+
+            <!-- Block Content -->
             {% block content %}{% endblock content %}
-            <!-- End of Main Content -->
-
-            <!-- Right Section -->
-            <div class="right-section">
-                {% block RightSection %}{% endblock RightSection %}
-            </div>
-            <!-- End of Right Section -->
-        </main>
-        <!-- End of Main Content Block -->
-    </div>
-
-    <script src="{% static 'javascript/orders.js' %}"></script>
-    <script src="{% static 'javascript/index.js' %}"></script>
-</body>
-
+            <!-- End of Block Content -->
+        </section>
+        
+        <!-- ======== JQuery ======== -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <!-- ====== Javascript ====== -->
+        <script src="{% static 'javascript/base.js' %}"></script>
+        <script src="{% static 'javascript/create-bill.js' %}"></script>
+        <script src="{% static 'javascript/products.js' %}"></script>
+    </body>
 </html>

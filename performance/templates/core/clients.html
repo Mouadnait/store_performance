@@ -1,12 +1,30 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block style-content %}
+    <link rel="stylesheet" href="{% static 'css/client.css' %}">
+{% endblock style-content %}
+
+{% block title %}Clients | Store Performance{% endblock title %}
+
+{% block content-title %}Clients{% endblock content-title %}
+
 {% block content %}
-<!-- Main Content -->
-<h1>Clients</h1>
-<!-- Clients -->
-
-<!-- End of Clients -->
-
-<!-- End of Main Content -->
+<div class="content-area">
+    <!-- Clients -->
+    <div class="row-client">
+        {% for client in clients %}
+        <div class="client-card">
+            <img src="{% static 'images/client.png' %}" alt="Avatar" class="img-fluid">
+            <div class="overlay">
+                <div class="text-card">
+                    <p>{{ client.full_name }}</p>
+                    <a href="{% url 'core:client_detail' client.lid %}">More Info !</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <!-- End of Clients -->
+</div>
 {% endblock content %}

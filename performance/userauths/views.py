@@ -1,9 +1,7 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
 from userauths.forms import UserRegisterForm
 from django.contrib.auth import get_user_model, authenticate, login, logout
 from django.contrib import messages
-from django.conf import settings
 
 # User = settings.AUTH_USER_MODEL
 User = get_user_model()

@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style-content %}
+    <link rel="stylesheet" href="{% static 'css/create-bill.css' %}">
+{% endblock style-content %}
+
+{% block title %}New Bill | Store Performance{% endblock title %}
+
+{% block content-title %}Create a new Bill{% endblock content-title %}
+
+{% block content %}
+<!-- Bills -->
+<div class="content-area">
+    <div class="billApp" style="height: auto;width: 1000px;">
+        <form method="POST" onsubmit="submitForm(event)">
+            <div class="billheader">
+                <div class="firstline d-flex">
+                    <span>Store Name:&nbsp; {{request.user.username}}&nbsp; </span>
+                    <span>Phone Number:&nbsp; {{request.user.phone}}&nbsp; </span>
+                </div>
+
+                <div class="name d-flex">
+                    <input type="text" name="" id="">
+                </div>
+
+                <div class="firstline d-flex" style="margin-top: 15px;">
+                    <span>Client. &nbsp;:</span>
+                    <input type="text" name="clientName" id="clientName">
+
+                    <span>DATE &nbsp;:</span>
+                    <input type="date" name="billDate" id="billDate">
+                </div>
+
+                <div class="name d-flex">
+                    <input type="text" name="" id="">
+                </div>
+
+                <div class="businessinfo d-flex" style="margin-top: 15px;">
+                    <span>GSTIN NO. &nbsp;:</span>
+                    <input type="text" name="" id="">
+                </div>
+
+            </div>
+            <div class="billbody" style="width: calc(100% - -110px);">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 115px;">
+                                <div>Quantity</div>
+                            </th>
+                            <th style="width: 700px;">
+                                <div>Description</div>
+                            </th>
+                            <th style="width: 115px;">
+                                <div>Price</div>
+                            </th>
+                            <th style="width: 115px;">
+                                <div>Amount</div>
+                            </th>
+                            <th style="width: 115px;"></th>
+                    </thead>
+                    <tbody>
+                        <!-- Item rows here -->
+                        <tr>
+                            <td>
+                                <div><input type="text" name="quantity" id=""></div>
+                            </td>
+                            <td>
+                                <div><input type="text" name="description" id=""></div>
+                            </td>
+                            <td>
+                                <div><input type="text" name="price" id=""></div>
+                            </td>
+                            <td>
+                                <div><input type="text" name="amount" id=""></div>
+                            </td>
+                        </tr>
+                        <!-- Total Price Row -->
+                        <tr>
+                            <td colspan="3" style="text-align: right;">
+                                <div style="border: 2px solid #FF9494;">Gr. Total:</div>
+                            </td>
+                            <td>
+                                <div style="border: 2px solid #FF9494;"><input type="text" name="totalPrice"
+                                        id="totalPrice" readonly></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </form>
+        <div class="bill-bottom" style="display: flex;justify-content: space-between;padding: 20px;">
+            <button id="clear-bill-btn">Clear Bill</button>
+            <button type="submit" id="save-bill-btn">Save Bill</button>
+        </div>
+    </div>
+</div>
+<!-- End of Bills -->
+{% endblock content %}

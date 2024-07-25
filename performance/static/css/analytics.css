@@ -1,0 +1,153 @@
+.content-area .analyse {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.6rem;
+}
+
+.content-area .analyse>div {
+    background-color: var(--color-white);
+    padding: var(--card-padding);
+    border-radius: var(--card-border-radius);
+    margin-top: 1rem;
+    box-shadow: var(--box-shadow);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.content-area .analyse>div:hover {
+    box-shadow: none;
+}
+
+.content-area .analyse>div .status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.content-area .analyse h3 {
+    margin-left: 0.6rem;
+    font-size: 1rem;
+}
+
+.content-area .analyse .progresss {
+    position: relative;
+    width: 92px;
+    height: 92px;
+    border-radius: 50%;
+}
+
+.content-area .analyse svg {
+    width: 7rem;
+    height: 7rem;
+}
+
+.content-area .analyse svg circle {
+    fill: none;
+    stroke-width: 10;
+    stroke-linecap: round;
+    transform: translate(5px, 5px);
+}
+
+.content-area .analyse .sales svg circle {
+    stroke: var(--color-success);
+    stroke-dashoffset: -30;
+    stroke-dasharray: 200;
+}
+
+.content-area .analyse .visits svg circle {
+    stroke: var(--color-danger);
+    stroke-dashoffset: -30;
+    stroke-dasharray: 200;
+}
+
+.content-area .analyse .searches svg circle {
+    stroke: var(--color-primary);
+    stroke-dashoffset: -30;
+    stroke-dasharray: 200;
+}
+
+.content-area .analyse .progresss .percentage {
+    position: absolute;
+    top: -3px;
+    left: -1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+}
+
+.content-area .new-users {
+    margin-top: 1.3rem;
+}
+
+.content-area .new-users .user-list {
+    background-color: var(--color-white);
+    padding: var(--card-padding);
+    border-radius: var(--card-border-radius);
+    margin-top: 1rem;
+    box-shadow: var(--box-shadow);
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 1.4rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.content-area .new-users .user-list:hover {
+    box-shadow: none;
+}
+
+.content-area .new-users .user-list .user {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.content-area .new-users .user-list .user img {
+    width: 5rem;
+    height: 5rem;
+    margin-bottom: 0.4rem;
+    border-radius: 50%;
+}
+
+.content-area .recent-orders {
+    margin-top: 1.3rem;
+}
+
+.content-area .recent-orders h2 {
+    margin-bottom: 0.8rem;
+}
+
+.content-area .recent-orders table {
+    background-color: var(--color-white);
+    width: 100%;
+    padding: var(--card-padding);
+    text-align: center;
+    box-shadow: var(--box-shadow);
+    border-radius: var(--card-border-radius);
+    transition: all 0.3s ease;
+}
+
+.content-area .recent-orders table:hover {
+    box-shadow: none;
+}
+
+.content-area table tbody td {
+    height: 2.8rem;
+    border-bottom: 1px solid var(--color-light);
+    color: var(--color-dark-variant);
+}
+
+.content-area table tbody tr:last-child td {
+    border: none;
+}
+
+.content-area .recent-orders a {
+    text-align: center;
+    display: block;
+    margin: 1rem auto;
+    color: var(--color-primary);
+}

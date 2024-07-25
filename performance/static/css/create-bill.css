@@ -1,0 +1,270 @@
+div.billApp {
+    background-color: #ffffff;
+    /* height: 88vh; */
+    height: auto;
+    width: 1000px;
+    /* width: 900px; */
+    margin: 10px auto 0 auto;
+    border-radius: 5px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+div.billApp div.billheader {
+    color: #FF6161;
+    margin: 5px auto;
+    border: 2px solid #FF9494;
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    border-color: #FF9494;
+}
+
+div.billApp div.billheader div.firstline {
+    display: flex;
+    justify-content: space-between;
+}
+
+
+div.billApp div.billheader div.firstline span {
+    color: #FF6161;
+    width: fit-content;
+    margin: 5px 10px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+div.billApp div.billheader div.firstline input {
+    width: 300px;
+    outline: none;
+    border: 0;
+    border-bottom: 1px solid #FF9494;
+    margin-bottom: 10px;
+    text-align: center;
+    border-color: #FF9494;
+}
+
+div.billApp div.billheader div.name span {
+    color: #FF6161;
+    width: fit-content;
+    margin: 5px 10px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+div.billApp div.billheader div.name input {
+    width: 100%;
+    outline: none;
+    border: 0;
+    border-bottom: 1px solid #FF9494;
+    margin-bottom: 5px;
+    text-align: center;
+}
+
+div.billApp div.billheader div.businessinfo span {
+    color: #FF6161;
+    width: fit-content;
+    margin: 5px 10px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+div.billApp div.billheader div.businessinfo input {
+    width: calc(100% - 420px);
+    outline: none;
+    border: 0;
+    border-bottom: 1px solid #FF9494;
+    margin-bottom: 5px;
+    text-align: center;
+    border-color: #FF9494;
+}
+
+div.billApp div.billbody {
+    width: calc(100% - -102px);
+    margin: auto;
+}
+
+div.billApp div.billbody table {
+    table-layout: fixed;
+}
+
+div.billApp div.billbody table th>div {
+    color: #FF6161;
+    background-color: #FED2D2;
+    border-color: #FF9494;
+    margin: 5px auto;
+    border: 2px solid #FF9494;
+    border-radius: 1px;
+    padding: 15px;
+    text-align: center;
+    margin: 0px 5px;
+    margin: auto;
+    height: 60px;
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+div.billApp div.billbody table th>div input {
+    width: calc(100% - 10px);
+    outline: none;
+    border: 0;
+    border-bottom: 1px solid #FF9494;
+    margin-bottom: 5px;
+    text-align: center;
+    text-align: center;
+}
+
+div.billApp div.billbody table tbody {
+    border-bottom: 2px solid #FF6161;
+}
+
+div.billApp div.billbody table tbody td div {
+    color: #FF6161;
+    margin: 5px auto;
+    border: 2px solid #FF9494;
+    border-radius: 1px;
+    padding: 10px;
+    text-align: center;
+    margin: 0px 5px;
+    margin: auto;
+    border-top: none;
+    border-bottom: none;
+    height: 45px;
+    font-weight: bold;
+}
+
+div.billApp div.billbody table tbody td div input {
+    width: 100%;
+    outline: none;
+    border: 0;
+    border-bottom: 1px solid #FF9494;
+    margin-bottom: 5px;
+    text-align: center;
+    text-align: center;
+}
+
+div.billApp div.billbody table tbody td div:nth-child(4) {
+    display: none;
+    border-top: 2px solid red !important;
+}
+
+div.billApp div.billbody div.description div {
+    color: #FF6161;
+    background-color: #FED2D2;
+    margin: 5px auto;
+    border: 2px solid #FF9494;
+    border-radius: 1px;
+    padding: 15px;
+    text-align: center;
+    margin: 0px 5px;
+    margin: auto;
+    height: 60px;
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+div.billApp div.billbody div.description div:nth-child(6) {
+    border-right: 2px solid #FF9494;
+}
+
+div.billApp div.billbody div.content div {
+    margin: 5px auto;
+    border: 2px solid #FF9494;
+    border-radius: 1px;
+    padding: 5px;
+    text-align: center;
+    height: 300px;
+    border-radius: 10px;
+    border-right: none;
+    font-weight: bold;
+}
+
+div.billApp div.billbody div.content div input {
+    width: calc(100% - 10px);
+    outline: none;
+    border: 0;
+    border-bottom: 1px solid #FF9494;
+    margin-bottom: 5px;
+    text-align: center;
+}
+
+div.billApp div.billbody div.content div:nth-child(4),
+div.billApp div.billbody div.content div:nth-child(5),
+div.billApp div.billbody div.content div:nth-child(6) {
+    margin: 5px auto;
+    border: 2px solid #FF9494;
+    border-radius: 1px;
+    padding: 5px;
+    text-align: center;
+    height: 300px;
+    border-radius: 10px;
+    border-right: none;
+    font-weight: bold;
+}
+
+div.billApp div.billbody div.content div:nth-child(6) {
+    border-right: 2px solid #FF9494;
+}
+
+div.billApp div.billbody div.subtotal div,
+div.billApp div.billbody div.sgst div,
+div.billApp div.billbody div.cgst div,
+div.billApp div.billbody div.igst div {
+    margin: 5px auto;
+    border: 2px solid #FF9494;
+    border-radius: 1px;
+    padding: 5px;
+    text-align: center;
+    height: 50px;
+    border-radius: 10px;
+    border-right: none;
+    font-weight: bold;
+    border: none;
+    margin: 0px !important;
+}
+
+div.billApp div.billbody div.subtotal div input,
+div.billApp div.billbody div.sgst div input,
+div.billApp div.billbody div.cgst div input,
+div.billApp div.billbody div.igst div input {
+    width: calc(100% - 10px);
+    outline: none;
+    border: 0;
+    border-bottom: 1px solid #FF9494;
+    margin-bottom: 5px;
+    text-align: center;
+}
+
+div.billApp div.billbody div.subtotal div:nth-child(4),
+div.billApp div.billbody div.subtotal div:nth-child(5),
+div.billApp div.billbody div.subtotal div:nth-child(6),
+div.billApp div.billbody div.sgst div:nth-child(4),
+div.billApp div.billbody div.sgst div:nth-child(5),
+div.billApp div.billbody div.sgst div:nth-child(6),
+div.billApp div.billbody div.cgst div:nth-child(4),
+div.billApp div.billbody div.cgst div:nth-child(5),
+div.billApp div.billbody div.cgst div:nth-child(6),
+div.billApp div.billbody div.igst div:nth-child(4),
+div.billApp div.billbody div.igst div:nth-child(5),
+div.billApp div.billbody div.igst div:nth-child(6) {
+    margin: 5px auto;
+    border: 2px solid #FF9494;
+    border-radius: 1px;
+    padding: 5px;
+    text-align: center;
+    height: 50px;
+    border-radius: 10px;
+    border-right: none;
+    font-weight: bold;
+}
+
+div.billApp div.billbody div.subtotal div:nth-child(6),
+div.billApp div.billbody div.sgst div:nth-child(6),
+div.billApp div.billbody div.cgst div:nth-child(6),
+div.billApp div.billbody div.igst div:nth-child(6) {
+    border-right: 2px solid #FF9494;
+}
+
+.bill-bottom {
+    display: flex;
+    justify-content: space-between;
+}

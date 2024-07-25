@@ -1,40 +1,27 @@
 from django.contrib import admin
-from core.models import Category, Vendor, Product, ProductImages, CartOrder, CartOrderItems, ProductReview, Wishlists, Address
+from core.models import *
 
 class ProductImagesAdmin(admin.TabularInline):
     model = ProductImages
 
 class ProductAdmin(admin.ModelAdmin):
     inlines = [ProductImagesAdmin]
-    list_display = ['user', 'title', 'product_image', 'price', 'featured', 'product_status']
+    list_display = ['user', 'title', 'product_image', 'price', 'stock', 'featured', 'product_status', 'pid']
 
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['title', 'category_image']
+    list_display = ['title', 'category_image', 'cid']
 
-class VendorAdmin(admin.ModelAdmin):
-    list_display = ['title', 'vendor_image']
-
-class CartOrderAdmin(admin.ModelAdmin):
-    list_display = ['user', 'price', 'paid_status', 'older_date', 'product_status']
-
-class CartOrderItemsAdmin(admin.ModelAdmin):
-    list_display = ['order', 'invoice_no', 'item', 'image', 'qty', 'price', 'total']
+class ClientAdmin(admin.ModelAdmin):
+    list_display = ['full_name', 'profile_image', 'phone', 'address', 'city', 'country', 'postal_code', 'user', 'lid']
 
 class ProductReviewAdmin(admin.ModelAdmin):
     list_display = ['user', 'product', 'review', 'rating']
 
-class WishlistsAdmin(admin.ModelAdmin):
-    list_display = ['user', 'product', 'date']
-
-class AddressAdmin(admin.ModelAdmin):
-    list_display = ['user', 'address', 'status']
+class BillAdmin(admin.ModelAdmin):
+    list_display = ['store_name', 'client', 'date', 'description', 'quantity', 'price', 'amount', 'total_price']
 
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Category, CategoryAdmin)
-admin.site.register(Vendor, VendorAdmin)
-admin.site.register(CartOrder, CartOrderAdmin)
-admin.site.register(CartOrderItems, CartOrderItemsAdmin)
+admin.site.register(Client, ClientAdmin)
 admin.site.register(ProductReview, ProductReviewAdmin)
-admin.site.register(Wishlists, WishlistsAdmin)
-admin.site.register(Address, AddressAdmin)
-
+admin.site.register(Bill, BillAdmin)

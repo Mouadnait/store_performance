@@ -1,12 +1,126 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block style-content %}
+    <link rel="stylesheet" href="{% static 'css/product.css' %}">
+{% endblock style-content %}
+
+{% block title %}Products | Store Performance{% endblock title %}
+
+{% block content-title %}Products{% endblock content-title %}
+
 {% block content %}
-<!-- Main Content -->
-<h1>Products</h1>
-<!-- Products -->
+<div class="products-area">
+    <!-- Search Filter and Add Product -->
+    <div class="search_filter" onclick="toggleProductForm()">
+        <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for names.." title="Type in a name">
+        <span class="material-icons-sharp add-product-icon" title="Add a new product">add_circle_outline</span>
+    </div>
+    <!-- End Search Filter and Add Product -->
 
-<!-- End of Products -->
+    <div id="productForm" class="product-form-container">
+        <!-- Form to add product -->
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button class="signup-link" type="submit">Submit</button>
+        </form>
+        <!-- Add more fields as needed -->
+    </div>
 
-<!-- End of Main Content -->
+    <!-- Products -->
+    <div class="products-container">
+        {% for product in products %}
+        <div class="product-card">
+            {% if product.old_price != 1.00 %}
+            <span class="percentage">-{{ product.get_percentage|floatformat:0 }}%</span>
+            {% endif %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}">
+            <p>{{ product.category }}</p>
+            <h2>{{ product.title }}</h2>
+            <p>{{ product.description }}</p>
+            <p class="price">Price: ${{ product.price }}</p>
+            <button onclick="addToBill('{{ product.title }}', '{{ product.price }}')">Add to Bill</button>
+        </div>
+        {% endfor %}
+    </div>
+    <!-- End of Products -->
+</div>
 {% endblock content %}
+
+{% block section %}
+<!-- Search Section -->
+<div class="search-section">
+    <div class="container-fluid container-xl">
+        <div class="main-content">
+            <div class="sidebar pro-col-md-3">
+                <h1 class="border-bottom filter-header align-items-center">
+                    Filters
+                </h1>
+                <div class="sidebar__inner">
+                    <div class="filter-body">
+                        <div>
+                            <!--categories start-->
+                            <h2 class="border-bottom filter-title">Categories</h2>
+                            <div class="filter-options">
+                                {% for category in categories %}
+                                <div class="custom-control custom-checkbox mb-3">
+                                    <input type="checkbox" class="custom-control-input" id="{{ category.title }}">
+                                    <label class="custom-control-label" for="{{ category.title }}">{{ category.title }}</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <!--categories end-->
+
+                            <!--cusine filters start-->
+                            <h2 class="border-bottom filter-title">Cuisines</h2>
+                            <div class="mb-3 filter-options" id="cusine-options">
+                                <div class="custom-control custom-checkbox mb-3">
+                                    <input type="checkbox" class="custom-control-input" id="Chinese" checked="">
+                                    <label class="custom-control-label" for="Chinese">Chinese</label>
+                                </div>
+                            </div>
+                            <!--cusine filters end-->
+
+                            <!--price range start-->
+                            <h2 class="border-bottom filter-title">Price Range</h2>>
+                            <div class="filter-options">
+                                <div>
+                                    <div id="slider-range">
+                                        <form>
+                                            <div class="form-group">
+                                                <label for="min_price">Min Price:</label>
+                                                <input type="number" id="min_price" name="min_price" value="{{ min_price }}">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="max_price">Max Price:</label>
+                                                <input type="number" id="max_price" name="max_price" value="{{ max_price }}">
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--price range end-->
+
+                            <!--ratings start-->
+                            <h2 class="border-bottom">Rating</h2>
+                            <div class="mb-3 filter-options" id="rating-options">
+                                {% for rating_value, rating_name in ratings %}
+                                <div class="custom-control custom-checkbox mb-3">
+                                    <input type="checkbox" class="custom-control-input" id="{{ rating_name }}" name="ratings"
+                                        value="{{ rating_value }}" {% if rating_value in selectedRatings %}checked{% endif %}>
+                                    <label class="custom-control-label" for="{{ rating_name }}">{{ rating_name }}</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <!--ratings end-->
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- End of Search Section -->
+{% endblock section %}

@@ -1,0 +1,36 @@
+.content-area {
+    display: flex;
+    padding: 20px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.content-area>div>div {
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin: 10px;
+    padding: 20px;
+    border-radius: 8px;
+    width: calc(50% - 55px);
+    display: inline-block;
+    vertical-align: top;
+}
+
+.content-area h2 {
+    color: #333;
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.content-area p {
+    color: #666;
+    line-height: 1.5;
+    margin: 5px 0;
+}
+
+/* Optional: Style for the "No bills found" message */
+.content-area>div>p {
+    text-align: center;
+    color: #999;
+    width: 100%;
+}
