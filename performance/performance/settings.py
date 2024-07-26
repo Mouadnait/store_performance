@@ -141,9 +141,9 @@ LOGIN_REDIRECT_URL = "userauths:home"
 LOGOUT_REDIRECT_URL = "userauths:login"
 
 JAZZMIN_SETTINGS = {
-    'site_header': "Store Performance",
+    'site_header': "Admin",
     'site_brand': "Store Performance",
-    'site_logo': "images/logo.png",
+    'site_logo': "images/store_performance.jpeg",
 }
 
 AUTH_USER_MODEL = 'userauths.User'

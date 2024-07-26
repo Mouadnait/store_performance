@@ -73,7 +73,7 @@ def dashboard(request):
     teams = [[str(bill.client), bill.description, bill.quantity] for bill in today_bills]
 
     df = pd.DataFrame({'Quantity': [quantity[2] for quantity in teams], 'Products': [product[1] for product in teams]})
-    fig = px.pie(df, values='Quantity', names='Products', color='Products', title='Products Sold Today')
+    fig = px.pie(df, values='Quantity', names='Products', color='Products', title='Products Sold')
 
     pie_chart = fig.to_html()
 
@@ -98,7 +98,7 @@ def dashboard(request):
                             mode='markers', marker=dict(color='green', size=10)))
 
     # Edit the layout
-    fig.update_layout(title='Average High and Low Products Sold',
+    fig.update_layout(title='High and Low Products Sold',
                     xaxis_title='Months',
                     yaxis_title='Products Sold')
 
