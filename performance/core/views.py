@@ -48,10 +48,18 @@ def client_detail(request, lid):
     client = Client.objects.get(lid=lid)
     # Fetch bills related to the client
     bills = Bill.objects.filter(client=client)
+    
+    # Calculate statistics
+    total_revenue = bills.aggregate(total=Sum("total_price"))["total"] or 0
+    total_quantity = bills.aggregate(total=Sum("quantity"))["total"] or 0
+    avg_bill = (total_revenue / bills.count()) if bills.count() > 0 else 0
 
     context = {
         'client': client,
         'bills': bills,
+        'total_revenue': total_revenue,
+        'total_quantity': total_quantity,
+        'avg_bill': avg_bill,
     }
     return render(request, 'core/client-bills.html', context)
 
@@ -362,3 +370,106 @@ def profile(request):
         'is_admin': is_admin,
     }
     return render(request, 'core/profile.html', context)
+
+
+# Bill Actions
+@login_required(login_url='/login/')
+def edit_bill(request, bill_id):
+    """Edit bill details"""
+    try:
+        bill = Bill.objects.get(id=bill_id)
+        
+        if request.method == 'POST':
+            # Update bill fields
+            bill.description = request.POST.get('description', bill.description)
+            bill.quantity = float(request.POST.get('quantity', bill.quantity))
+            bill.price = float(request.POST.get('price', bill.price))
+            bill.amount = float(request.POST.get('amount', bill.amount))
+            bill.total_price = float(request.POST.get('total_price', bill.total_price))
+            
+            bill.save()
+            messages.success(request, 'Bill updated successfully!')
+            
+            # Redirect back to client bills page
+            return redirect('core:client_detail', lid=bill.client.lid)
+        
+        messages.error(request, 'Invalid request method')
+        return redirect('core:client_detail', lid=bill.client.lid)
+        
+    except Bill.DoesNotExist:
+        messages.error(request, 'Bill not found')
+        return redirect('core:clients')
+    except Exception as e:
+        messages.error(request, f'Error updating bill: {str(e)}')
+        return redirect('core:clients')
+
+
+@login_required(login_url='/login/')
+def delete_bill(request, bill_id):
+    """Delete a bill"""
+    try:
+        bill = Bill.objects.get(id=bill_id)
+        client_lid = bill.client.lid
+        
+        if request.method == 'POST':
+            bill.delete()
+            messages.success(request, 'Bill deleted successfully!')
+            return redirect('core:client_detail', lid=client_lid)
+        
+        messages.error(request, 'Invalid request method')
+        return redirect('core:client_detail', lid=client_lid)
+        
+    except Bill.DoesNotExist:
+        messages.error(request, 'Bill not found')
+        return redirect('core:clients')
+    except Exception as e:
+        messages.error(request, f'Error deleting bill: {str(e)}')
+        return redirect('core:clients')
+
+
+@login_required(login_url='/login/')
+def print_bill(request, bill_id):
+    """Print/view bill in a printable format"""
+    try:
+        bill = Bill.objects.get(id=bill_id)
+        context = {
+            'bill': bill,
+            'client': bill.client,
+        }
+        return render(request, 'core/print-bill.html', context)
+    except Bill.DoesNotExist:
+        messages.error(request, 'Bill not found')
+        return redirect('core:clients')
+    except Exception as e:
+        messages.error(request, f'Error printing bill: {str(e)}')
+        return redirect('core:clients')
+
+
+@login_required(login_url='/login/')
+def duplicate_bill(request, bill_id):
+    """Duplicate a bill"""
+    try:
+        original_bill = Bill.objects.get(id=bill_id)
+        client_lid = original_bill.client.lid
+        
+        # Create a new bill with the same details but new ID
+        new_bill = Bill.objects.create(
+            client=original_bill.client,
+            store_name=original_bill.store_name,
+            description=original_bill.description,
+            quantity=original_bill.quantity,
+            price=original_bill.price,
+            amount=original_bill.amount,
+            total_price=original_bill.total_price,
+            date=timezone.now().date(),
+        )
+        
+        messages.success(request, f'Bill #{new_bill.id} created successfully!')
+        return redirect('core:client_detail', lid=client_lid)
+        
+    except Bill.DoesNotExist:
+        messages.error(request, 'Original bill not found')
+        return redirect('core:clients')
+    except Exception as e:
+        messages.error(request, f'Error duplicating bill: {str(e)}')
+        return redirect('core:clients')

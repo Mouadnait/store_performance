@@ -13,4 +13,9 @@ urlpatterns = [
     path("reports/", views.reports, name="reports"),
     path("settings/", views.settings, name="settings"),
     path("profile/", views.profile, name="profile"),
+    # Bill actions
+    path('bill/<int:bill_id>/edit/', views.edit_bill, name='edit_bill'),
+    path('bill/<int:bill_id>/delete/', views.delete_bill, name='delete_bill'),
+    path('bill/<int:bill_id>/print/', views.print_bill, name='print_bill'),
+    path('bill/<int:bill_id>/duplicate/', views.duplicate_bill, name='duplicate_bill'),
 ]
