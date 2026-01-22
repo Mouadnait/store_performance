@@ -2,25 +2,228 @@
 {% load static %}
 
 {% block style-content %}
-    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 {% endblock style-content %}
 
 {% block title %}Dashboard | Store Performance{% endblock title %}
-
 {% block content-title %}Dashboard{% endblock content-title %}
 
 {% block content %}
-<!-- Dashboard -->
 <div class="dashboard-area">
-    <div class="bar_chart">{{ bar_chart|safe }}</div>
+    
+    <!-- Header Section -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1>Welcome back, {{ request.user.username }}!</h1>
+            <p>Here's your store performance overview</p>
+        </div>
+        <div class="header-date">
+            <span id="current-date"></span>
+        </div>
+    </div>
 
-    <div class="table_chart">{{ table_chart|safe }}</div>
+    <!-- KPI Cards Section -->
+    <div class="kpi-section">
+        <div class="kpi-row">
+            <!-- Total Revenue -->
+            <div class="kpi-card">
+                <div class="kpi-icon revenue">
+                    <span class="material-icons-sharp">trending_up</span>
+                </div>
+                <div class="kpi-content">
+                    <p class="kpi-label">Total Revenue</p>
+                    <h2 class="kpi-value">${{ kpis.total_revenue|floatformat:2 }}</h2>
+                    <span class="kpi-subtitle">All time</span>
+                </div>
+            </div>
 
-    <div class="pie_chart">{{ pie_chart|safe }}</div>
+            <!-- Today's Revenue -->
+            <div class="kpi-card">
+                <div class="kpi-icon today">
+                    <span class="material-icons-sharp">calendar_today</span>
+                </div>
+                <div class="kpi-content">
+                    <p class="kpi-label">Today's Revenue</p>
+                    <h2 class="kpi-value">${{ kpis.today_revenue|floatformat:2 }}</h2>
+                    <span class="kpi-subtitle">{{ kpis.today_bills }} bills</span>
+                </div>
+            </div>
 
-    <div class="line_chart">{{ line_chart|safe }}</div>
+            <!-- Month Revenue -->
+            <div class="kpi-card">
+                <div class="kpi-icon month">
+                    <span class="material-icons-sharp">date_range</span>
+                </div>
+                <div class="kpi-content">
+                    <p class="kpi-label">This Month</p>
+                    <h2 class="kpi-value">${{ kpis.month_revenue|floatformat:2 }}</h2>
+                    <span class="kpi-subtitle">{{ kpis.month_bills }} bills</span>
+                </div>
+            </div>
 
-    <div class="map_chart">{{ map_chart|safe }}</div>
+            <!-- Avg Bill Value -->
+            <div class="kpi-card">
+                <div class="kpi-icon avg">
+                    <span class="material-icons-sharp">assessment</span>
+                </div>
+                <div class="kpi-content">
+                    <p class="kpi-label">Avg Bill Value</p>
+                    <h2 class="kpi-value">${{ kpis.avg_bill_value|floatformat:2 }}</h2>
+                    <span class="kpi-subtitle">Per transaction</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="kpi-row">
+            <!-- Total Clients -->
+            <div class="kpi-card">
+                <div class="kpi-icon clients">
+                    <span class="material-icons-sharp">people</span>
+                </div>
+                <div class="kpi-content">
+                    <p class="kpi-label">Total Clients</p>
+                    <h2 class="kpi-value">{{ kpis.total_clients }}</h2>
+                    <span class="kpi-subtitle">Active customers</span>
+                </div>
+            </div>
+
+            <!-- Total Products -->
+            <div class="kpi-card">
+                <div class="kpi-icon products">
+                    <span class="material-icons-sharp">inventory_2</span>
+                </div>
+                <div class="kpi-content">
+                    <p class="kpi-label">Total Products</p>
+                    <h2 class="kpi-value">{{ kpis.total_products }}</h2>
+                    <span class="kpi-subtitle">In inventory</span>
+                </div>
+            </div>
+
+            <!-- Total Quantity -->
+            <div class="kpi-card">
+                <div class="kpi-icon quantity">
+                    <span class="material-icons-sharp">stack</span>
+                </div>
+                <div class="kpi-content">
+                    <p class="kpi-label">Total Quantity</p>
+                    <h2 class="kpi-value">{{ kpis.total_quantity }}</h2>
+                    <span class="kpi-subtitle">Items sold</span>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="kpi-card actions-card">
+                <div class="quick-actions">
+                    <a href="{% url 'core:products' %}#bill-builder" class="action-btn primary">
+                        <span class="material-icons-sharp">add_circle</span>
+                        <span>Create Bill</span>
+                    </a>
+                    <a href="{% url 'core:products' %}" class="action-btn secondary">
+                        <span class="material-icons-sharp">add</span>
+                        <span>Add Product</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-section">
+        <!-- Row 1: Key Performance Charts -->
+        <div class="charts-row">
+            {% if top_clients_chart %}
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3>Top Clients by Revenue</h3>
+                    <span class="chart-badge">Top 8</span>
+                </div>
+                {{ top_clients_chart|safe }}
+            </div>
+            {% endif %}
+
+            {% if top_products_chart %}
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3>Top Products by Quantity</h3>
+                    <span class="chart-badge">Top 8</span>
+                </div>
+                {{ top_products_chart|safe }}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Row 2: Sales Trend & Distribution -->
+        <div class="charts-row">
+            {% if line_chart %}
+            <div class="chart-container wide">
+                <div class="chart-header">
+                    <h3>Revenue Trend</h3>
+                    <span class="chart-subtitle">Monthly performance</span>
+                </div>
+                {{ line_chart|safe }}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Row 3: Today & Distribution -->
+        <div class="charts-row">
+            {% if bar_chart %}
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3>Today's Sales</h3>
+                    <span class="chart-subtitle">Products sold today</span>
+                </div>
+                {{ bar_chart|safe }}
+            </div>
+            {% endif %}
+
+            {% if pie_chart %}
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3>Product Share</h3>
+                    <span class="chart-subtitle">Sales distribution</span>
+                </div>
+                {{ pie_chart|safe }}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Row 4: Map & Table -->
+        <div class="charts-row">
+            {% if map_chart %}
+            <div class="chart-container wide">
+                <div class="chart-header">
+                    <h3>Geographic Distribution</h3>
+                    <span class="chart-subtitle">Client locations</span>
+                </div>
+                {{ map_chart|safe }}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Table: Recent Transactions -->
+        {% if table_chart %}
+        <div class="chart-container wide">
+            <div class="chart-header">
+                <h3>Recent Transactions</h3>
+                <span class="chart-subtitle">Last 10 bills</span>
+            </div>
+            <div class="table-wrapper">
+                {{ table_chart|safe }}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
 </div>
-<!-- End of Dashboard -->
+
+<script>
+    // Display current date
+    document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+</script>
 {% endblock content %}

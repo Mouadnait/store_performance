@@ -1,10 +1,11 @@
-/* Settings Page Styles - Optimized */
+/* ===== SETTINGS PAGE STYLES ===== */
 
 :root {
     --primary-color: #007bff;
     --secondary-color: #6c757d;
     --danger-color: #dc3545;
     --success-color: #28a745;
+    --warning-color: #ffc107;
     --light-bg: #f8f9fa;
     --border-color: #dee2e6;
     --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -12,7 +13,7 @@
     --transition: all 0.3s ease-in-out;
 }
 
-/* Main Container */
+/* Container & Layout */
 .settings-container {
     padding: 30px 20px;
     max-width: 1400px;
@@ -35,7 +36,7 @@
     gap: 30px;
 }
 
-/* Card Base Styles */
+/* Card Styling */
 .settings-card {
     background: white;
     border-radius: 12px;
@@ -74,7 +75,7 @@
     padding: 25px;
 }
 
-/* Profile Section */
+/* Profile Card Specific */
 .profile-card {
     grid-column: 1 / -1;
 }
@@ -105,6 +106,10 @@
 
 .badge-admin {
     background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.badge-user {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .profile-content {
@@ -199,7 +204,7 @@
     flex-wrap: wrap;
 }
 
-/* Stats Grid */
+/* Statistics Grid */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -264,7 +269,7 @@
     color: var(--primary-color);
 }
 
-/* Settings Controls */
+/* Settings Groups */
 .settings-group {
     padding: 15px 0;
     border-bottom: 1px solid var(--border-color);
@@ -328,7 +333,7 @@
     left: 26px;
 }
 
-/* Security & Notifications */
+/* Security & Notification Items */
 .security-item,
 .notification-item {
     display: flex;
@@ -397,7 +402,7 @@
     font-size: 13px;
 }
 
-/* Admin Panel */
+/* Admin Panel Card */
 .admin-panel-card {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
@@ -406,6 +411,7 @@
 .admin-panel-card .card-header {
     background: transparent;
     padding: 0;
+    color: white;
 }
 
 .admin-panel-card .card-body {
@@ -491,7 +497,7 @@
     font-size: 18px;
 }
 
-/* Modals */
+/* Modal Styles */
 .modal {
     display: none;
     position: fixed;
@@ -529,9 +535,11 @@
     font-size: 28px;
     font-weight: bold;
     cursor: pointer;
+    line-height: 1;
 }
 
-.close:hover {
+.close:hover,
+.close:focus {
     color: #000;
 }
 
@@ -555,7 +563,6 @@
     font-size: 14px;
     font-family: inherit;
     transition: var(--transition);
-    box-sizing: border-box;
 }
 
 .form-group input:focus,
@@ -563,43 +570,6 @@
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-}
-
-/* Notifications */
-.notification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 15px 20px;
-    border-radius: 8px;
-    color: white;
-    z-index: 9999;
-    box-shadow: var(--shadow-lg);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    opacity: 0;
-    transition: var(--transition);
-}
-
-.notification.show {
-    opacity: 1;
-}
-
-.notification-success {
-    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-}
-
-.notification-error {
-    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-}
-
-.notification-warning {
-    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-}
-
-.notification-info {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 /* Animations */
@@ -614,18 +584,7 @@
     }
 }
 
-@keyframes slideInRight {
-    from {
-        transform: translateX(100px);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-/* Responsive */
+/* Responsive Design */
 @media (max-width: 1024px) {
     .settings-grid {
         grid-template-columns: 1fr;
@@ -675,16 +634,68 @@
         width: 95%;
         margin: 30% auto;
     }
+}
 
-    .notification {
-        top: auto;
-        bottom: 20px;
-        right: 10px;
-        left: 10px;
+/* ===== NOTIFICATION STYLES ===== */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    color: white;
+    z-index: 9999;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideInRight 0.3s ease-in-out;
+    opacity: 0;
+    transition: var(--transition);
+}
+
+.notification.show {
+    opacity: 1;
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.notification .material-icons-sharp {
+    font-size: 20px;
+}
+
+.notification-success {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.notification-error {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.notification-warning {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.notification-info {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
     }
 }
 
-/* Dark Mode */
+/* Dark Mode Styles */
 body.dark-mode {
     background: #1a1a1a;
     color: #e0e0e0;

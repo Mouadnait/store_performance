@@ -2,9 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const body = document.querySelector('body'),
         sidebar = body.querySelector('nav'),
         toggle = body.querySelector(".toggle"),
-        searchBtn = body.querySelector(".search-box"),
-        modeSwitch = body.querySelector(".toggle-switch"),
-        modeText = body.querySelector(".mode-text");
+        searchBtn = body.querySelector(".search-box");
 
     // Check if toggle exists before adding event listener
     if (toggle) {
@@ -20,15 +18,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Check if both elements exist
-    if (modeSwitch && modeText) {
-        modeSwitch.addEventListener("click", () => {
-            body.classList.toggle("dark");
-            if (body.classList.contains("dark")) {
-                modeText.innerText = "Light mode";
-            } else {
-                modeText.innerText = "Dark mode";
-            }
-        });
+    // Load dark mode preference from localStorage on page load
+    const darkModeEnabled = localStorage.getItem('darkMode') === 'enabled';
+    if (darkModeEnabled) {
+        body.classList.add('dark-mode');
+        body.classList.add('dark');
     }
 });

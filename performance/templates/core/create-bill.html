@@ -12,8 +12,25 @@
 {% block content %}
 <!-- Bills -->
 <div class="content-area">
+    {% if messages %}
+    <div style="padding: 10px; margin-bottom: 10px; border-radius: 5px;">
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                <div style="background-color: #ffcccc; border: 1px solid #ff6666;">
+                    <strong>Error:</strong> {{ message }}
+                </div>
+            {% elif message.tags == 'success' %}
+                <div style="background-color: #ccffcc; border: 1px solid #66ff66;">
+                    <strong>Success:</strong> {{ message }}
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="billApp" style="height: auto;width: 1000px;">
-        <form method="POST" onsubmit="submitForm(event)">
+        <form method="POST" id="bill-form" action="{% url 'core:create-bill' %}">
+            {% csrf_token %}
             <div class="billheader">
                 <div class="firstline d-flex">
                     <span>Store Name:&nbsp; {{request.user.username}}&nbsp; </span>
@@ -24,24 +41,36 @@
                     <input type="text" name="" id="">
                 </div>
 
+                <!-- Client Information Section -->
                 <div class="firstline d-flex" style="margin-top: 15px;">
-                    <span>Client. &nbsp;:</span>
-                    <input type="text" name="clientName" id="clientName">
+                    <span>Client Name &nbsp;:</span>
+                    <input type="text" name="clientName" id="clientName" required placeholder="Enter client name">
 
                     <span>DATE &nbsp;:</span>
-                    <input type="date" name="billDate" id="billDate">
+                    <input type="date" name="billDate" id="billDate" required>
+                </div>
+
+                <!-- Client Contact Information -->
+                <div class="firstline d-flex" style="margin-top: 15px;">
+                    <span>Phone &nbsp;:</span>
+                    <input type="tel" name="phone" id="phone" placeholder="Client phone (optional)">
+
+                    <span>Email &nbsp;:</span>
+                    <input type="email" name="email" id="email" placeholder="Client email (optional)">
+                </div>
+
+                <!-- Client Address -->
+                <div class="firstline d-flex" style="margin-top: 15px;">
+                    <span>Address &nbsp;:</span>
+                    <input type="text" name="address" id="address" placeholder="Client address (optional)">
                 </div>
 
                 <div class="name d-flex">
                     <input type="text" name="" id="">
                 </div>
 
-                <div class="businessinfo d-flex" style="margin-top: 15px;">
-                    <span>GSTIN NO. &nbsp;:</span>
-                    <input type="text" name="" id="">
-                </div>
-
             </div>
+
             <div class="billbody" style="width: calc(100% - -110px);">
                 <table>
                     <thead>
@@ -59,21 +88,22 @@
                                 <div>Amount</div>
                             </th>
                             <th style="width: 115px;"></th>
+                        </tr>
                     </thead>
                     <tbody>
                         <!-- Item rows here -->
                         <tr>
                             <td>
-                                <div><input type="text" name="quantity" id=""></div>
+                                <div><input type="number" name="quantity" id="quantity" placeholder="0" step="0.01"></div>
                             </td>
                             <td>
-                                <div><input type="text" name="description" id=""></div>
+                                <div><input type="text" name="description" id="description" placeholder="Product description"></div>
                             </td>
                             <td>
-                                <div><input type="text" name="price" id=""></div>
+                                <div><input type="number" name="price" id="price" placeholder="0.00" step="0.01"></div>
                             </td>
                             <td>
-                                <div><input type="text" name="amount" id=""></div>
+                                <div><input type="number" name="amount" id="amount" placeholder="0.00" step="0.01"></div>
                             </td>
                         </tr>
                         <!-- Total Price Row -->
@@ -82,19 +112,36 @@
                                 <div style="border: 2px solid #FF9494;">Gr. Total:</div>
                             </td>
                             <td>
-                                <div style="border: 2px solid #FF9494;"><input type="text" name="totalPrice"
-                                        id="totalPrice" readonly></div>
+                                <div style="border: 2px solid #FF9494;"><input type="number" name="totalPrice" id="totalPrice" placeholder="0.00" step="0.01" readonly></div>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
+
+            <div class="bill-bottom" style="display: flex;justify-content: space-between;padding: 20px;">
+                <button type="button" id="clear-bill-btn">Clear Bill</button>
+                <button type="submit" id="save-bill-btn" name="save_bill">Save Bill</button>
+            </div>
         </form>
-        <div class="bill-bottom" style="display: flex;justify-content: space-between;padding: 20px;">
-            <button id="clear-bill-btn">Clear Bill</button>
-            <button type="submit" id="save-bill-btn">Save Bill</button>
-        </div>
     </div>
 </div>
 <!-- End of Bills -->
+
+<script>
+    // Set today's date by default
+    document.getElementById('billDate').valueAsDate = new Date();
+
+    // Clear button functionality
+    document.getElementById('clear-bill-btn').addEventListener('click', function() {
+        document.getElementById('bill-form').reset();
+        document.getElementById('billDate').valueAsDate = new Date();
+    });
+
+    // Calculate total price
+    document.getElementById('amount').addEventListener('change', function() {
+        const amount = parseFloat(document.getElementById('amount').value) || 0;
+        document.getElementById('totalPrice').value = amount.toFixed(2);
+    });
+</script>
 {% endblock content %}

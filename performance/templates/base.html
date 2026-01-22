@@ -73,14 +73,6 @@
                             </a>
                         </li>
 
-                        <li class="nav-link" title="Create Bill">
-                            <a href="{% url 'core:create-bill' %}"
-                                class="{% if request.resolver_match.url_name == 'create-bill' %}active{% else %}none{% endif %}">
-                                <i class='bx bx-money icon'></i>
-                                <h3 class="text nav-text">create-bill</h3>
-                            </a>
-                        </li>
-
                         <!-- <li class="nav-link" title="Reports">
                             <a href="{% url 'core:reports' %}"
                                 class="{% if request.resolver_match.url_name == 'reports' %}active{% else %}none{% endif %}">
@@ -88,6 +80,14 @@
                                 <h3 class="text nav-text">Reports</h3>
                             </a>
                         </li> -->
+
+                        <li class="nav-link" title="Profile">
+                            <a href="{% url 'core:profile' %}"
+                                class="{% if request.resolver_match.url_name == 'profile' %}active{% else %}none{% endif %}">
+                                <i class='bx bx-user-circle icon'></i>
+                                <h3 class="text nav-text">Profile</h3>
+                            </a>
+                        </li>
 
                         <li class="nav-link" title="Settings">
                             <a href="{% url 'core:settings' %}"
@@ -101,24 +101,11 @@
 
                 <div class="bottom-content">
                     <li class="" title="Logout">
-                        <a href="{% url 'userauths:sign-out' %}">
+                        <a href="{% url 'userauths:logout' %}">
                             <i class='bx bx-log-out icon'></i>
                             <h3 class="text nav-text">Logout</h3>
                         </a>
                     </li>
-
-                    <li class="mode" title="Dark mode">
-                        <div class="sun-moon">
-                            <i class='bx bx-moon icon moon'></i>
-                            <i class='bx bx-sun icon sun'></i>
-                        </div>
-                        <span class="mode-text text">Dark mode</span>
-                    
-                        <div class="toggle-switch">
-                            <span class="switch"></span>
-                        </div>
-                    </li>
-
                 </div>
             </div>
 
@@ -153,5 +140,6 @@
         <script src="{% static 'javascript/base.js' %}"></script>
         <script src="{% static 'javascript/create-bill.js' %}"></script>
         <script src="{% static 'javascript/products.js' %}"></script>
+        {% block script %}{% endblock script %}
     </body>
 </html>

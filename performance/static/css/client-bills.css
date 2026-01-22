@@ -11,7 +11,7 @@
     margin: 10px;
     padding: 20px;
     border-radius: 8px;
-    width: calc(50% - 55px);
+    width: calc(100%);
     display: inline-block;
     vertical-align: top;
 }
