@@ -1,120 +1,246 @@
 # Store Performance Dashboard
 
-![Berry Bootstrap 5 - Dark-Mode ready, Open-source Template.](https://user-images.githubusercontent.com/51070104/215728710-d1ee7fef-8153-402b-9741-371e1c01cd36.png)
+A comprehensive Django-based store management and analytics dashboard for tracking products, clients, bills, and business performance metrics.
 
-<br />
+## Features
 
-## Manual Build
+- 📊 **Analytics Dashboard** - Real-time business metrics and data visualization
+- 👥 **Client Management** - Track customer information and history
+- 📦 **Product Management** - Inventory and product catalog
+- 🧾 **Billing System** - Create and manage bills for clients
+- 📈 **Performance Reports** - Business insights and trends
+- 🔐 **User Authentication** - Secure login and user management
 
-> 👉 Download the code  
+## Tech Stack
+
+- **Backend**: Django 5.0.7
+- **Database**: SQLite (default) - easily configurable for PostgreSQL/MySQL
+- **Admin Panel**: Jazzmin (enhanced Django admin)
+- **Data Visualization**: Plotly, Pandas
+- **Forms**: Django Crispy Forms
+- **Authentication**: Custom user model with email login
+
+## Installation
+
+### Prerequisites
+
+- Python 3.12+
+- Virtual environment (recommended)
+
+### Setup Instructions
+
+1. **Clone the repository**
 
 ```bash
 git clone https://github.com/Mouadnait/store_performance.git
-cd performance
+cd store_performance/performance
 ```
 
-<br />
-
-> 👉 Install modules via `VENV`  
+2. **Create and activate virtual environment**
 
 ```bash
-virtualenv store
-source store/bin/activate
+# Using virtualenv
+virtualenv .store
+source .store/bin/activate  # On Windows: .store\Scripts\activate
+```
+
+3. **Install dependencies**
+
+```bash
 pip install -r requirements.txt
 ```
 
-<br />
+4. **Configure environment variables**
 
-> 👉 Edit the `.env` using the template `.env.example`.
+Create a `.env` file in the project root:
 
 ```env
-
-# True for development, False for production
-SECRET_KEY="PUT_YOUR_SECRET_KEY"
-
+SECRET_KEY=your-secret-key-here
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+DATABASE_URL=sqlite:///db.sqlite3
 ```
 
-<br />
-
-> 👉 Set Up Database
+5. **Run database migrations**
 
 ```bash
 python manage.py makemigrations
 python manage.py migrate
 ```
 
-<br />
-
-> 👉 Create the Superuser
+6. **Create superuser**
 
 ```bash
 python manage.py createsuperuser
 ```
 
-<br />
+7. **Collect static files** (for production)
 
-> 👉 Start the app
+```bash
+python manage.py collectstatic
+```
+
+8. **Start the development server**
 
 ```bash
 python manage.py runserver
 ```
 
-At this point, the app runs at `http://127.0.0.1:8000/`.
+Access the application at `http://127.0.0.1:8000/`
 
-<br />
+## Usage
 
-## Codebase structure
+### URLs
 
-The project is coded using a simple and intuitive structure presented below:
+- `/` - Login page
+- `/signup/` - User registration
+- `/dashboard/` - Main dashboard with analytics
+- `/clients/` - Client management
+- `/products/` - Product catalog
+- `/create-bill/` - Create new bill
+- `/analytics/` - Analytics page
+- `/admin/` - Django admin panel
 
+### Default Credentials
+
+Create a superuser using:
 ```bash
-< PROJECT ROOT >
-   |
-   |-- core/                            
-   |    |-- __init__.py                  # APP __init__
-   |    |-- admin.py                     # APP Admin
-   |    |-- apps.py                      # APP Apps 
-   |    |-- forms.py                     # APP Forms 
-   |    |-- models.py                    # APP Models
-   |    |-- tests.py                     # APP Tests  
-   |    |-- urls.py                      # APP Urls Routing
-   |    |-- views.py                     # APP Views Routing
-   |
-   |-- performance/
-   |    |-- __init__.py                  # __init__ Routing
-   |    |-- asgi.py                      # asgi Routing
-   |    |-- urls.py                      # urls Routing
-   |    |-- settings.py                  # Project Configuration 
-   |    |-- wsgi.py                      # wsgi   
-   |    
-   |-- userauths/
-   |    |-- __init__.py                  # APP __init__
-   |    |-- admin.py                     # APP Admin
-   |    |-- apps.py                      # APP Apps 
-   |    |-- forms.py                     # APP Forms 
-   |    |-- models.py                    # APP Models
-   |    |-- tests.py                     # APP Tests  
-   |    |-- urls.py                      # APP Urls Routing
-   |    |-- views.py                     # APP Views Routing
-   |    
-   |-- requirements.txt                  # Project Dependencies
-   |
-   |-- env.example                       # ENV Configuration (default values)
-   |-- manage.py                         # Start the app - Django default start script
-   |
-   |-- ************************************************************************
+python manage.py createsuperuser
 ```
 
-<br />
+## Project Structure
 
-## How to Customize
+```
+performance/
+├── core/                      # Core application
+│   ├── migrations/           # Database migrations
+│   ├── admin.py             # Admin configuration
+│   ├── models.py            # Database models
+│   ├── views.py             # View controllers
+│   ├── forms.py             # Form definitions
+│   └── urls.py              # URL routing
+├── userauths/                # Authentication app
+│   ├── models.py            # Custom user model
+│   ├── views.py             # Auth views
+│   └── forms.py             # Auth forms
+├── performance/              # Project settings
+│   ├── settings.py          # Django settings
+│   ├── urls.py              # Root URL config
+│   └── wsgi.py              # WSGI config
+├── templates/                # HTML templates
+├── static/                   # Static files (CSS, JS)
+├── media/                    # User uploaded files
+├── requirements.txt          # Dependencies
+└── manage.py                # Django CLI
 
-When a template file is loaded in the controller, `Django` scans all template directories starting from the ones defined by the user, and returns the first match or an error in case the template is not found.
-The theme used to style this starter provides the following files:
+```
+
+## Database Models
+
+### User
+Custom user model with email-based authentication
+
+### Client
+Customer information with contact details
+
+### Product
+Product catalog with pricing and inventory
+
+### Category
+Product categorization
+
+### Bill
+Transaction records linking clients and products
+
+### ProductReview
+Customer reviews and ratings
+
+## Security Features
+
+- Email-based authentication
+- Password validation
+- CSRF protection
+- XSS protection
+- SQL injection protection
+- Secure session management
+- Production-ready security settings (when DEBUG=False)
+
+## Development
+
+### Running Tests
 
 ```bash
-# This is saved in ENV: LIB/admin
-< UI_LIBRARY_ROOT > 
+python manage.py test
+```
+
+### Creating Migrations
+
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+### Code Quality
+
+The project follows Django best practices and PEP 8 style guidelines.
+
+## Deployment
+
+For production deployment:
+
+1. Set `DEBUG=False` in `.env`
+2. Generate a strong `SECRET_KEY`
+3. Configure `ALLOWED_HOSTS` with your domain
+4. Use a production database (PostgreSQL recommended)
+5. Configure static file serving
+6. Enable HTTPS and security headers
+7. Set up proper logging
+
+## Troubleshooting
+
+### Common Issues
+
+**Issue**: Database errors after model changes
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+**Issue**: Static files not loading
+```bash
+python manage.py collectstatic
+```
+
+**Issue**: Permission errors
+```bash
+# Ensure proper file permissions
+chmod -R 755 media/
+chmod -R 755 static/
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is open source and available under the MIT License.
+
+## Support
+
+For issues and questions, please open an issue on GitHub.
+
+## Changelog
+
+### Version 1.0.0
+- Initial release
+- Core features: Dashboard, Products, Clients, Billing
+- Analytics and reporting
+- User authentication 
    |
    |-- templates/                        # Root Templates Folder 
    |    |                               
