@@ -172,6 +172,73 @@
             font-weight: bold;
             color: #333;
         }
+        .controls-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            align-items: end;
+            margin-top: 10px;
+            margin-bottom: 16px;
+        }
+        .filter-field label {
+            font-weight: 600;
+            font-size: 0.9em;
+            color: #444;
+            margin-bottom: 6px;
+            display: block;
+        }
+        .filter-field input,
+        .filter-field select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 8px;
+            background: #fff;
+        }
+        .controls-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .action-btn.btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .action-btn.btn-secondary {
+            background: #eef2ff;
+            color: #374151;
+            border: 1px solid #cbd5ff;
+        }
+        .action-btn.btn-ghost {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .results-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            color: #374151;
+            margin: 8px 0 16px;
+        }
+        .pill {
+            background: #eef2ff;
+            color: #4f46e5;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 0.85em;
+        }
+        .inline-empty {
+            padding: 18px;
+            background: white;
+            border: 1px dashed #cbd5e1;
+            border-radius: 8px;
+            text-align: center;
+        }
         .modal {
             display: none;
             position: fixed;
@@ -234,6 +301,37 @@
 
     <!-- Statistics -->
     {% if bills %}
+    <div class="controls-bar">
+        <div class="filter-field">
+            <label for="searchBills">Search bills</label>
+            <input type="text" id="searchBills" placeholder="Search description" autocomplete="off">
+        </div>
+        <div class="filter-field">
+            <label for="startDate">Start date</label>
+            <input type="date" id="startDate">
+        </div>
+        <div class="filter-field">
+            <label for="endDate">End date</label>
+            <input type="date" id="endDate">
+        </div>
+        <div class="filter-field">
+            <label for="sortBills">Sort by</label>
+            <select id="sortBills">
+                <option value="newest">Date: Newest first</option>
+                <option value="oldest">Date: Oldest first</option>
+                <option value="total_high">Total: High to low</option>
+                <option value="total_low">Total: Low to high</option>
+            </select>
+        </div>
+        <div class="controls-actions">
+            <button type="button" class="action-btn btn-secondary" id="clearFilters">Clear filters</button>
+            <a class="action-btn btn-primary" href="{% url 'core:create-bill' %}">+ New bill</a>
+        </div>
+    </div>
+    <div class="results-meta">
+        <span id="resultsCount">Showing {{ bills|length }} bills</span>
+        <span class="pill" id="filterState">No filters</span>
+    </div>
     <div class="stats-grid">
         <div class="stat-item">
             <div>Total Bills</div>
@@ -258,7 +356,7 @@
     {% if bills %}
     <div class="bills-container" style="margin-top: 30px;">
         {% for bill in bills %}
-        <div class="bill-card">
+        <div class="bill-card" data-description="{{ bill.description|lower|escape }}" data-date="{{ bill.date|date:'Y-m-d' }}" data-total="{{ bill.total_price }}">
             <div class="bill-header">
                 <h3><span class="material-icons-sharp" style="color: #667eea;">receipt</span>Bill #{{ bill.id }}</h3>
                 <div class="bill-date">{{ bill.date|date:"M d, Y" }}</div>
@@ -292,6 +390,7 @@
         </div>
         {% endfor %}
     </div>
+    <div id="filteredEmpty" class="inline-empty hidden">No bills match these filters.</div>
     {% else %}
     <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 10px;">
         <h3>📋 No Bills Yet</h3>
@@ -377,5 +476,78 @@ function duplicateBill(billId) {
 window.addEventListener('click', function(e) {
     if (e.target === document.getElementById('editModal')) closeEditModal();
 });
+
+// Client-side filtering and sorting for quick triage
+const cards = Array.from(document.querySelectorAll('.bill-card'));
+const searchInput = document.getElementById('searchBills');
+const startInput = document.getElementById('startDate');
+const endInput = document.getElementById('endDate');
+const sortSelect = document.getElementById('sortBills');
+const resultsCount = document.getElementById('resultsCount');
+const filterState = document.getElementById('filterState');
+const filteredEmpty = document.getElementById('filteredEmpty');
+
+function filterAndSortBills() {
+    const term = (searchInput?.value || '').toLowerCase().trim();
+    const start = startInput?.value ? new Date(startInput.value) : null;
+    const end = endInput?.value ? new Date(endInput.value) : null;
+    let visibleCards = [];
+
+    cards.forEach(card => {
+        const desc = (card.dataset.description || '').toLowerCase();
+        const dateStr = card.dataset.date;
+        const total = parseFloat(card.dataset.total || '0');
+        const date = dateStr ? new Date(dateStr) : null;
+
+        let isVisible = true;
+        if (term && !desc.includes(term)) isVisible = false;
+        if (start && date && date < start) isVisible = false;
+        if (end && date && date > end) isVisible = false;
+
+        card.classList.toggle('hidden', !isVisible);
+        if (isVisible) visibleCards.push({ card, date, total });
+    });
+
+    const sortMode = sortSelect?.value || 'newest';
+    const sorters = {
+        newest: (a, b) => (b.date || 0) - (a.date || 0),
+        oldest: (a, b) => (a.date || 0) - (b.date || 0),
+        total_high: (a, b) => (b.total || 0) - (a.total || 0),
+        total_low: (a, b) => (a.total || 0) - (b.total || 0),
+    };
+    visibleCards.sort(sorters[sortMode] || sorters.newest);
+    visibleCards.forEach((item, idx) => {
+        item.card.style.order = idx;
+    });
+
+    const count = visibleCards.length;
+    if (resultsCount) {
+        resultsCount.textContent = `Showing ${count} bill${count === 1 ? '' : 's'}`;
+    }
+    if (filterState) {
+        const active = [];
+        if (term) active.push(`Search: ${term}`);
+        if (start) active.push(`From ${startInput.value}`);
+        if (end) active.push(`To ${endInput.value}`);
+        filterState.textContent = active.length ? active.join(' | ') : 'No filters';
+    }
+    if (filteredEmpty) {
+        filteredEmpty.classList.toggle('hidden', count !== 0);
+    }
+}
+
+searchInput?.addEventListener('input', filterAndSortBills);
+startInput?.addEventListener('change', filterAndSortBills);
+endInput?.addEventListener('change', filterAndSortBills);
+sortSelect?.addEventListener('change', filterAndSortBills);
+document.getElementById('clearFilters')?.addEventListener('click', () => {
+    if (searchInput) searchInput.value = '';
+    if (startInput) startInput.value = '';
+    if (endInput) endInput.value = '';
+    if (sortSelect) sortSelect.value = 'newest';
+    filterAndSortBills();
+});
+
+filterAndSortBills();
 </script>
 {% endblock content %}
