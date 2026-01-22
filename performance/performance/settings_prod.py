@@ -1,0 +1,93 @@
+"""
+Production settings for Store Performance.
+Extends base settings with production-specific security & optimization.
+"""
+from .settings_base import *
+
+# Production overrides
+DEBUG = False
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost').split(',')
+SECRET_KEY = os.environ.get('SECRET_KEY')
+
+if not SECRET_KEY:
+    raise ValueError('SECRET_KEY environment variable is required in production')
+
+# PostgreSQL Database
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'store_performance'),
+        'USER': os.environ.get('DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
+        'CONN_MAX_AGE': 600,
+        'OPTIONS': {
+            'connect_timeout': 10,
+        },
+    }
+}
+
+# Redis Cache & Session
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': os.environ.get('REDIS_URL', 'redis://localhost:6379/0'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'SOCKET_CONNECT_TIMEOUT': 5,
+            'SOCKET_TIMEOUT': 5,
+            'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
+        }
+    }
+}
+
+# Session Storage
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
+
+# Security Headers
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_HSTS_SECONDS = 31536000  # 1 year
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+
+# CSRF
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    'CSRF_TRUSTED_ORIGINS',
+    'https://storeperformance.local'
+).split(',')
+
+# CORS Restricted
+CORS_ALLOWED_ORIGINS = os.environ.get(
+    'CORS_ALLOWED_ORIGINS',
+    'https://storeperformance.local'
+).split(',')
+
+# SendGrid Email
+EMAIL_BACKEND = 'sendgrid_backend.SendgridBackend'
+SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
+
+if not SENDGRID_API_KEY:
+    raise ValueError('SENDGRID_API_KEY environment variable is required in production')
+
+# Celery with Redis
+CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL', 'redis://localhost:6379/1')
+
+# Sentry enabled
+SENTRY_DSN = os.environ.get('SENTRY_DSN')
+
+# Logging: File-based with rotation
+LOGGING['handlers']['file']['filename'] = '/var/log/store_performance/app.log'
+
+# Static Files: Use whitenoise or CDN in production
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Disable debug toolbar in production
+DEBUG_TOOLBAR_ENABLED = False
