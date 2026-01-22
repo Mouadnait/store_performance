@@ -17,6 +17,25 @@
         {% block style-content %}{% endblock style-content %}
         <style>
             /* Sidebar polish and quick actions */
+            .sidebar {
+                max-height: 100vh;
+                overflow-y: auto;
+                overscroll-behavior-y: contain;
+            }
+            .sidebar header {
+                padding-bottom: 12px;
+                position: relative;
+            }
+            .sidebar::-webkit-scrollbar {
+                width: 8px;
+            }
+            .sidebar::-webkit-scrollbar-thumb {
+                background: #c7d2fe;
+                border-radius: 8px;
+            }
+            .sidebar::-webkit-scrollbar-track {
+                background: transparent;
+            }
             .sidebar .section-label {
                 font-size: 0.78rem;
                 letter-spacing: 0.08em;
@@ -59,6 +78,28 @@
             }
             .sidebar .menu .grouped {
                 padding-top: 8px;
+            }
+            /* Persistent toggle at bottom */
+            .sidebar header .toggle {
+                position: fixed;
+                bottom: 18px;
+                top: auto;
+                right: -18px;
+                transform: rotate(180deg);
+                box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+            }
+            .sidebar.close .toggle {
+                right: -18px;
+                transform: rotate(0deg);
+            }
+            /* Hide text elements on collapse for a cleaner icon rail */
+            .sidebar.close .section-label,
+            .sidebar.close .meta,
+            .sidebar.close .quick-actions {
+                display: none;
+            }
+            .sidebar.close .menu-links .nav-text {
+                display: none;
             }
         </style>
 
