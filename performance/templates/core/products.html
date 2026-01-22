@@ -11,56 +11,144 @@
 
 {% block content %}
 <div class="products-area">
-    <!-- Search Filter and Add Product -->
-    <div class="search_filter" onclick="toggleProductForm()">
-        <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for names.." title="Type in a name">
-        <span class="material-icons-sharp add-product-icon" title="Add a new product">add_circle_outline</span>
-    </div>
-    <!-- End Search Filter and Add Product -->
+    <!-- Top bar -->
+    <div class="products-top">
+        <div class="search_filter">
+            <div class="search-box">
+                <span class="material-icons-sharp">search</span>
+                <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search products..." title="Type to search">
+            </div>
+            <button type="button" class="add-product-btn" onclick="toggleProductForm()">
+                <span class="material-icons-sharp">add_circle_outline</span>
+                Add Product
+            </button>
+        </div>
 
-    <div id="productForm" class="product-form-container">
-        <!-- Form to add product -->
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button class="signup-link" type="submit">Submit</button>
-        </form>
-        <!-- Add more fields as needed -->
+        <!-- Collapsible form -->
+        <div id="productForm" class="product-form-container" style="display:none;">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button class="signup-link" type="submit">Save Product</button>
+            </form>
+        </div>
     </div>
 
-    <!-- Products -->
-    <div class="products-container">
+    <!-- Products grid -->
+    <div class="products-container" id="productsGrid">
         {% for product in products %}
         <div class="product-card">
-            {% if product.old_price != 1.00 %}
+            {% if product.old_price and product.old_price > 0 and product.get_percentage > 0 %}
             <span class="percentage">-{{ product.get_percentage|floatformat:0 }}%</span>
             {% endif %}
-            <img src="{{ product.image.url }}" alt="{{ product.name }}">
-            <p>{{ product.category }}</p>
-            <h2>{{ product.title }}</h2>
-            <p>{{ product.description }}</p>
-            <p class="price">Price: ${{ product.price }}</p>
-            <button onclick="addToBill('{{ product.title }}', '{{ product.price }}')">Add to Bill</button>
+            <div class="product-image">
+                <img src="{{ product.image.url }}" alt="{{ product.title }}">
+            </div>
+            <div class="product-body">
+                <p class="product-category">{{ product.category }}</p>
+                <h2 class="product-title">{{ product.title }}</h2>
+                <p class="product-desc">{{ product.description }}</p>
+                <div class="product-pricing">
+                    <span class="price">${{ product.price }}</span>
+                    {% if product.old_price and product.old_price|floatformat:2 != '1.00' %}
+                        <span class="old-price">${{ product.old_price }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="product-actions">
+                <button onclick="addToBill('{{ product.title }}', '{{ product.price }}')">Add to Bill</button>
+            </div>
+        </div>
+        {% empty %}
+        <div class="alert alert-warning" style="grid-column: 1 / -1;">
+            No products yet. Click “Add Product” to create your first one.
         </div>
         {% endfor %}
     </div>
-    <!-- End of Products -->
+
+    <!-- Bill Builder -->
+    <div id="bill-builder" class="bill-builder">
+        <div class="bill-header">
+            <div>
+                <h3>Bill Builder</h3>
+                <p>Add products and save a bill without leaving this page.</p>
+            </div>
+            <div class="bill-meta">
+                <span class="meta">Store: {{ request.user.username }}</span>
+                <span class="meta">Phone: {{ request.user.phone }}</span>
+            </div>
+        </div>
+
+        {% if messages %}
+        <div class="bill-messages">
+            {% for message in messages %}
+                <div class="bill-alert bill-alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="POST" id="bill-form" action="{% url 'core:create-bill' %}">
+            {% csrf_token %}
+            <div class="bill-form-grid">
+                <label>Client Name
+                    <input type="text" name="clientName" id="clientName" required placeholder="Enter client name">
+                </label>
+                <label>Bill Date
+                    <input type="date" name="billDate" id="billDate" required>
+                </label>
+                <label>Phone
+                    <input type="tel" name="phone" id="phone" placeholder="Client phone (optional)">
+                </label>
+                <label>Email
+                    <input type="email" name="email" id="email" placeholder="Client email (optional)">
+                </label>
+                <label class="full">Address
+                    <input type="text" name="address" id="address" placeholder="Client address (optional)">
+                </label>
+            </div>
+
+            <div class="bill-table-wrapper">
+                <table class="bill-table">
+                    <thead>
+                        <tr>
+                            <th>Quantity</th>
+                            <th>Description</th>
+                            <th>Price</th>
+                            <th>Amount</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="bill-total-row">
+                            <td colspan="3" class="text-right"><strong>Gr. Total:</strong></td>
+                            <td colspan="2"><input type="number" name="totalPrice" id="totalPrice" placeholder="0.00" step="0.01" readonly></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="bill-actions">
+                <div>
+                    <button type="button" id="clear-bill-btn" class="btn secondary">Clear Bill</button>
+                    <a href="#productsGrid" class="btn ghost">Add more products</a>
+                </div>
+                <button type="submit" id="save-bill-btn" name="save_bill" class="btn primary">Save Bill</button>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock content %}
 
 {% block section %}
-<!-- Search Section -->
+<!-- Keep filters if you use them; otherwise you can remove this block -->
 <div class="search-section">
     <div class="container-fluid container-xl">
         <div class="main-content">
             <div class="sidebar pro-col-md-3">
-                <h1 class="border-bottom filter-header align-items-center">
-                    Filters
-                </h1>
+                <h1 class="border-bottom filter-header align-items-center">Filters</h1>
                 <div class="sidebar__inner">
                     <div class="filter-body">
                         <div>
-                            <!--categories start-->
                             <h2 class="border-bottom filter-title">Categories</h2>
                             <div class="filter-options">
                                 {% for category in categories %}
@@ -70,39 +158,31 @@
                                 </div>
                                 {% endfor %}
                             </div>
-                            <!--categories end-->
 
-                            <!--cusine filters start-->
                             <h2 class="border-bottom filter-title">Cuisines</h2>
                             <div class="mb-3 filter-options" id="cusine-options">
                                 <div class="custom-control custom-checkbox mb-3">
-                                    <input type="checkbox" class="custom-control-input" id="Chinese" checked="">
+                                    <input type="checkbox" class="custom-control-input" id="Chinese" checked>
                                     <label class="custom-control-label" for="Chinese">Chinese</label>
                                 </div>
                             </div>
-                            <!--cusine filters end-->
 
-                            <!--price range start-->
-                            <h2 class="border-bottom filter-title">Price Range</h2>>
+                            <h2 class="border-bottom filter-title">Price Range</h2>
                             <div class="filter-options">
-                                <div>
-                                    <div id="slider-range">
-                                        <form>
-                                            <div class="form-group">
-                                                <label for="min_price">Min Price:</label>
-                                                <input type="number" id="min_price" name="min_price" value="{{ min_price }}">
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="max_price">Max Price:</label>
-                                                <input type="number" id="max_price" name="max_price" value="{{ max_price }}">
-                                            </div>
-                                        </form>
-                                    </div>
+                                <div id="slider-range">
+                                    <form>
+                                        <div class="form-group">
+                                            <label for="min_price">Min Price:</label>
+                                            <input type="number" id="min_price" name="min_price" value="{{ min_price }}">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="max_price">Max Price:</label>
+                                            <input type="number" id="max_price" name="max_price" value="{{ max_price }}">
+                                        </div>
+                                    </form>
                                 </div>
                             </div>
-                            <!--price range end-->
 
-                            <!--ratings start-->
                             <h2 class="border-bottom">Rating</h2>
                             <div class="mb-3 filter-options" id="rating-options">
                                 {% for rating_value, rating_name in ratings %}
@@ -113,7 +193,6 @@
                                 </div>
                                 {% endfor %}
                             </div>
-                            <!--ratings end-->
 
                         </div>
                     </div>
@@ -122,5 +201,25 @@
         </div>
     </div>
 </div>
-<!-- End of Search Section -->
 {% endblock section %}
+
+{% block scripts %}
+<script src="{% static 'javascript/create-bill.js' %}"></script>
+<script>
+function toggleProductForm() {
+    const form = document.getElementById('productForm');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+function myFunction() {
+    const input = document.getElementById('myInput');
+    const filter = input.value.toUpperCase();
+    const cards = document.querySelectorAll('#productsGrid .product-card');
+    cards.forEach(card => {
+        const title = card.querySelector('.product-title')?.textContent.toUpperCase() || '';
+        const category = card.querySelector('.product-category')?.textContent.toUpperCase() || '';
+        card.style.display = (title.indexOf(filter) > -1 || category.indexOf(filter) > -1) ? '' : 'none';
+    });
+}
+</script>
+{% endblock scripts %}
