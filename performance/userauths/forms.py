@@ -1,6 +1,5 @@
 from django import forms
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 
 User = get_user_model()
@@ -13,7 +12,7 @@ class UserRegisterForm(UserCreationForm):
             'invalid': "Invalid username."
         }
     )
-    email = forms.CharField(
+    email = forms.EmailField(
         widget=forms.EmailInput(attrs={"placeholder": "Email"}),
         error_messages={
             'required': "Email is required.",

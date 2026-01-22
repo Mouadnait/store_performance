@@ -18,7 +18,11 @@ from django.urls import path
 from .views import register, login_view, logout_view
 
 urlpatterns = [
-    path('', register, name="sign-up"),
-    path('login/', login_view, name="sign-in"),
-    path('logout/', logout_view, name="sign-out"),
+    path('', login_view, name="login"),
+    path('', login_view, name="sign-in"),  # compatibility alias
+    path('signup/', register, name="signup"),
+    path('sign-up/', register, name="sign-up"),  # compatibility alias
+    path('logout/', logout_view, name="logout"),
+    path('sign-out/', logout_view, name="sign-out"),  # compatibility alias
+    path('home/', login_view, name="home"),  # Home redirects to login if not authenticated
 ]
