@@ -1,5 +1,5 @@
 from django import forms
-from .models import Product, Bill
+from .models import Product, Bill, Client
 
 class ProductForm(forms.ModelForm):
     new_category = forms.CharField(required=False, help_text="Add a new category if yours isn't listed.")
@@ -14,8 +14,13 @@ class ProductForm(forms.ModelForm):
 class BillForm(forms.ModelForm):
     class Meta:
         model = Bill
-        fields = ['store_name', 'client', 'quantity', 'description', 'price', 'amount', 'total_price']
+        fields = ['client', 'quantity', 'description', 'price', 'amount', 'total_price']
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date'}),
+            'description': forms.Textarea(attrs={'rows': 2}),
         }
+
+class ClientForm(forms.ModelForm):
+    class Meta:
+        model = Client
+        fields = ['full_name', 'email', 'phone', 'address', 'city', 'country', 'postal_code']
 

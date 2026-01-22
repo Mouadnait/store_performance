@@ -24,8 +24,43 @@ RATING = (
     ( 5, '★★★★★'),
 )
 
+STORE_STATUS = (
+    ('active', 'Active'),
+    ('inactive', 'Inactive'),
+    ('suspended', 'Suspended'),
+)
+
 def user_directory_path(instance, filename):
     return 'user_{0}/{1}'.format(instance.user.id, filename)
+
+class Store(models.Model):
+    sid = ShortUUIDField(unique=True, length=10, max_length=20, prefix="store", alphabet="abcdefgh12345")
+    owner = models.OneToOneField(User, on_delete=models.CASCADE, related_name='store')
+    
+    name = models.CharField(max_length=200)
+    slug = models.SlugField(unique=True, max_length=200)
+    description = models.TextField(blank=True, null=True)
+    logo = models.ImageField(upload_to="store", default="store.png")
+    
+    email = models.EmailField()
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    address = models.CharField(max_length=255, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    country = models.CharField(max_length=100, blank=True, null=True)
+    postal_code = models.CharField(max_length=10, blank=True, null=True)
+    
+    status = models.CharField(choices=STORE_STATUS, max_length=20, default='active')
+    opening_hours = models.CharField(max_length=100, blank=True, null=True)
+    return_policy = models.TextField(blank=True, null=True)
+    
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name_plural = "Stores"
+    
+    def __str__(self):
+        return self.name
 
 class Client(models.Model):
     lid = ShortUUIDField(unique=True, length=10, max_length=20, prefix="cli", alphabet="abcdefgh12345")
@@ -33,11 +68,13 @@ class Client(models.Model):
 
     profile_image = models.ImageField(upload_to=user_directory_path, default="client.png")
     full_name = models.CharField(max_length=100)
+    email = models.EmailField(blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
     address = models.CharField(max_length=100, blank=True, null=True)
     city = models.CharField(max_length=100, blank=True, null=True)
     country = models.CharField(max_length=100, blank=True, null=True)
     postal_code = models.CharField(max_length=10, blank=True, null=True)
+    gpt5_enabled = models.BooleanField(default=True)
 
     class Meta:
         verbose_name_plural = "Clients"
@@ -65,7 +102,14 @@ class Category(models.Model):
         return self.title
 
 class Tags(models.Model):
-    pass
+    name = models.CharField(max_length=100, unique=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = "Tags"
+
+    def __str__(self):
+        return self.name
 
 class Product (models.Model):
     pid = ShortUUIDField(unique=True, length=10, max_length=20, alphabet="abcdefgh12345")
@@ -77,13 +121,13 @@ class Product (models.Model):
     image = models.ImageField(upload_to=user_directory_path, default="product.jpg")
     description = models.TextField(null=True, blank=True, default='This is a product description')
 
-    price = models.DecimalField(max_digits=99999999999, decimal_places=2, default=0.00)
-    old_price = models.DecimalField(max_digits=99999999999, decimal_places=2, default=1.00)
+    price = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    old_price = models.DecimalField(max_digits=12, decimal_places=2, default=1.00)
 
     specifications = models.TextField(null=True, blank=True, default='This is a product specification')
     tags = models.ForeignKey(Tags, on_delete=models.SET_NULL, blank=True, null=True)
 
-    stock = models.DecimalField(max_digits=99999999999, decimal_places=0, blank=True, null=True)
+    stock = models.DecimalField(max_digits=12, decimal_places=0, blank=True, null=True)
 
     product_status = models.CharField(choices=STATUS, max_length=20, default='in_review')
 
@@ -107,9 +151,14 @@ class Product (models.Model):
         return self.title
     
     def get_percentage(self):
-        # (recent_price / old_price) * 100
-        new_price = (self.price / self.old_price) * 100
-        return new_price
+        """Calculate discount percentage. Returns 0 if old_price is 0 or None."""
+        if not self.old_price or self.old_price <= 0:
+            return 0
+        try:
+            discount = ((self.old_price - self.price) / self.old_price) * 100
+            return max(0, discount)  # Ensure non-negative
+        except (ValueError, TypeError):
+            return 0
 
 class ProductImages(models.Model):
     images = models.ImageField(upload_to="product-images", default="product.jpg")
@@ -135,7 +184,7 @@ class ProductReview(models.Model):
         verbose_name_plural = "Product Reviews"
 
     def __str__(self):
-        return self.title
+        return f"{self.user.username}'s review for {self.product.title}" if self.user and self.product else "Product Review"
 
     def get_rating(self):
         return self.rating
@@ -153,7 +202,7 @@ class Bill(models.Model):
 
 
     class Meta:
-        verbose_name_plural = "create-bill"
+        verbose_name_plural = "Bills"
 
     def __str__(self):
         return f"Bill for {self.client} on {self.date}"

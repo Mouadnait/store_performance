@@ -1,0 +1,471 @@
+[
+  {
+    "model": "userauths.user",
+    "pk": 1,
+    "fields": {
+      "password": "pbkdf2_sha256$870000$HbzQzLrXGUwJOOmBUH3vTh$1IpG1kbQ0D4sAaBXS2v7sH5xBkZpwOzGYNYdJBfCgno=",
+      "last_login": null,
+      "is_superuser": false,
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2026-01-20T10:00:00Z",
+      "email": "john@store.com",
+      "username": "John Store",
+      "phone": "+1234567890",
+      "bio": "Store Owner - Tech Gadgets",
+      "first_name": "John",
+      "last_name": "Store",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "userauths.user",
+    "pk": 2,
+    "fields": {
+      "password": "pbkdf2_sha256$870000$HbzQzLrXGUwJOOmBUH3vTh$1IpG1kbQ0D4sAaBXS2v7sH5xBkZpwOzGYNYdJBfCgno=",
+      "last_login": null,
+      "is_superuser": false,
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2026-01-20T10:00:00Z",
+      "email": "sarah@store.com",
+      "username": "Sarah Shop",
+      "phone": "+1234567891",
+      "bio": "Store Owner - Fashion & Accessories",
+      "first_name": "Sarah",
+      "last_name": "Shop",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 1,
+    "fields": {
+      "cid": "cat1234567",
+      "title": "Electronics",
+      "image": "category.jpg"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 2,
+    "fields": {
+      "cid": "cat2345678",
+      "title": "Fashion",
+      "image": "category.jpg"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 3,
+    "fields": {
+      "cid": "cat3456789",
+      "title": "Home & Garden",
+      "image": "category.jpg"
+    }
+  },
+  {
+    "model": "core.category",
+    "pk": 4,
+    "fields": {
+      "cid": "cat4567890",
+      "title": "Sports & Outdoors",
+      "image": "category.jpg"
+    }
+  },
+  {
+    "model": "core.tags",
+    "pk": 1,
+    "fields": {
+      "name": "New Arrival",
+      "created": "2026-01-20T10:00:00Z"
+    }
+  },
+  {
+    "model": "core.tags",
+    "pk": 2,
+    "fields": {
+      "name": "Best Seller",
+      "created": "2026-01-20T10:00:00Z"
+    }
+  },
+  {
+    "model": "core.tags",
+    "pk": 3,
+    "fields": {
+      "name": "On Sale",
+      "created": "2026-01-20T10:00:00Z"
+    }
+  },
+  {
+    "model": "core.client",
+    "pk": 1,
+    "fields": {
+      "lid": "cli1234567",
+      "user": 1,
+      "profile_image": "client.png",
+      "full_name": "Alice Johnson",
+      "email": "alice@example.com",
+      "phone": "+1234567892",
+      "address": "123 Main Street",
+      "city": "New York",
+      "country": "USA",
+      "postal_code": "10001",
+      "gpt5_enabled": true
+    }
+  },
+  {
+    "model": "core.client",
+    "pk": 2,
+    "fields": {
+      "lid": "cli2345678",
+      "user": 1,
+      "profile_image": "client.png",
+      "full_name": "Bob Smith",
+      "email": "bob@example.com",
+      "phone": "+1234567893",
+      "address": "456 Oak Avenue",
+      "city": "Los Angeles",
+      "country": "USA",
+      "postal_code": "90001",
+      "gpt5_enabled": false
+    }
+  },
+  {
+    "model": "core.client",
+    "pk": 3,
+    "fields": {
+      "lid": "cli3456789",
+      "user": 1,
+      "profile_image": "client.png",
+      "full_name": "Carol Williams",
+      "email": "carol@example.com",
+      "phone": "+1234567894",
+      "address": "789 Pine Road",
+      "city": "Chicago",
+      "country": "USA",
+      "postal_code": "60601",
+      "gpt5_enabled": true
+    }
+  },
+  {
+    "model": "core.client",
+    "pk": 4,
+    "fields": {
+      "lid": "cli4567890",
+      "user": 2,
+      "profile_image": "client.png",
+      "full_name": "David Brown",
+      "email": "david@example.com",
+      "phone": "+1234567895",
+      "address": "321 Elm Street",
+      "city": "Houston",
+      "country": "USA",
+      "postal_code": "77001",
+      "gpt5_enabled": true
+    }
+  },
+  {
+    "model": "core.client",
+    "pk": 5,
+    "fields": {
+      "lid": "cli5678901",
+      "user": 2,
+      "profile_image": "client.png",
+      "full_name": "Emma Davis",
+      "email": "emma@example.com",
+      "phone": "+1234567896",
+      "address": "654 Maple Drive",
+      "city": "Phoenix",
+      "country": "USA",
+      "postal_code": "85001",
+      "gpt5_enabled": false
+    }
+  },
+  {
+    "model": "core.product",
+    "pk": 1,
+    "fields": {
+      "pid": "prod123456",
+      "user": 1,
+      "category": 1,
+      "title": "Wireless Bluetooth Headphones",
+      "image": "product.jpg",
+      "description": "Premium noise-canceling wireless headphones with 30-hour battery life",
+      "price": "149.99",
+      "old_price": "199.99",
+      "specifications": "Battery: 30hrs, Bluetooth 5.0, Active Noise Cancellation",
+      "tags": 2,
+      "stock": "50",
+      "product_status": "published",
+      "status": true,
+      "in_stock": true,
+      "featured": true,
+      "digital": false,
+      "sku": "sku1234",
+      "date": "2026-01-15T10:00:00Z",
+      "updated": null
+    }
+  },
+  {
+    "model": "core.product",
+    "pk": 2,
+    "fields": {
+      "pid": "prod234567",
+      "user": 1,
+      "category": 1,
+      "title": "Smart Watch Series 5",
+      "image": "product.jpg",
+      "description": "Advanced fitness tracking with heart rate monitor and GPS",
+      "price": "299.99",
+      "old_price": "349.99",
+      "specifications": "Display: OLED, Water Resistant: 50m, Battery: 48hrs",
+      "tags": 1,
+      "stock": "35",
+      "product_status": "published",
+      "status": true,
+      "in_stock": true,
+      "featured": true,
+      "digital": false,
+      "sku": "sku2345",
+      "date": "2026-01-16T10:00:00Z",
+      "updated": null
+    }
+  },
+  {
+    "model": "core.product",
+    "pk": 3,
+    "fields": {
+      "pid": "prod345678",
+      "user": 1,
+      "category": 1,
+      "title": "4K Action Camera",
+      "image": "product.jpg",
+      "description": "Waterproof 4K action camera with image stabilization",
+      "price": "179.99",
+      "old_price": "229.99",
+      "specifications": "Resolution: 4K@60fps, Waterproof: 10m, WiFi enabled",
+      "tags": 3,
+      "stock": "25",
+      "product_status": "published",
+      "status": true,
+      "in_stock": true,
+      "featured": false,
+      "digital": false,
+      "sku": "sku3456",
+      "date": "2026-01-17T10:00:00Z",
+      "updated": null
+    }
+  },
+  {
+    "model": "core.product",
+    "pk": 4,
+    "fields": {
+      "pid": "prod456789",
+      "user": 2,
+      "category": 2,
+      "title": "Designer Handbag",
+      "image": "product.jpg",
+      "description": "Luxury leather handbag with gold hardware",
+      "price": "449.99",
+      "old_price": "599.99",
+      "specifications": "Material: Genuine Leather, Size: Large, Color: Black",
+      "tags": 2,
+      "stock": "15",
+      "product_status": "published",
+      "status": true,
+      "in_stock": true,
+      "featured": true,
+      "digital": false,
+      "sku": "sku4567",
+      "date": "2026-01-18T10:00:00Z",
+      "updated": null
+    }
+  },
+  {
+    "model": "core.product",
+    "pk": 5,
+    "fields": {
+      "pid": "prod567890",
+      "user": 2,
+      "category": 2,
+      "title": "Premium Sunglasses",
+      "image": "product.jpg",
+      "description": "UV400 protection polarized sunglasses",
+      "price": "89.99",
+      "old_price": "129.99",
+      "specifications": "UV Protection: 400, Polarized, Frame: Metal",
+      "tags": 3,
+      "stock": "60",
+      "product_status": "published",
+      "status": true,
+      "in_stock": true,
+      "featured": false,
+      "digital": false,
+      "sku": "sku5678",
+      "date": "2026-01-19T10:00:00Z",
+      "updated": null
+    }
+  },
+  {
+    "model": "core.product",
+    "pk": 6,
+    "fields": {
+      "pid": "prod678901",
+      "user": 1,
+      "category": 3,
+      "title": "Smart LED Light Bulb",
+      "image": "product.jpg",
+      "description": "WiFi-enabled color-changing LED bulb",
+      "price": "24.99",
+      "old_price": "34.99",
+      "specifications": "Power: 9W, Colors: 16 million, App Control",
+      "tags": 1,
+      "stock": "100",
+      "product_status": "published",
+      "status": true,
+      "in_stock": true,
+      "featured": false,
+      "digital": false,
+      "sku": "sku6789",
+      "date": "2026-01-19T11:00:00Z",
+      "updated": null
+    }
+  },
+  {
+    "model": "core.product",
+    "pk": 7,
+    "fields": {
+      "pid": "prod789012",
+      "user": 1,
+      "category": 4,
+      "title": "Yoga Mat Premium",
+      "image": "product.jpg",
+      "description": "Non-slip eco-friendly yoga mat with carrying strap",
+      "price": "39.99",
+      "old_price": "59.99",
+      "specifications": "Size: 72x24 inches, Thickness: 6mm, Material: TPE",
+      "tags": 2,
+      "stock": "45",
+      "product_status": "published",
+      "status": true,
+      "in_stock": true,
+      "featured": true,
+      "digital": false,
+      "sku": "sku7890",
+      "date": "2026-01-19T12:00:00Z",
+      "updated": null
+    }
+  },
+  {
+    "model": "core.product",
+    "pk": 8,
+    "fields": {
+      "pid": "prod890123",
+      "user": 1,
+      "category": 1,
+      "title": "Portable Power Bank 20000mAh",
+      "image": "product.jpg",
+      "description": "Fast charging portable battery pack with dual USB ports",
+      "price": "49.99",
+      "old_price": "69.99",
+      "specifications": "Capacity: 20000mAh, USB Ports: 2, Fast Charge: Yes",
+      "tags": 1,
+      "stock": "80",
+      "product_status": "published",
+      "status": true,
+      "in_stock": true,
+      "featured": false,
+      "digital": false,
+      "sku": "sku8901",
+      "date": "2026-01-19T13:00:00Z",
+      "updated": null
+    }
+  },
+  {
+    "model": "core.bill",
+    "pk": 1,
+    "fields": {
+      "store_name": 1,
+      "client": 1,
+      "date": "2026-01-18",
+      "quantity": 2,
+      "description": "Wireless Bluetooth Headphones",
+      "price": "149.99",
+      "amount": "299.98",
+      "total_price": "299.98"
+    }
+  },
+  {
+    "model": "core.bill",
+    "pk": 2,
+    "fields": {
+      "store_name": 1,
+      "client": 2,
+      "date": "2026-01-18",
+      "quantity": 1,
+      "description": "Smart Watch Series 5",
+      "price": "299.99",
+      "amount": "299.99",
+      "total_price": "299.99"
+    }
+  },
+  {
+    "model": "core.bill",
+    "pk": 3,
+    "fields": {
+      "store_name": 1,
+      "client": 3,
+      "date": "2026-01-19",
+      "quantity": 3,
+      "description": "Smart LED Light Bulb",
+      "price": "24.99",
+      "amount": "74.97",
+      "total_price": "74.97"
+    }
+  },
+  {
+    "model": "core.bill",
+    "pk": 4,
+    "fields": {
+      "store_name": 2,
+      "client": 4,
+      "date": "2026-01-19",
+      "quantity": 1,
+      "description": "Designer Handbag",
+      "price": "449.99",
+      "amount": "449.99",
+      "total_price": "449.99"
+    }
+  },
+  {
+    "model": "core.bill",
+    "pk": 5,
+    "fields": {
+      "store_name": 2,
+      "client": 5,
+      "date": "2026-01-20",
+      "quantity": 2,
+      "description": "Premium Sunglasses",
+      "price": "89.99",
+      "amount": "179.98",
+      "total_price": "179.98"
+    }
+  },
+  {
+    "model": "core.bill",
+    "pk": 6,
+    "fields": {
+      "store_name": 1,
+      "client": 1,
+      "date": "2026-01-20",
+      "quantity": 1,
+      "description": "Yoga Mat Premium",
+      "price": "39.99",
+      "amount": "39.99",
+      "total_price": "39.99"
+    }
+  }
+]
