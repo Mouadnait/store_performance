@@ -24,6 +24,10 @@ db.sqlite3-journal
 /media/
 /static/
 staticfiles/
+performance/db.sqlite3
+performance/celerybeat-schedule
+performance/.env_old
+performance/media/
 
 # Environment variables
 .env
