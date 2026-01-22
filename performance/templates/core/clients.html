@@ -1,30 +1,107 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block style-content %}
-    <link rel="stylesheet" href="{% static 'css/client.css' %}">
-{% endblock style-content %}
-
 {% block title %}Clients | Store Performance{% endblock title %}
 
-{% block content-title %}Clients{% endblock content-title %}
+{% block style-content %}
+<link rel="stylesheet" href="{% static 'css/clients.css' %}">
+{% endblock style-content %}
+
+{% block content-title %}All Clients{% endblock content-title %}
 
 {% block content %}
-<div class="content-area">
-    <!-- Clients -->
-    <div class="row-client">
+<div class="clients-page">
+
+    <!-- Header / Stats -->
+    <div class="clients-hero">
+        <div>
+            <h1>Clients</h1>
+            <p>Manage your customer base and track their bills.</p>
+            <div class="hero-actions">
+                <a class="btn primary" href="{% url 'core:products' %}#bill-builder">Create Bill</a>
+                <a class="btn ghost" href="{% url 'core:products' %}">Add Product</a>
+            </div>
+        </div>
+        <div class="hero-stats">
+            <div class="stat-card">
+                <p>Total Clients</p>
+                <h3>{{ total_clients }}</h3>
+            </div>
+            <div class="stat-card">
+                <p>Your Clients</p>
+                <h3>{{ user_clients }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filters (static front-end) -->
+    <div class="clients-toolbar">
+        <div class="search-box">
+            <span class="material-icons-sharp">search</span>
+            <input type="text" id="clientSearch" placeholder="Search clients by name, email, or phone" onkeyup="filterClients()">
+        </div>
+        <div class="toolbar-actions">
+            <span class="tag">Active list</span>
+        </div>
+    </div>
+
+    {% if clients %}
+    <div class="clients-grid" id="clientsGrid">
         {% for client in clients %}
-        <div class="client-card">
-            <img src="{% static 'images/client.png' %}" alt="Avatar" class="img-fluid">
-            <div class="overlay">
-                <div class="text-card">
-                    <p>{{ client.full_name }}</p>
-                    <a href="{% url 'core:client_detail' client.lid %}">More Info !</a>
+        <div class="client-card" data-name="{{ client.full_name|default:'' }}" data-email="{{ client.email|default:'' }}" data-phone="{{ client.phone|default:'' }}">
+            <div class="client-card-header">
+                <div class="avatar">
+                    <span>{{ client.full_name|slice:":1"|upper }}</span>
                 </div>
+                <div class="client-meta">
+                    <h3>{{ client.full_name|default:"Unnamed client" }}</h3>
+                    <p class="muted">{% if client.created_at %}Added on {{ client.created_at|date:"M d, Y" }}{% else %}Date unknown{% endif %}</p>
+                </div>
+            </div>
+            <div class="client-fields">
+                <div>
+                    <p class="label">Phone</p>
+                    <p class="value">{{ client.phone|default:"N/A" }}</p>
+                </div>
+                <div>
+                    <p class="label">Email</p>
+                    <p class="value">{{ client.email|default:"N/A" }}</p>
+                </div>
+                <div class="full-row">
+                    <p class="label">Address</p>
+                    <p class="value">{{ client.address|default:"N/A" }}</p>
+                </div>
+            </div>
+            <div class="client-actions">
+                <a class="btn ghost" href="{% url 'core:client_detail' client.lid %}">View Bills</a>
+                <a class="btn primary" href="{% url 'core:products' %}#bill-builder">Create Bill</a>
             </div>
         </div>
         {% endfor %}
     </div>
-    <!-- End of Clients -->
+    {% else %}
+    <div class="empty-state">
+        <div class="icon-circle"><span class="material-icons-sharp">person_off</span></div>
+        <h3>No clients yet</h3>
+        <p>Create a bill to add your first client and start tracking their purchases.</p>
+        <a class="btn primary" href="{% url 'core:products' %}#bill-builder">Create Bill</a>
+    </div>
+    {% endif %}
 </div>
+
+{% block script %}
+<script>
+function filterClients() {
+    const query = (document.getElementById('clientSearch').value || '').toLowerCase();
+    const cards = document.querySelectorAll('#clientsGrid .client-card');
+    cards.forEach(card => {
+        const name = (card.dataset.name || '').toLowerCase();
+        const email = (card.dataset.email || '').toLowerCase();
+        const phone = (card.dataset.phone || '').toLowerCase();
+        const match = name.includes(query) || email.includes(query) || phone.includes(query);
+        card.style.display = match ? '' : 'none';
+    });
+}
+</script>
+{% endblock script %}
 {% endblock content %}
