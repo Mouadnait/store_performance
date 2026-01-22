@@ -15,6 +15,52 @@
         <!-- ======== CSS ======== -->
         <link rel="stylesheet" href="{% static 'css/style.css' %}">
         {% block style-content %}{% endblock style-content %}
+        <style>
+            /* Sidebar polish and quick actions */
+            .sidebar .section-label {
+                font-size: 0.78rem;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: #9ca3af;
+                padding: 12px 18px 4px;
+            }
+            .sidebar .quick-actions {
+                padding: 0 16px 10px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .sidebar .quick-action {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 12px;
+                border-radius: 10px;
+                background: #eef2ff;
+                color: #312e81;
+                font-weight: 600;
+                border: 1px solid #e0e7ff;
+                transition: all 0.2s ease;
+            }
+            .sidebar .quick-action:hover {
+                background: #e0e7ff;
+                border-color: #c7d2fe;
+            }
+            .sidebar .quick-action .icon {
+                font-size: 18px;
+            }
+            .sidebar .meta {
+                padding: 0 18px 12px;
+                color: #9ca3af;
+                font-size: 0.88rem;
+            }
+            .sidebar .meta strong {
+                color: #f9fafb;
+            }
+            .sidebar .menu .grouped {
+                padding-top: 8px;
+            }
+        </style>
 
         <!-- ===== Title ===== -->
         <title>{% block title %}{% endblock title %}</title>
@@ -38,8 +84,21 @@
                 <i class='bx bx-chevron-right toggle'></i>
             </header>
 
+            <div class="meta">
+                {% if request.user.email %}<div><strong>Email:</strong> {{ request.user.email }}</div>{% endif %}
+                <div><strong>Plan:</strong> Team</div>
+            </div>
+
+            <div class="section-label">Quick actions</div>
+            <div class="quick-actions">
+                <a class="quick-action" href="{% url 'core:create-bill' %}"><i class='bx bx-receipt icon'></i> New bill</a>
+                <a class="quick-action" href="{% url 'core:clients' %}"><i class='bx bx-user-plus icon'></i> Add client</a>
+                <a class="quick-action" href="{% url 'core:products' %}"><i class='bx bx-package icon'></i> Add product</a>
+            </div>
+
             <div class="menu-bar">
                 <div class="menu">
+                    <div class="section-label">Overview</div>
                     <ul class="menu-links" title="Dashboard">
                         <li class="nav-link">
                             <a href="{% url 'core:dashboard' %}"
@@ -48,15 +107,31 @@
                                 <h3 class="text nav-text">Dashboard</h3>
                             </a>
                         </li>
-
-                        <!-- <li class="nav-link" title="Analytics">
+                        <li class="nav-link" title="Analytics">
                             <a href="{% url 'core:analytics' %}"
                                 class="{% if request.resolver_match.url_name == 'analytics' %}active{% else %}none{% endif %}">
                                 <i class='bx bx-pie-chart-alt icon'></i>
                                 <h3 class="text nav-text">Analytics</h3>
                             </a>
-                        </li> -->
+                        </li>
+                        <li class="nav-link" title="Reports">
+                            <a href="{% url 'core:reports' %}"
+                                class="{% if request.resolver_match.url_name == 'reports' %}active{% else %}none{% endif %}">
+                                <i class='bx bx-file icon'></i>
+                                <h3 class="text nav-text">Reports</h3>
+                            </a>
+                        </li>
+                    </ul>
 
+                    <div class="section-label">Operations</div>
+                    <ul class="menu-links grouped" title="Operations">
+                        <li class="nav-link" title="Bills">
+                            <a href="{% url 'core:create-bill' %}"
+                                class="{% if request.resolver_match.url_name == 'create-bill' %}active{% else %}none{% endif %}">
+                                <i class='bx bx-receipt icon'></i>
+                                <h3 class="text nav-text">Bills</h3>
+                            </a>
+                        </li>
                         <li class="nav-link" title="Clients">
                             <a href="{% url 'core:clients' %}"
                                 class="{% if request.resolver_match.url_name == 'clients' %}active{% else %}none{% endif %}">
@@ -64,7 +139,6 @@
                                 <h3 class="text nav-text">Clients</h3>
                             </a>
                         </li>
-
                         <li class="nav-link" title="Products">
                             <a href="{% url 'core:products' %}"
                                 class="{% if request.resolver_match.url_name == 'products' %}active{% else %}none{% endif %}">
@@ -72,15 +146,10 @@
                                 <h3 class="text nav-text">Products</h3>
                             </a>
                         </li>
+                    </ul>
 
-                        <!-- <li class="nav-link" title="Reports">
-                            <a href="{% url 'core:reports' %}"
-                                class="{% if request.resolver_match.url_name == 'reports' %}active{% else %}none{% endif %}">
-                                <i class='bx bx-file icon'></i>
-                                <h3 class="text nav-text">Reports</h3>
-                            </a>
-                        </li> -->
-
+                    <div class="section-label">Account</div>
+                    <ul class="menu-links grouped" title="Account">
                         <li class="nav-link" title="Profile">
                             <a href="{% url 'core:profile' %}"
                                 class="{% if request.resolver_match.url_name == 'profile' %}active{% else %}none{% endif %}">
@@ -88,7 +157,6 @@
                                 <h3 class="text nav-text">Profile</h3>
                             </a>
                         </li>
-
                         <li class="nav-link" title="Settings">
                             <a href="{% url 'core:settings' %}"
                                 class="{% if request.resolver_match.url_name == 'settings' %}active{% else %}none{% endif %}">
