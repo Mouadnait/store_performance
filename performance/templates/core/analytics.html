@@ -353,7 +353,7 @@
                     <div class="item-name">{{ product.title }}</div>
                     <div class="item-detail">Category: {{ product.category.title|default:"Uncategorized" }}</div>
                 </div>
-                <div class="item-value">${{ product.revenue|floatformat:2|default:"0.00" }}</div>
+                <div class="item-value">${{ product.price|floatformat:2 }}</div>
             </div>
             {% empty %}
             <p style="text-align: center; color: #6b7280; padding: 20px;">No product data available</p>

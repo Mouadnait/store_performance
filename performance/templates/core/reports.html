@@ -324,9 +324,9 @@
                 <tr>
                     <th>Product Name</th>
                     <th>Category</th>
-                    <th>Total Sold</th>
-                    <th>Revenue</th>
-                    <th>Performance</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Status</th>
                 </tr>
             </thead>
             <tbody>
@@ -334,13 +334,9 @@
                 <tr>
                     <td style="font-weight: 600;">{{ product.title }}</td>
                     <td>{{ product.category.title|default:"Uncategorized" }}</td>
-                    <td>{{ product.total_sold }}</td>
-                    <td style="font-weight: 600; color: #10b981;">${{ product.revenue|floatformat:2|default:"0.00" }}</td>
-                    <td>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: {% widthratio product.revenue summary_data.total_revenue 100 %}%;"></div>
-                        </div>
-                    </td>
+                    <td style="font-weight: 600; color: #10b981;">${{ product.price|floatformat:2 }}</td>
+                    <td>{{ product.stock|default:0 }}</td>
+                    <td><span class="status-badge completed">{{ product.status|title }}</span></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -398,8 +394,7 @@
                 <tr>
                     <th>Category</th>
                     <th>Product Count</th>
-                    <th>Total Revenue</th>
-                    <th>Share</th>
+                    <th>Avg Price</th>
                 </tr>
             </thead>
             <tbody>
@@ -407,12 +402,7 @@
                 <tr>
                     <td style="font-weight: 600;">{{ category.title }}</td>
                     <td>{{ category.product_count }}</td>
-                    <td style="font-weight: 600; color: #10b981;">${{ category.revenue|floatformat:2|default:"0.00" }}</td>
-                    <td>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: {% widthratio category.revenue summary_data.total_revenue 100 %}%;"></div>
-                        </div>
-                    </td>
+                    <td style="font-weight: 600; color: #10b981;">${{ category.avg_price|floatformat:2|default:"0.00" }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

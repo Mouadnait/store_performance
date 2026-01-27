@@ -50,16 +50,14 @@ def analytics(request):
     revenue_growth = ((recent_revenue - prev_revenue) / prev_revenue * 100) if prev_revenue > 0 else 0
     bills_growth = ((recent_bills - prev_bills) / prev_bills * 100) if prev_bills > 0 else 0
     
-    # Top products by revenue
-    top_products = Product.objects.filter(user=user).annotate(
-        revenue=Sum('bill__total_price')
-    ).order_by('-revenue')[:5]
+    # Top products by price (since bills don't reference products directly)
+    top_products = Product.objects.filter(user=user, status='published').order_by('-price')[:5]
     
     # Top clients by revenue
     top_clients = Client.objects.filter(user=user).annotate(
         revenue=Sum('bill__total_price'),
         bill_count=Count('bill')
-    ).order_by('-revenue')[:5]
+    ).filter(revenue__isnull=False).order_by('-revenue')[:5]
     
     # Revenue trend (daily)
     revenue_trend_raw = Bill.objects.filter(
@@ -552,11 +550,10 @@ def reports(request):
         for item in revenue_by_period_raw
     ])
     
-    # Product performance
-    product_performance = Product.objects.filter(user=user).annotate(
-        total_sold=Count('bill'),
-        revenue=Sum('bill__total_price')
-    ).order_by('-revenue')[:10]
+    # Product performance (by stock/price since bills don't reference products)
+    product_performance = Product.objects.filter(user=user, status='published').annotate(
+        total_sold=Count('id')  # Placeholder, shows 1 for each product
+    ).order_by('-price')[:10]
     
     # Client analysis
     client_analysis = Client.objects.filter(user=user).annotate(
@@ -565,11 +562,11 @@ def reports(request):
         avg_purchase=Avg('bill__total_price')
     ).order_by('-total_spent')[:10]
     
-    # Category breakdown
+    # Category breakdown (by product count since no bill-product relationship)
     category_breakdown = Category.objects.filter(user=user).annotate(
         product_count=Count('product'),
-        revenue=Sum('product__bill__total_price')
-    ).order_by('-revenue')
+        avg_price=Avg('product__price')
+    ).filter(product_count__gt=0).order_by('-product_count')
     
     context = {
         'report_type': report_type,
