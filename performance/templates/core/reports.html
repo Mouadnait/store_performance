@@ -368,7 +368,7 @@
                 {% for client in client_analysis %}
                 <tr>
                     <td style="font-weight: 600;">{{ client.full_name }}</td>
-                    <td>{{ client.email|default:client.mobile|default:"N/A" }}</td>
+                    <td>{{ client.email|default:client.phone|default:"N/A" }}</td>
                     <td style="font-weight: 600; color: #10b981;">${{ client.total_spent|floatformat:2|default:"0.00" }}</td>
                     <td>{{ client.visit_count }}</td>
                     <td>${{ client.avg_purchase|floatformat:2|default:"0.00" }}</td>
