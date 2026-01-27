@@ -2,6 +2,7 @@ from decimal import Decimal
 from django.db import models
 from shortuuid.django_fields import ShortUUIDField
 from django.utils.html import mark_safe
+from django.utils import timezone
 from userauths.models import User
 
 STATUS_CHOICES = (
@@ -193,7 +194,8 @@ class ProductReview(models.Model):
 class Bill(models.Model):
     store_name = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bill')
     client = models.ForeignKey(Client, on_delete=models.CASCADE)
-    date = models.DateField(auto_now_add=True)
+    # Allow user-selected bill dates; default to today
+    date = models.DateField(default=timezone.now)
 
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.CharField(max_length=255)

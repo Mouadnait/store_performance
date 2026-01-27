@@ -439,7 +439,7 @@ def create_bill(request):
     # For GET requests, render the multi-bill creation page
     if request.method == 'GET':
         # Get all existing clients for the dropdown
-        clients = Client.objects.filter(user=request.user).order_by('-created_at')[:50]
+        clients = Client.objects.filter(user=request.user).order_by('-id')[:50]
         return render(request, 'core/create-bill.html', {
             'user': request.user,
             'clients': clients,
@@ -557,20 +557,33 @@ def create_bill(request):
                 messages.success(request, f'Bill saved successfully for client "{client_name}"!')
 
             # Return success response for AJAX
-            from django.http import JsonResponse
-            return JsonResponse({
-                'success': True,
-                'message': 'Bill saved successfully!',
-                'client_id': str(client.lid)
-            })
+            # If it's an AJAX request, return JSON; otherwise redirect
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                from django.http import JsonResponse
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Bill saved successfully!',
+                    'client_id': str(client.lid)
+                })
+            else:
+                return redirect('core:client_detail', lid=client.lid)
             
         except Client.DoesNotExist:
+            from django.http import JsonResponse
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': 'Selected client not found.'}, status=400)
             messages.error(request, 'Selected client not found.')
             return render(request, 'core/create-bill.html', {'user': request.user})
         except (ValueError, InvalidOperation) as ve:
+            from django.http import JsonResponse
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': f'Invalid number format: {str(ve)}'}, status=400)
             messages.error(request, f'Invalid number format: {str(ve)}')
             return render(request, 'core/create-bill.html', {'user': request.user})
         except Exception as e:
+            from django.http import JsonResponse
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': f'Error creating bill: {str(e)}'}, status=500)
             messages.error(request, f'Error creating bill: {str(e)}')
             return render(request, 'core/create-bill.html', {'user': request.user})
 

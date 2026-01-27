@@ -124,6 +124,42 @@
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+.autocomplete-list {
+    position: absolute;
+    top: 100%;
+    left: 120px;
+    right: 0;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.autocomplete-list.active {
+    display: block;
+}
+
+.autocomplete-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.2s;
+}
+
+.autocomplete-item:hover {
+    background-color: #f0f4ff;
+}
+
+.autocomplete-item.selected {
+    background-color: #f0f4ff;
+    border-left: 4px solid #667eea;
+}
+
 .bill-items-section {
     margin: 25px 0;
 }
@@ -546,6 +582,44 @@ function populateClientFromSelect(selectElement) {
     }
 }
 
+// Setup client autocomplete on all client name inputs
+document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('client-name')) {
+            handleClientNameInput(e.target);
+        }
+    });
+});
+
+function handleClientNameInput(input) {
+    const billContent = input.closest('.bill-content');
+    const searchText = input.value.toLowerCase().trim();
+    
+    if (searchText.length < 1) {
+        return;
+    }
+    
+    // Get available clients from the select dropdown
+    const selectElement = billContent.querySelector('.client-select');
+    const options = selectElement ? Array.from(selectElement.options) : [];
+    
+    // Filter clients by name
+    const matches = options.filter(opt => 
+        opt.value && opt.text.toLowerCase().includes(searchText)
+    );
+    
+    if (matches.length > 0) {
+        // Auto-select first match if it's exact
+        if (matches.length === 1 || matches[0].text.toLowerCase() === searchText) {
+            const firstMatch = matches[0];
+            selectElement.value = firstMatch.value;
+            if (selectElement.value) {
+                populateClientFromSelect(selectElement);
+            }
+        }
+    }
+}
+
 function showToast(message) {
     const toast = document.createElement('div');
     toast.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #667eea; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 600; font-size: 13px;';
@@ -559,6 +633,20 @@ function showToast(message) {
     }, 2500);
 }
 
+// Get all bills info for Products page integration
+function getAllBills() {
+    const bills = [];
+    document.querySelectorAll('.bill-content').forEach(content => {
+        const billId = content.id.replace('bill-', '');
+        const clientName = content.querySelector('.client-name').value || 'Unnamed';
+        bills.push({ id: billId, name: clientName, element: content });
+    });
+    return bills;
+}
+
+// Store selected bill ID for product page
+window.selectedBillForProducts = 1;
+
 // Set today's date for initial bill
 document.querySelectorAll('.bill-date').forEach(input => {
     input.valueAsDate = new Date();
@@ -570,11 +658,28 @@ document.addEventListener('input', function(e) {
         const row = e.target.closest('.item-row');
         const qty = parseFloat(row.querySelector('.item-quantity').value) || 0;
         const price = parseFloat(row.querySelector('.item-price').value) || 0;
+        
+        // Validate inputs
+        if (qty < 0) {
+            row.querySelector('.item-quantity').value = 0;
+        }
+        if (price < 0) {
+            row.querySelector('.item-price').value = 0;
+        }
+        
         const amount = qty * price;
         row.querySelector('.item-amount').value = amount.toFixed(2);
         
         // Recalculate bill total
         updateBillTotal(e.target);
+    }
+    
+    // Validate negative values in real-time
+    if (e.target.classList.contains('item-quantity') && parseFloat(e.target.value) < 0) {
+        e.target.value = Math.abs(e.target.value);
+    }
+    if (e.target.classList.contains('item-price') && parseFloat(e.target.value) < 0) {
+        e.target.value = Math.abs(e.target.value);
     }
 });
 
@@ -622,7 +727,11 @@ function addNewBill() {
         Bill #${billCounter}
         <span class="close-tab material-icons-sharp" onclick="removeBill(event, ${billCounter})">close</span>
     `;
-    newTab.onclick = function() { switchBill(billCounter); };
+    newTab.addEventListener('click', function(e) {
+        if (!e.target.classList.contains('close-tab')) {
+            switchBill(billCounter);
+        }
+    }, true);
     billTabs.insertBefore(newTab, billTabs.lastElementChild);
     
     // Clone first bill form
@@ -650,14 +759,34 @@ function addNewBill() {
     });
     
     billsContainer.appendChild(template);
+    
+    // Show success toast
+    showToast(`Bill #${billCounter} created - ready for items and client info`);
+    
+    // Scroll to new bill
+    setTimeout(() => {
+        document.getElementById(`bill-${billCounter}`).scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
 }
 
 function switchBill(billNum) {
+    // Remove active from all tabs and contents
     document.querySelectorAll('.bill-tab').forEach(tab => tab.classList.remove('active'));
     document.querySelectorAll('.bill-content').forEach(content => content.classList.remove('active'));
     
-    document.querySelector(`[data-bill="${billNum}"]`).classList.add('active');
-    document.getElementById(`bill-${billNum}`).classList.add('active');
+    // Activate the selected bill tab and content
+    const tab = document.querySelector(`[data-bill="${billNum}"]`);
+    const content = document.getElementById(`bill-${billNum}`);
+    
+    if (tab) {
+        tab.classList.add('active');
+        tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    }
+    if (content) {
+        content.classList.add('active');
+        content.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    window.selectedBillForProducts = billNum;
 }
 
 function removeBill(event, billNum) {
@@ -690,6 +819,13 @@ function addItem(button) {
     newRow.querySelectorAll('input').forEach(input => input.value = '');
     
     itemsBody.appendChild(newRow);
+    
+    // Focus on quantity field for quick entry
+    setTimeout(() => {
+        newRow.querySelector('.item-quantity').focus();
+    }, 50);
+    
+    showToast('New item row added - enter product details');
 }
 
 function removeItem(button) {
@@ -740,12 +876,14 @@ async function saveAllBills() {
         const billDate = bill.querySelector('.bill-date').value;
         
         if (!clientName) {
-            alert(`Bill #${i + 1}: Client name is required!`);
+            showToast(`Bill #${i + 1}: Client name is required!`);
+            bill.scrollIntoView({ behavior: 'smooth', block: 'start' });
             return;
         }
         
         if (!billDate) {
-            alert(`Bill #${i + 1}: Date is required!`);
+            showToast(`Bill #${i + 1}: Date is required!`);
+            bill.scrollIntoView({ behavior: 'smooth', block: 'start' });
             return;
         }
         
@@ -767,7 +905,8 @@ async function saveAllBills() {
         }
         
         if (items.length === 0) {
-            alert(`Bill #${i + 1}: Please add at least one valid item!`);
+            showToast(`Bill #${i + 1}: Please add at least one valid item!`);
+            bill.scrollIntoView({ behavior: 'smooth', block: 'start' });
             return;
         }
         
@@ -786,6 +925,8 @@ async function saveAllBills() {
     
     // Save bills one by one
     let successCount = 0;
+    const failedBills = [];
+    
     for (let i = 0; i < billsData.length; i++) {
         progressText.textContent = `Processing bill ${i + 1} of ${billsData.length}`;
         
@@ -801,25 +942,37 @@ async function saveAllBills() {
         try {
             const response = await fetch('{% url "core:create-bill" %}', {
                 method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 body: formData
             });
             
-            if (response.ok) {
-                successCount++;
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                failedBills.push({ num: i + 1, error: errorData.error || response.statusText });
+            } else {
+                const data = await response.json();
+                if (data && data.success) {
+                    successCount++;
+                } else {
+                    failedBills.push({ num: i + 1, error: data.error || 'Unknown error' });
+                }
             }
         } catch (error) {
             console.error('Error saving bill:', error);
+            failedBills.push({ num: i + 1, error: error.message });
         }
     }
     
     progressIndicator.classList.remove('active');
     
     if (successCount === billsData.length) {
-        alert(`Successfully saved all ${successCount} bills!`);
-        window.location.href = '{% url "core:dashboard" %}';
+        showToast(`✓ Successfully saved all ${successCount} bills!`);
+        setTimeout(() => { window.location.href = '{% url "core:dashboard" %}'; }, 800);
+    } else if (successCount > 0) {
+        const failedNums = failedBills.map(b => `#${b.num}`).join(', ');
+        showToast(`✓ Saved ${successCount}/${billsData.length} bills. Failed: ${failedNums}`);
     } else {
-        alert(`Saved ${successCount} out of ${billsData.length} bills. Please check and try again.`);
-        window.location.reload();
+        showToast(`✗ All bills failed. Please check and try again.`);
     }
 }
 

@@ -363,33 +363,73 @@ function addToBill(productTitle, productPrice) {
         return;
     }
 
-    // Create a product object
+    // Check if user is on create-bill page or products page
+    const isCreateBillPage = document.getElementById('bills-container') !== null;
+    
+    if (isCreateBillPage) {
+        // If on create-bill page, add to selected bill directly
+        addItemToSelectedBill(productTitle, price);
+    } else {
+        // If on products page, show bill selector or save to localStorage
+        showBillSelector(productTitle, price);
+    }
+}
+
+function addItemToSelectedBill(productTitle, price) {
+    const selectedBillNum = window.selectedBillForProducts || 1;
+    const billContent = document.getElementById(`bill-${selectedBillNum}`);
+    
+    if (!billContent) {
+        showBillToast('Bill not found');
+        return;
+    }
+    
+    // Add a new item row
+    const itemsBody = billContent.querySelector('.items-body');
+    const newRow = itemsBody.querySelector('.item-row').cloneNode(true);
+    
+    // Fill in the product details
+    newRow.querySelector('.item-quantity').value = 1;
+    newRow.querySelector('.item-description').value = productTitle;
+    newRow.querySelector('.item-price').value = price.toFixed(2);
+    newRow.querySelector('.item-amount').value = (price * 1).toFixed(2);
+    
+    itemsBody.appendChild(newRow);
+    
+    // Update the bill total
+    updateBillTotalById(`bill-${selectedBillNum}`);
+    
+    // Scroll to the new item
+    billContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    
+    showBillToast(`${productTitle} added to Bill #${selectedBillNum}`);
+}
+
+function showBillSelector(productTitle, price) {
+    // Create a temporary storage for the product
     let product = { 
         title: productTitle, 
         price: price, 
         quantity: 1 
     };
 
-    // Retrieve existing products from local storage and parse them
+    // Retrieve existing products from local storage
     let products = JSON.parse(localStorage.getItem('billProducts')) || [];
 
     // Check if the product already exists
     let existingProduct = products.find(p => p.title === productTitle);
     if (existingProduct) {
-        existingProduct.quantity += 1; // Increment quantity
-        showBillToast(`${product.title} quantity updated (${existingProduct.quantity})`);
+        existingProduct.quantity += 1;
+        showBillToast(`${productTitle} quantity updated (${existingProduct.quantity})`);
     } else {
-        products.push(product); // Add new product
-        showBillToast(`${product.title} added to bill`);
+        products.push(product);
+        showBillToast(`${productTitle} added to bill`);
     }
 
     // Save the updated products array back to local storage
     localStorage.setItem('billProducts', JSON.stringify(products));
     console.log('Products saved to localStorage:', products);
 
-    // Reload bill items to display the product (if modal is open)
-    loadBillItems();
-    
     // Update the bill counter badge
     updateBillCounter();
     
