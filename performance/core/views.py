@@ -15,6 +15,7 @@ from geopy.exc import GeocoderInsufficientPrivileges
 from django.db import transaction
 from django.contrib import messages
 from django.db.models import Sum, Count, Avg
+from django.db.models.functions import ExtractYear, ExtractMonth
 import time
 import logging
 
@@ -183,17 +184,18 @@ def dashboard(request):
     logger = logging.getLogger(__name__)
     t_start = time.perf_counter()
     timings = {}
+    user = request.user
     
     # Check cache first
-    cache_key = f"dashboard_{request.user.id}"
+    cache_key = f"dashboard_{user.id}"
     cached_data = cache.get(cache_key)
     if cached_data:
         return render(request, 'core/dashboard.html', cached_data)
     
-    # Filter data for current user - use only() to limit fields
-    bills = Bill.objects.filter(store_name=request.user)
-    products = Product.objects.filter(user=request.user)
-    clients = Client.objects.filter(user=request.user)
+    # Filter data for current user
+    bills = Bill.objects.filter(store_name=user)
+    products = Product.objects.filter(user=user)
+    clients = Client.objects.filter(user=user)
     timings["query_load"] = round((time.perf_counter() - t_start) * 1000)
     
     today = timezone.now().date()
@@ -239,7 +241,7 @@ def dashboard(request):
     }
     timings["kpis"] = round((time.perf_counter() - t_start) * 1000)
 
-    # Top clients - convert to JSON for Chart.js instead of Plotly
+    # Top clients - convert to JSON for Chart.js
     top_clients_qs = bills.values("client__full_name").annotate(
         revenue=Sum("total_price"),
         qty=Sum("quantity"),
@@ -266,7 +268,7 @@ def dashboard(request):
     })
     timings["top_products_chart"] = round((time.perf_counter() - t_start) * 1000)
 
-    # Monthly revenue trend - simplified, no Pandas
+    # Monthly revenue trend
     monthly_data = bills.annotate(
         year=ExtractYear('date'),
         month=ExtractMonth('date')
@@ -274,7 +276,6 @@ def dashboard(request):
         total=Sum('total_price')
     ).order_by('year', 'month')
     
-    # Convert to Chart.js format with labels and data arrays
     monthly_list = list(monthly_data)
     monthly_chart = json.dumps({
         'labels': [f"{item['year']}-{item['month']:02d}" for item in monthly_list],
@@ -282,7 +283,7 @@ def dashboard(request):
     })
     timings["monthly_chart"] = round((time.perf_counter() - t_start) * 1000)
 
-    # Today's bar chart - simplified
+    # Today's bar chart
     bar_chart = None
     if today_bills.exists():
         today_data = list(today_bills.values('description', 'quantity')[:10])
@@ -292,7 +293,7 @@ def dashboard(request):
         })
     timings["bar_chart"] = round((time.perf_counter() - t_start) * 1000)
 
-    # Table (recent bills) - convert to JSON for template
+    # Recent bills table
     recent = bills.select_related('client').only(
         "description", "quantity", "total_price", "date", "client__full_name"
     ).order_by("-date")[:10]
@@ -307,7 +308,7 @@ def dashboard(request):
     ])
     timings["table_chart"] = round((time.perf_counter() - t_start) * 1000)
 
-    # Pie: product share - simplified
+    # Pie chart - product share
     pie_data = bills.values("description").annotate(
         qty=Sum("quantity")
     ).order_by("-qty")[:8]
@@ -320,10 +321,59 @@ def dashboard(request):
 
     line_chart = monthly_chart
 
-    # Remove geocoding - it's extremely slow!
+    # Optional geocoding with caching (only when requested)
     geo_data = None
-    show_geo = False
     map_chart = None
+    show_geo = request.GET.get("show_geo") == "1"
+    if show_geo:
+        geo_cache_key = f"geo_data_{user.id}"
+        geo_data = cache.get(geo_cache_key)
+        if not geo_data:
+            geolocator = Nominatim(user_agent="store_performance_dashboard")
+            locations = []
+            client_list = Client.objects.filter(user=user).only(
+                "full_name", "address", "city", "country", "profile_image", "phone", "lid"
+            )
+            for client in client_list:
+                location_parts = [client.address, client.city, client.country]
+                location_str = ", ".join([p for p in location_parts if p])
+                if not location_str:
+                    continue
+
+                client_cache_key = f"geo_client_{client.id}_{hash(location_str)}"
+                cached_coords = cache.get(client_cache_key)
+                coords = None
+                if cached_coords is not None:
+                    coords = cached_coords
+                else:
+                    try:
+                        geo = geolocator.geocode(location_str, timeout=1.5)
+                        if geo:
+                            coords = (geo.latitude, geo.longitude)
+                        cache.set(client_cache_key, coords, 86400)  # 1 day
+                    except Exception:
+                        coords = None
+
+                if not coords:
+                    continue
+
+                image_url = client.profile_image.url if client.profile_image else ""
+                locations.append({
+                    "lid": client.lid,
+                    "name": client.full_name or "",
+                    "location": location_str,
+                    "address": client.address or "",
+                    "city": client.city or "",
+                    "phone": client.phone or "",
+                    "profile_image": image_url,
+                    "lat": coords[0],
+                    "lon": coords[1],
+                })
+
+            if locations:
+                geo_data = json.dumps(locations)
+                cache.set(geo_cache_key, geo_data, 86400)  # cache for 1 day
+
     timings["geo_data"] = round((time.perf_counter() - t_start) * 1000)
 
     # Log timings summary
