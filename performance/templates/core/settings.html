@@ -243,12 +243,15 @@
                     <h3><span class="material-icons-sharp">warning</span> Danger Zone</h3>
                 </div>
                 <div class="card-body">
-                    <div class="danger-action">
-                        <div>
-                            <h4>Logout</h4>
-                            <p>Sign out from all your devices</p>
+                    <div class="danger-action" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 25px; border-radius: 12px; margin-bottom: 20px;">
+                        <div style="color: white;">
+                            <h4 style="color: white; font-size: 18px; margin-bottom: 8px;">Logout from Your Account</h4>
+                            <p style="color: rgba(255,255,255,0.9); margin: 0;">Sign out from this device and end your current session securely</p>
                         </div>
-                        <a href="{% url 'userauths:logout' %}" class="btn btn-danger">Logout</a>
+                        <a href="{% url 'userauths:logout' %}" class="btn" style="background: white; color: #ef4444; font-weight: 700; padding: 14px 28px; margin-top: 15px;">
+                            <span class="material-icons-sharp">logout</span>
+                            Logout Now
+                        </a>
                     </div>
                     
                     <div class="danger-action">
@@ -256,7 +259,10 @@
                             <h4>Delete Account</h4>
                             <p>Permanently delete your account and all data</p>
                         </div>
-                        <button class="btn btn-danger-outline" onclick="confirmDeleteAccount()">Delete Account</button>
+                        <button class="btn btn-danger-outline" onclick="confirmDeleteAccount()" disabled>
+                            <span class="material-icons-sharp">delete</span>
+                            Delete Account
+                        </button>
                     </div>
                 </div>
             </div>
