@@ -59,18 +59,18 @@ def analytics(request):
         bill_count=Count('bill')
     ).filter(revenue__isnull=False).order_by('-revenue')[:5]
     
-    # Revenue trend (daily)
-    revenue_trend_raw = Bill.objects.filter(
+    # Revenue trend (daily) - simplified for SQLite compatibility
+    bills_for_trend = Bill.objects.filter(
         store_name=user, 
         date__gte=start_date
-    ).annotate(day=TruncDate('date')).values('day').annotate(
+    ).values('date').annotate(
         total=Sum('total_price')
-    ).order_by('day')
+    ).order_by('date')
     
-    # Convert to JSON-serializable format
+    # Convert to JSON-serializable format with date grouping
     revenue_trend = json.dumps([
-        {'day': item['day'].isoformat(), 'total': float(item['total'] or 0)}
-        for item in revenue_trend_raw
+        {'day': str(item['date']), 'total': float(item['total'] or 0)}
+        for item in bills_for_trend
     ])
     
     # Recent transactions
@@ -524,26 +524,26 @@ def reports(request):
         'unique_clients': bills.values('client').distinct().count(),
     }
     
-    # Revenue by period
+    # Revenue by period - simplified for SQLite compatibility
     if period == 'monthly':
-        revenue_by_period_raw = bills.annotate(
-            period=TruncMonth('date')
+        # Group by year-month
+        revenue_by_period_raw = bills.extra(
+            select={'period': "strftime('%Y-%m-01', date)"}
         ).values('period').annotate(
             revenue=Sum('total_price'),
             transactions=Count('id')
         ).order_by('period')
     else:
-        revenue_by_period_raw = bills.annotate(
-            period=TruncWeek('date')
-        ).values('period').annotate(
+        # Group by date
+        revenue_by_period_raw = bills.values('date').annotate(
             revenue=Sum('total_price'),
             transactions=Count('id')
-        ).order_by('period')
+        ).order_by('date')
     
     # Convert to JSON-serializable format
     revenue_by_period = json.dumps([
         {
-            'period': item['period'].isoformat() if item['period'] else None,
+            'period': item['period'] if isinstance(item['period'], str) else str(item['period']),
             'revenue': float(item['revenue'] or 0),
             'transactions': item['transactions']
         }
