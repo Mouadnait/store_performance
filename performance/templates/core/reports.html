@@ -336,7 +336,7 @@
                     <td>{{ product.category.title|default:"Uncategorized" }}</td>
                     <td style="font-weight: 600; color: #10b981;">${{ product.price|floatformat:2 }}</td>
                     <td>{{ product.stock|default:0 }}</td>
-                    <td><span class="status-badge completed">{{ product.status|title }}</span></td>
+                    <td><span class="status-badge completed">{{ product.product_status|title }}</span></td>
                 </tr>
                 {% endfor %}
             </tbody>

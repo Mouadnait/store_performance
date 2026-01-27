@@ -51,7 +51,7 @@ def analytics(request):
     bills_growth = ((recent_bills - prev_bills) / prev_bills * 100) if prev_bills > 0 else 0
     
     # Top products by price (since bills don't reference products directly)
-    top_products = Product.objects.filter(user=user, status='published').order_by('-price')[:5]
+    top_products = Product.objects.filter(user=user, status=True, product_status='published').order_by('-price')[:5]
     
     # Top clients by revenue
     top_clients = Client.objects.filter(user=user).annotate(
@@ -551,7 +551,7 @@ def reports(request):
     ])
     
     # Product performance (by stock/price since bills don't reference products)
-    product_performance = Product.objects.filter(user=user, status='published').annotate(
+    product_performance = Product.objects.filter(user=user, status=True, product_status='published').annotate(
         total_sold=Count('id')  # Placeholder, shows 1 for each product
     ).order_by('-price')[:10]
     
