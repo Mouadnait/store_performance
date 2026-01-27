@@ -572,11 +572,13 @@ def reports(request):
         avg_purchase=Avg('bill__total_price')
     ).order_by('-total_spent')[:10]
     
-    # Category breakdown (by product count since no bill-product relationship)
-    category_breakdown = Category.objects.filter(user=user).annotate(
+    # Category breakdown - filter through user's products
+    category_breakdown = Category.objects.filter(
+        product__user=user
+    ).annotate(
         product_count=Count('product'),
         avg_price=Avg('product__price')
-    ).filter(product_count__gt=0).order_by('-product_count')
+    ).filter(product_count__gt=0).order_by('-product_count').distinct()
     
     context = {
         'report_type': report_type,
