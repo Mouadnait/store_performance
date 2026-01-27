@@ -491,9 +491,10 @@ def create_bill(request):
 @login_required(login_url='/login/')
 def reports(request):
     from django.db.models import Sum, Count, Avg, F, Q
-    from django.db.models.functions import TruncMonth, TruncWeek
+    from django.db.models.functions import ExtractYear, ExtractMonth
     from datetime import datetime, timedelta
     import json
+    from collections import defaultdict
     
     user = request.user
     
@@ -524,31 +525,40 @@ def reports(request):
         'unique_clients': bills.values('client').distinct().count(),
     }
     
-    # Revenue by period - simplified for SQLite compatibility
+    # Revenue by period - group data in Python for SQLite compatibility
     if period == 'monthly':
-        # Group by year-month
-        revenue_by_period_raw = bills.extra(
-            select={'period': "strftime('%Y-%m-01', date)"}
-        ).values('period').annotate(
+        # Get all bills and group by year-month
+        monthly_data = bills.annotate(
+            year=ExtractYear('date'),
+            month=ExtractMonth('date')
+        ).values('year', 'month').annotate(
             revenue=Sum('total_price'),
             transactions=Count('id')
-        ).order_by('period')
+        ).order_by('year', 'month')
+        
+        revenue_by_period = json.dumps([
+            {
+                'period': f"{item['year']}-{item['month']:02d}-01",
+                'revenue': float(item['revenue'] or 0),
+                'transactions': item['transactions']
+            }
+            for item in monthly_data
+        ])
     else:
         # Group by date
-        revenue_by_period_raw = bills.values('date').annotate(
+        daily_data = bills.values('date').annotate(
             revenue=Sum('total_price'),
             transactions=Count('id')
         ).order_by('date')
-    
-    # Convert to JSON-serializable format
-    revenue_by_period = json.dumps([
-        {
-            'period': item['period'] if isinstance(item['period'], str) else str(item['period']),
-            'revenue': float(item['revenue'] or 0),
-            'transactions': item['transactions']
-        }
-        for item in revenue_by_period_raw
-    ])
+        
+        revenue_by_period = json.dumps([
+            {
+                'period': str(item['date']),
+                'revenue': float(item['revenue'] or 0),
+                'transactions': item['transactions']
+            }
+            for item in daily_data
+        ])
     
     # Product performance (by stock/price since bills don't reference products)
     product_performance = Product.objects.filter(user=user, status=True, product_status='published').annotate(
