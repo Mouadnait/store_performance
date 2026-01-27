@@ -436,9 +436,16 @@ def products(request):
 @login_required(login_url='/login/')
 @transaction.atomic
 def create_bill(request):
-    # Always push users to the inline bill builder on the products page
-    products_url = f"{reverse('core:products')}#bill-builder"
+    # For GET requests, render the multi-bill creation page
+    if request.method == 'GET':
+        # Get all existing clients for the dropdown
+        clients = Client.objects.filter(user=request.user).order_by('-created_at')[:50]
+        return render(request, 'core/create-bill.html', {
+            'user': request.user,
+            'clients': clients,
+        })
 
+    # POST: Handle bill creation
     if request.method == 'POST':
         client_name = request.POST.get('clientName', '').strip()
         bill_date = request.POST.get('billDate')
@@ -446,7 +453,7 @@ def create_bill(request):
         # Validate client name is not empty
         if not client_name:
             messages.error(request, 'Client name is required.')
-            return redirect(products_url)
+            return render(request, 'core/create-bill.html', {'user': request.user})
 
         # Parse bill items sent as JSON
         items_json = request.POST.get('items_json', '')
@@ -454,31 +461,52 @@ def create_bill(request):
             items_data = json.loads(items_json) if items_json else []
         except json.JSONDecodeError:
             messages.error(request, 'Invalid items payload. Please try again.')
-            return redirect(products_url)
+            return render(request, 'core/create-bill.html', {'user': request.user})
 
         if not items_data:
             messages.error(request, 'Please add at least one product to the bill.')
-            return redirect(products_url)
+            return render(request, 'core/create-bill.html', {'user': request.user})
 
         try:
-            # Resolve or create client
+            # Resolve or create client - now with more fields from multi-bill form
             client_select = request.POST.get('clientSelect')
             if client_select:
                 client = Client.objects.get(lid=client_select, user=request.user)
                 created = False
             else:
-                client, created = Client.objects.get_or_create(
+                # Check if client exists by name first
+                existing_client = Client.objects.filter(
                     full_name=client_name,
-                    user=request.user,
-                    defaults={
-                        'address': request.POST.get('address', ''),
-                        'phone': request.POST.get('phone', ''),
-                        'email': request.POST.get('email', ''),
-                        'city': request.POST.get('city', ''),
-                        'country': request.POST.get('country', ''),
-                        'postal_code': request.POST.get('postal_code', ''),
-                    }
-                )
+                    user=request.user
+                ).first()
+                
+                if existing_client:
+                    # Update existing client with new info if provided
+                    client = existing_client
+                    created = False
+                    
+                    # Update fields if provided
+                    if request.POST.get('phone'):
+                        client.phone = request.POST.get('phone', '')
+                    if request.POST.get('email'):
+                        client.email = request.POST.get('email', '')
+                    if request.POST.get('address'):
+                        client.address = request.POST.get('address', '')
+                    
+                    client.save()
+                else:
+                    # Create new client
+                    client = Client.objects.create(
+                        full_name=client_name,
+                        user=request.user,
+                        address=request.POST.get('address', ''),
+                        phone=request.POST.get('phone', ''),
+                        email=request.POST.get('email', ''),
+                        city=request.POST.get('city', ''),
+                        country=request.POST.get('country', ''),
+                        postal_code=request.POST.get('postal_code', ''),
+                    )
+                    created = True
 
             parsed_items = []
             total_price = Decimal('0')
@@ -526,22 +554,25 @@ def create_bill(request):
             if created:
                 messages.success(request, f'New client "{client_name}" created and bill saved successfully!')
             else:
-                messages.success(request, f'Bill saved successfully for existing client "{client_name}"!')
+                messages.success(request, f'Bill saved successfully for client "{client_name}"!')
 
-            return redirect('core:client_detail', lid=client.lid)
+            # Return success response for AJAX
+            from django.http import JsonResponse
+            return JsonResponse({
+                'success': True,
+                'message': 'Bill saved successfully!',
+                'client_id': str(client.lid)
+            })
             
         except Client.DoesNotExist:
             messages.error(request, 'Selected client not found.')
-            return redirect(products_url)
+            return render(request, 'core/create-bill.html', {'user': request.user})
         except (ValueError, InvalidOperation) as ve:
             messages.error(request, f'Invalid number format: {str(ve)}')
-            return redirect(products_url)
+            return render(request, 'core/create-bill.html', {'user': request.user})
         except Exception as e:
             messages.error(request, f'Error creating bill: {str(e)}')
-            return redirect(products_url)
-
-    # GET requests are redirected to the products page bill builder
-    return redirect(products_url)
+            return render(request, 'core/create-bill.html', {'user': request.user})
 
 @login_required(login_url='/login/')
 def reports(request):

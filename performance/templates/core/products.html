@@ -287,25 +287,27 @@
     <!-- Bill Builder Modal -->
     <div id="billBuilderModal" class="modal" style="display: none;">
         <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
-            <div class="modal-header">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 20px; border-radius: 12px 12px 0 0;">
                 <div>
-                    <h2>Bill Builder</h2>
-                    <p id="clientModeIndicator" style="margin: 5px 0; font-size: 14px; color: #666; font-weight: normal;">
-                        <span class="material-icons-sharp" style="font-size: 16px; vertical-align: middle;">info</span>
+                    <h2 style="margin: 0; color: white;">Quick Bill Builder</h2>
+                    <p id="clientModeIndicator" style="margin: 8px 0 0 0; font-size: 13px; opacity: 0.9; font-weight: normal;">
+                        <span class="material-icons-sharp" style="font-size: 14px; vertical-align: middle;">info</span>
                         Select an existing client or create a new one
                     </p>
                 </div>
-                <button type="button" class="close-modal" onclick="closeBillBuilderModal()">&times;</button>
+                <button type="button" class="close-modal" onclick="closeBillBuilderModal()" style="color: white; font-size: 24px; opacity: 0.8;">&times;</button>
             </div>
 
-            <div class="modal-body">
-                <div class="bill-header">
-                    <div>
-                        <p style="margin: 5px 0;">Create and manage bills easily</p>
-                    </div>
-                    <div class="bill-meta">
-                        <span class="meta">Store: {{ request.user.username }}</span>
-                        <span class="meta">Phone: {{ request.user.phone }}</span>
+            <div class="modal-body" style="padding: 25px;">
+                <div class="bill-header" style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 25px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <p style="margin: 5px 0; font-size: 14px; color: #666;">Create and manage bills with ease</p>
+                        </div>
+                        <div class="bill-meta">
+                            <span class="meta" style="display: inline-block; margin: 0 10px 0 0; font-size: 13px;"><strong>Store:</strong> {{ request.user.username }}</span>
+                            <span class="meta" style="display: inline-block; font-size: 13px;"><strong>Phone:</strong> {{ request.user.phone }}</span>
+                        </div>
                     </div>
                 </div>
 
@@ -319,85 +321,128 @@
 
                 <form method="POST" id="bill-form" action="{% url 'core:create-bill' %}">
                     {% csrf_token %}
-                    <!-- Hidden fields for bill items that will be populated by JavaScript -->
-                    <input type="hidden" name="description" id="description">
-                    <input type="hidden" name="quantity" id="quantity">
-                    <input type="hidden" name="price" id="price">
-                    <input type="hidden" name="amount" id="amount">
                     <input type="hidden" name="items_json" id="items_json">
                     
-                    <div class="bill-form-grid">
-                        <label class="full">Select Existing Client or Create New
-                            <select id="clientSelect" name="clientSelect" onchange="handleClientSelection()">
-                                <option value="">-- Create New Client --</option>
-                                {% for client in clients %}
-                                <option value="{{ client.lid }}" 
-                                    data-name="{{ client.full_name }}" 
-                                    data-phone="{{ client.phone|default:'' }}" 
-                                    data-email="{{ client.email|default:'' }}" 
-                                    data-address="{{ client.address|default:'' }}" 
-                                    data-city="{{ client.city|default:'' }}" 
-                                    data-country="{{ client.country|default:'' }}"
-                                    data-postal="{{ client.postal_code|default:'' }}">
-                                    {{ client.full_name }} {% if client.phone %}({{ client.phone }}){% endif %}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </label>
-                    </div>
-                    
-                    <div class="bill-form-grid" id="clientDetailsSection">
-                        <label>Client Name *
-                            <input type="text" name="clientName" id="clientName" required placeholder="Enter client name">
-                        </label>
-                        <label>Bill Date *
-                            <input type="date" name="billDate" id="billDate" required>
-                        </label>
-                        <label>Phone
-                            <input type="tel" name="phone" id="phone" placeholder="Client phone (optional)">
-                        </label>
-                        <label>Email
-                            <input type="email" name="email" id="email" placeholder="Client email (optional)">
-                        </label>
-                        <label class="full">Address
-                            <input type="text" name="address" id="address" placeholder="Client address (optional)">
-                        </label>
-                        <label>City
-                            <input type="text" name="city" id="city" placeholder="City (optional)">
-                        </label>
-                        <label>Country
-                            <input type="text" name="country" id="country" placeholder="Country (optional)">
-                        </label>
-                        <label>Postal Code
-                            <input type="text" name="postal_code" id="postal_code" placeholder="Postal code (optional)">
-                        </label>
+                    <!-- Client Selection Section -->
+                    <div style="background: #f0f4ff; padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 2px solid #e0e7ff;">
+                        <h3 style="margin: 0 0 15px 0; color: #374151; font-size: 15px; font-weight: 600;">
+                            <span class="material-icons-sharp" style="font-size: 18px; vertical-align: middle; margin-right: 8px;">person</span>
+                            Client Information
+                        </h3>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151;">Select Existing Client</label>
+                            <div style="position: relative;">
+                                <select id="clientSelect" name="clientSelect" onchange="handleClientSelection()" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; cursor: pointer;">
+                                    <option value="">+ Create New Client</option>
+                                    {% for client in clients %}
+                                    <option value="{{ client.lid }}" 
+                                        data-name="{{ client.full_name }}" 
+                                        data-phone="{{ client.phone|default:'' }}" 
+                                        data-email="{{ client.email|default:'' }}" 
+                                        data-address="{{ client.address|default:'' }}" 
+                                        data-city="{{ client.city|default:'' }}" 
+                                        data-country="{{ client.country|default:'' }}"
+                                        data-postal="{{ client.postal_code|default:'' }}">
+                                        {{ client.full_name }} {% if client.phone %}<span style="color: #999;">({{ client.phone }})</span>{% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div id="clientDetailsSection">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div>
+                                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 14px;">Client Name *</label>
+                                    <input type="text" name="clientName" id="clientName" required placeholder="Enter client name" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 14px;">Bill Date *</label>
+                                    <input type="date" name="billDate" id="billDate" required style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                                <div>
+                                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 14px;">Phone</label>
+                                    <input type="tel" name="phone" id="phone" placeholder="Client phone (optional)" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 14px;">Email</label>
+                                    <input type="email" name="email" id="email" placeholder="Client email (optional)" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+                                </div>
+                            </div>
+                            <div style="margin-top: 15px;">
+                                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 14px;">Address</label>
+                                <input type="text" name="address" id="address" placeholder="Client address (optional)" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px;">
+                                <div>
+                                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 14px;">City</label>
+                                    <input type="text" name="city" id="city" placeholder="City (optional)" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 14px;">Country</label>
+                                    <input type="text" name="country" id="country" placeholder="Country (optional)" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 14px;">Postal Code</label>
+                                    <input type="text" name="postal_code" id="postal_code" placeholder="Postal code (optional)" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="bill-table-wrapper">
-                        <table class="bill-table">
-                            <thead>
-                                <tr>
-                                    <th>Quantity</th>
-                                    <th>Description</th>
-                                    <th>Price</th>
-                                    <th>Amount</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Products will be added here by JavaScript -->
-                            </tbody>
-                        </table>
+                    <!-- Bill Items Section -->
+                    <div style="margin-bottom: 25px;">
+                        <h3 style="margin: 0 0 15px 0; color: #374151; font-size: 15px; font-weight: 600;">
+                            <span class="material-icons-sharp" style="font-size: 18px; vertical-align: middle; margin-right: 8px;">shopping_cart</span>
+                            Bill Items
+                        </h3>
+                        <div class="bill-table-wrapper" style="border: 2px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+                            <table class="bill-table" style="width: 100%; border-collapse: collapse;">
+                                <thead style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+                                    <tr>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; width: 80px;">Qty</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600;">Description</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; width: 100px;">Price</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: 600; width: 100px;">Amount</th>
+                                        <th style="padding: 12px; text-align: center; font-weight: 600; width: 50px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody style="background: white;">
+                                    <!-- Products will be added here by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
-                    <div class="bill-actions">
-                        <div>
-                            <button type="button" id="clear-bill-btn" class="btn secondary">Clear Bill</button>
+                    <!-- Total Section -->
+                    <div style="background: #f9fafb; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 600; color: #374151;">
+                            <span>Grand Total:</span>
+                            <input type="number" name="totalPrice" id="totalPrice" placeholder="0.00" step="0.01" readonly style="width: 150px; padding: 10px; border: none; background: white; border-radius: 8px; font-size: 16px; text-align: right; font-weight: 700; color: #667eea;">
                         </div>
-                        <div>
-                            <button type="button" class="btn ghost" onclick="closeBillBuilderModal()">Close</button>
-                            <button type="submit" id="save-bill-btn" name="save_bill" class="btn primary">Save Bill</button>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="bill-actions" style="display: flex; gap: 12px; justify-content: space-between;">
+                        <button type="button" id="clear-bill-btn" class="btn secondary" style="padding: 12px 24px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                            <span class="material-icons-sharp" style="font-size: 18px; vertical-align: middle; margin-right: 6px;">refresh</span>
+                            Clear Bill
+                        </button>
+                        <div style="display: flex; gap: 12px;">
+                            <button type="button" class="btn ghost" onclick="closeBillBuilderModal()" style="padding: 12px 24px; background: white; color: #667eea; border: 2px solid #667eea; border-radius: 8px; font-weight: 600; cursor: pointer;">Close</button>
+                            <button type="submit" id="save-bill-btn" name="save_bill" class="btn primary" style="padding: 12px 24px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                                <span class="material-icons-sharp" style="font-size: 18px; vertical-align: middle; margin-right: 6px;">save</span>
+                                Save Bill
+                            </button>
                         </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
                     </div>
                 </form>
             </div>
