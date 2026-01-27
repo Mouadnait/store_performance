@@ -3,6 +3,8 @@
 
 {% block style-content %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<!-- Chart.js for modern charting -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <!-- Leaflet CSS for interactive map -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 {% endblock style-content %}
@@ -12,9 +14,6 @@
 
 {% block content %}
 <div class="dashboard-area">
-    <!-- Load Plotly once via CDN for all charts -->
-    <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
-    
     <!-- Header Section -->
     <div class="dashboard-header">
         <div class="header-content">
@@ -158,7 +157,7 @@
                     <h3>Top Clients by Revenue</h3>
                     <span class="chart-badge">Top 8</span>
                 </div>
-                {{ top_clients_chart|safe }}
+                <canvas id="topClientsChart"></canvas>
             </div>
             {% endif %}
 
@@ -168,7 +167,7 @@
                     <h3>Top Products by Quantity</h3>
                     <span class="chart-badge">Top 8</span>
                 </div>
-                {{ top_products_chart|safe }}
+                <canvas id="topProductsChart"></canvas>
             </div>
             {% endif %}
         </div>
@@ -181,7 +180,7 @@
                     <h3>Revenue Trend</h3>
                     <span class="chart-subtitle">Monthly performance</span>
                 </div>
-                {{ line_chart|safe }}
+                <canvas id="monthlyTrendChart"></canvas>
             </div>
             {% endif %}
         </div>
@@ -194,7 +193,7 @@
                     <h3>Today's Sales</h3>
                     <span class="chart-subtitle">Products sold today</span>
                 </div>
-                {{ bar_chart|safe }}
+                <canvas id="todaySalesChart"></canvas>
             </div>
             {% endif %}
 
@@ -204,7 +203,7 @@
                     <h3>Product Share</h3>
                     <span class="chart-subtitle">Sales distribution</span>
                 </div>
-                {{ pie_chart|safe }}
+                <canvas id="productShareChart"></canvas>
             </div>
             {% endif %}
         </div>
@@ -229,8 +228,19 @@
                 <h3>Recent Transactions</h3>
                 <span class="chart-subtitle">Last 10 bills</span>
             </div>
-            <div class="table-wrapper">
-                {{ table_chart|safe }}
+            <div class="table-wrapper" style="overflow-x:auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Client</th>
+                            <th>Total</th>
+                            <th>Items</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentBillsBody">
+                    </tbody>
+                </table>
             </div>
         </div>
         {% endif %}
@@ -248,7 +258,7 @@
         </div>
         {% endfor %}
     </div>
-    <div style="margin-top:8px; font-size:0.9em;">Plotly loaded via CDN once; charts exclude embedded JS. Leaflet map renders client locations dynamically.</div>
+    <div style="margin-top:8px; font-size:0.9em;">Chart.js loaded via CDN once; charts rendered client-side. Leaflet map renders client locations dynamically.</div>
 </div>
 {% endif %}
 
@@ -263,6 +273,248 @@
         month: 'long',
         day: 'numeric'
     });
+
+    // Chart.js default configuration
+    Chart.defaults.font.family = 'Inter, sans-serif';
+    Chart.defaults.color = '#6b7280';
+    
+    // Top Clients Chart
+    {% if top_clients_chart %}
+    (function() {
+        const data = {{ top_clients_chart|safe }};
+        const ctx = document.getElementById('topClientsChart');
+        if (ctx && data.labels && data.revenue) {
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Revenue ($)',
+                        data: data.revenue,
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return '$' + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toFixed(0);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    })();
+    {% endif %}
+    
+    // Top Products Chart
+    {% if top_products_chart %}
+    (function() {
+        const data = {{ top_products_chart|safe }};
+        const ctx = document.getElementById('topProductsChart');
+        if (ctx && data.labels && data.quantity) {
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Quantity Sold',
+                        data: data.quantity,
+                        backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    })();
+    {% endif %}
+    
+    // Monthly Trend Chart
+    {% if line_chart %}
+    (function() {
+        const data = {{ line_chart|safe }};
+        const ctx = document.getElementById('monthlyTrendChart');
+        if (ctx && data.labels && data.revenue) {
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Monthly Revenue ($)',
+                        data: data.revenue,
+                        borderColor: 'rgba(99, 102, 241, 1)',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return '$' + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toFixed(0);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    })();
+    {% endif %}
+    
+    // Today's Sales Chart
+    {% if bar_chart %}
+    (function() {
+        const data = {{ bar_chart|safe }};
+        const ctx = document.getElementById('todaySalesChart');
+        if (ctx && data.labels && data.quantity) {
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Quantity',
+                        data: data.quantity,
+                        backgroundColor: 'rgba(245, 158, 11, 0.8)',
+                        borderColor: 'rgba(245, 158, 11, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    })();
+    {% endif %}
+    
+    // Product Share Pie Chart
+    {% if pie_chart %}
+    (function() {
+        const data = {{ pie_chart|safe }};
+        const ctx = document.getElementById('productShareChart');
+        if (ctx && data.labels && data.values) {
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        data: data.values,
+                        backgroundColor: [
+                            'rgba(99, 102, 241, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(245, 158, 11, 0.8)',
+                            'rgba(239, 68, 68, 0.8)',
+                            'rgba(139, 92, 246, 0.8)',
+                            'rgba(236, 72, 153, 0.8)',
+                            'rgba(14, 165, 233, 0.8)',
+                            'rgba(34, 197, 94, 0.8)'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 10,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    })();
+    {% endif %}
+    
+    // Recent Bills Table
+    {% if table_chart %}
+    (function() {
+        const data = {{ table_chart|safe }};
+        const tbody = document.getElementById('recentBillsBody');
+        if (tbody && data && data.length > 0) {
+            data.forEach(function(bill) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = 
+                    '<td>' + bill.date + '</td>' +
+                    '<td>' + bill.client + '</td>' +
+                    '<td>$' + bill.total.toFixed(2) + '</td>' +
+                    '<td>' + bill.items + '</td>';
+                tbody.appendChild(tr);
+            });
+        }
+    })();
+    {% endif %}
 
     // Initialize map with client locations if enabled
     {% if show_geo and geo_data %}

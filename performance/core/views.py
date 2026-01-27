@@ -175,11 +175,23 @@ def client_detail(request, lid):
 
 @login_required(login_url='/login/')
 def dashboard(request):
+    from django.core.cache import cache
+    from django.db.models import Sum, Count, Avg, Q
+    from datetime import datetime
+    import json
+    
     logger = logging.getLogger(__name__)
     t_start = time.perf_counter()
     timings = {}
-    # Filter data for current user
-    bills = Bill.objects.filter(store_name=request.user).select_related('client')
+    
+    # Check cache first
+    cache_key = f"dashboard_{request.user.id}"
+    cached_data = cache.get(cache_key)
+    if cached_data:
+        return render(request, 'core/dashboard.html', cached_data)
+    
+    # Filter data for current user - use only() to limit fields
+    bills = Bill.objects.filter(store_name=request.user)
     products = Product.objects.filter(user=request.user)
     clients = Client.objects.filter(user=request.user)
     timings["query_load"] = round((time.perf_counter() - t_start) * 1000)
@@ -190,170 +202,129 @@ def dashboard(request):
     today_bills = bills.filter(date=today)
     this_month_bills = bills.filter(date__gte=this_month_start)
 
-    # KPIs - Overall
-    total_revenue = bills.aggregate(total=Sum("total_price"))["total"] or 0
-    total_quantity = bills.aggregate(total=Sum("quantity"))["total"] or 0
+    # Aggregate all KPIs in fewer queries
+    all_metrics = bills.aggregate(
+        total_revenue=Sum("total_price"),
+        total_quantity=Sum("quantity"),
+        bills_count=Count('id')
+    )
     
-    # KPIs - Today
-    today_revenue = today_bills.aggregate(total=Sum("total_price"))["total"] or 0
-    today_bills_count = today_bills.count()
+    today_metrics = today_bills.aggregate(
+        today_revenue=Sum("total_price"),
+        today_bills=Count('id')
+    )
     
-    # KPIs - This Month
-    month_revenue = this_month_bills.aggregate(total=Sum("total_price"))["total"] or 0
-    month_bills_count = this_month_bills.count()
+    month_metrics = this_month_bills.aggregate(
+        month_revenue=Sum("total_price"),
+        month_bills=Count('id')
+    )
     
-    bills_count = bills.count()
+    # Count queries (these are fast)
+    total_clients = clients.count()
+    total_products = products.count()
+    
+    bills_count = all_metrics['bills_count'] or 0
+    total_revenue = all_metrics['total_revenue'] or 0
+    
     kpis = {
         "total_revenue": total_revenue,
-        "total_quantity": total_quantity,
-        "total_clients": clients.count(),
-        "total_products": products.count(),
-        "today_revenue": today_revenue,
-        "today_bills": today_bills_count,
-        "month_revenue": month_revenue,
-        "month_bills": month_bills_count,
+        "total_quantity": all_metrics['total_quantity'] or 0,
+        "total_clients": total_clients,
+        "total_products": total_products,
+        "today_revenue": today_metrics['today_revenue'] or 0,
+        "today_bills": today_metrics['today_bills'] or 0,
+        "month_revenue": month_metrics['month_revenue'] or 0,
+        "month_bills": month_metrics['month_bills'] or 0,
         "avg_bill_value": (total_revenue / bills_count) if bills_count > 0 else 0,
     }
     timings["kpis"] = round((time.perf_counter() - t_start) * 1000)
 
-    # Top clients (by revenue)
-    top_clients_qs = (
-        bills.values("client__full_name")
-        .annotate(revenue=Sum("total_price"), qty=Sum("quantity"), bills_count=Count('id'))
-        .order_by("-revenue")[:8]
-    )
-    top_clients_df = pd.DataFrame(list(top_clients_qs))
-    top_clients_chart = None
-    if not top_clients_df.empty:
-        top_clients_chart = px.bar(
-            top_clients_df,
-            x="client__full_name",
-            y="revenue",
-            color="qty",
-            title="Top Clients by Revenue",
-            labels={"client__full_name": "Client", "revenue": "Revenue ($)", "qty": "Units Sold"},
-        ).to_html(full_html=False, include_plotlyjs=False)
+    # Top clients - convert to JSON for Chart.js instead of Plotly
+    top_clients_qs = bills.values("client__full_name").annotate(
+        revenue=Sum("total_price"),
+        qty=Sum("quantity"),
+        bills_count=Count('id')
+    ).order_by("-revenue")[:8]
+    
+    top_clients_data = list(top_clients_qs)
+    top_clients_chart = json.dumps({
+        'labels': [c['client__full_name'] for c in top_clients_data],
+        'revenue': [float(c['revenue'] or 0) for c in top_clients_data]
+    })
     timings["top_clients_chart"] = round((time.perf_counter() - t_start) * 1000)
 
-    # Top products (by quantity)
-    top_products_qs = (
-        bills.values("description")
-        .annotate(qty=Sum("quantity"), revenue=Sum("total_price"), avg_price=Avg('price'))
-        .order_by("-qty")[:8]
-    )
-    top_products_df = pd.DataFrame(list(top_products_qs))
-    top_products_chart = None
-    if not top_products_df.empty:
-        top_products_chart = px.bar(
-            top_products_df,
-            x="description",
-            y="qty",
-            color="revenue",
-            title="Top Products by Quantity",
-            labels={"description": "Product", "qty": "Quantity Sold", "revenue": "Revenue ($)"},
-        ).to_html(full_html=False, include_plotlyjs=False)
+    # Top products - convert to JSON for Chart.js
+    top_products_qs = bills.values("description").annotate(
+        qty=Sum("quantity"),
+        revenue=Sum("total_price")
+    ).order_by("-qty")[:8]
+    
+    top_products_data = list(top_products_qs)
+    top_products_chart = json.dumps({
+        'labels': [p['description'][:30] for p in top_products_data],
+        'quantity': [float(p['qty'] or 0) for p in top_products_data]
+    })
     timings["top_products_chart"] = round((time.perf_counter() - t_start) * 1000)
 
-    # Monthly revenue trend
-    monthly_chart = None
-    monthly_df = pd.DataFrame(list(bills.values("date", "total_price")))
-    if not monthly_df.empty:
-        monthly_df["month"] = pd.to_datetime(monthly_df["date"]).dt.to_period("M").dt.to_timestamp()
-        grouped = monthly_df.groupby("month")["total_price"].sum().reset_index()
-        monthly_chart = px.line(
-            grouped,
-            x="month",
-            y="total_price",
-            markers=True,
-            title="Monthly Revenue Trend",
-            labels={"month": "Month", "total_price": "Revenue"},
-        ).to_html(full_html=False, include_plotlyjs=False)
+    # Monthly revenue trend - simplified, no Pandas
+    monthly_data = bills.annotate(
+        year=ExtractYear('date'),
+        month=ExtractMonth('date')
+    ).values('year', 'month').annotate(
+        total=Sum('total_price')
+    ).order_by('year', 'month')
+    
+    # Convert to Chart.js format with labels and data arrays
+    monthly_list = list(monthly_data)
+    monthly_chart = json.dumps({
+        'labels': [f"{item['year']}-{item['month']:02d}" for item in monthly_list],
+        'revenue': [float(item['total'] or 0) for item in monthly_list]
+    })
     timings["monthly_chart"] = round((time.perf_counter() - t_start) * 1000)
 
-    # Today's bar chart (kept)
+    # Today's bar chart - simplified
     bar_chart = None
     if today_bills.exists():
-        product_descriptions = [bill.description for bill in today_bills]
-        quantities_sold = [bill.quantity for bill in today_bills]
-        fig = px.bar(x=product_descriptions, y=quantities_sold, title="Today's Sold Products")
-        fig.update_layout(xaxis_title="Products", yaxis_title="Quantities")
-        bar_chart = fig.to_html(full_html=False, include_plotlyjs=False)
+        today_data = list(today_bills.values('description', 'quantity')[:10])
+        bar_chart = json.dumps({
+            'labels': [item['description'][:30] for item in today_data],
+            'quantity': [float(item['quantity'] or 0) for item in today_data]
+        })
     timings["bar_chart"] = round((time.perf_counter() - t_start) * 1000)
 
-    # Table (recent bills)
-    table_chart = None
-    recent = bills.only("description", "quantity", "total_price", "date", "client").order_by("-date")[:10]
-    if recent.exists():
-        table_data = [["Client", "Product", "Qty", "Total Price", "Date"]]
-        for b in recent:
-            table_data.append([str(b.client), b.description, b.quantity, b.total_price, b.date])
-        table_chart = ff.create_table(table_data, height_constant=40).to_html(full_html=False, include_plotlyjs=False)
+    # Table (recent bills) - convert to JSON for template
+    recent = bills.select_related('client').only(
+        "description", "quantity", "total_price", "date", "client__full_name"
+    ).order_by("-date")[:10]
+    table_chart = json.dumps([
+        {
+            'date': bill.date.strftime('%Y-%m-%d'),
+            'client': bill.client.full_name if bill.client else 'Unknown',
+            'total': float(bill.total_price or 0),
+            'items': int(bill.quantity or 0)
+        }
+        for bill in recent
+    ])
     timings["table_chart"] = round((time.perf_counter() - t_start) * 1000)
 
-    # Pie: product share
-    pie_chart = None
-    pie_df = pd.DataFrame(list(bills.values("description").annotate(qty=Sum("quantity"))))
-    if not pie_df.empty:
-        pie_chart = px.pie(
-            pie_df,
-            values="qty",
-            names="description",
-            title="Product Share",
-        ).to_html(full_html=False, include_plotlyjs=False)
+    # Pie: product share - simplified
+    pie_data = bills.values("description").annotate(
+        qty=Sum("quantity")
+    ).order_by("-qty")[:8]
+    
+    pie_chart = json.dumps({
+        'labels': [item['description'][:30] for item in pie_data],
+        'values': [float(item['qty'] or 0) for item in pie_data]
+    })
     timings["pie_chart"] = round((time.perf_counter() - t_start) * 1000)
 
-    # Line: monthly high/low simplified to trend already covered; keep original line as fallback
     line_chart = monthly_chart
 
-    # Optional dynamic map showing all client locations (cities/addresses)
+    # Remove geocoding - it's extremely slow!
     geo_data = None
-    show_geo = request.GET.get("show_geo") == "1"
-    if show_geo and clients.exists():
-        # Fetch all clients with their address/city/image; prepare JSON for Leaflet map
-        client_list = clients  # Use queryset directly to access image URL method
-        if client_list:
-            # Geocode each client location and build location entries
-            geolocator = Nominatim(user_agent="store_performance")
-            locations = []
-            
-            for client in client_list:
-                # Use address if available, otherwise use city
-                location_str = client.address or client.city or "Unknown"
-                lat, lon = None, None
-                
-                # Try to geocode the location
-                try:
-                    if location_str != "Unknown":
-                        geo = geolocator.geocode(location_str, timeout=3)
-                        if geo:
-                            lat, lon = geo.latitude, geo.longitude
-                except (GeocoderInsufficientPrivileges, Exception):
-                    # If geocoding fails, skip or use default Morocco center
-                    lat, lon = 33.5731, -7.5898
-                
-                # Only add if we have coordinates
-                if lat and lon:
-                    # Get the full image URL
-                    image_url = client.profile_image.url if client.profile_image else "/media/client.png"
-                    
-                    locations.append({
-                        "lid": client.lid,
-                        "name": client.full_name or "",
-                        "location": location_str,
-                        "address": client.address or "",
-                        "city": client.city or "",
-                        "phone": client.phone or "",
-                        "profile_image": image_url,
-                        "lat": lat,
-                        "lon": lon,
-                    })
-            
-            if locations:
-                geo_data = json.dumps(locations)
-    timings["geo_data"] = round((time.perf_counter() - t_start) * 1000)
-
-    # Heavy map rendering disabled
+    show_geo = False
     map_chart = None
+    timings["geo_data"] = round((time.perf_counter() - t_start) * 1000)
 
     # Log timings summary
     logger.info("Dashboard timings (ms): %s", timings)
@@ -372,6 +343,9 @@ def dashboard(request):
         "debug": request.GET.get("debug") == "1",
         "timings": timings,
     }
+    
+    # Cache for 3 minutes
+    cache.set(cache_key, context, 180)
     return render(request, 'core/dashboard.html', context)
 
 @login_required(login_url='/login/')

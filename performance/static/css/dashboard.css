@@ -233,12 +233,14 @@
     border-radius: 8px;
 }
 
-.table-wrapper table {
+.table-wrapper table,
+.data-table {
     width: 100%;
     border-collapse: collapse;
 }
 
-.table-wrapper th {
+.table-wrapper th,
+.data-table th {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     padding: 12px;
@@ -247,14 +249,16 @@
     font-size: 13px;
 }
 
-.table-wrapper td {
+.table-wrapper td,
+.data-table td {
     padding: 12px;
     border-bottom: 1px solid #f0f0f0;
     color: #555;
     font-size: 13px;
 }
 
-.table-wrapper tr:hover {
+.table-wrapper tr:hover,
+.data-table tbody tr:hover {
     background: #f9f9f9;
 }
 
