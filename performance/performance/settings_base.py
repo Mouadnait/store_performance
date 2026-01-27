@@ -8,6 +8,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+def env_list(name: str, default: str) -> list[str]:
+    """Return a cleaned list from a comma-separated env var."""
+    return [item.strip() for item in os.environ.get(name, default).split(',') if item.strip()]
+
+
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = BASE_DIR.parent
@@ -18,7 +24,7 @@ SECRET_KEY = os.environ.get(
     'django-insecure-CHANGE-ME-IN-PRODUCTION-WITH-STRONG-SECRET'
 )
 DEBUG = False
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 
 # Application Definition
 DJANGO_APPS = [
@@ -111,6 +117,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
 
 # Default Field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -149,10 +157,15 @@ SPECTACULAR_SETTINGS = {
 }
 
 # CORS
-CORS_ALLOWED_ORIGINS = os.environ.get(
+CORS_ALLOWED_ORIGINS = env_list(
     'CORS_ALLOWED_ORIGINS',
     'http://localhost:3000,http://localhost:8000,http://127.0.0.1:8000'
-).split(',')
+)
+
+CSRF_TRUSTED_ORIGINS = env_list(
+    'CSRF_TRUSTED_ORIGINS',
+    'http://localhost:8000,http://127.0.0.1:8000'
+)
 
 # Caching (default: local memory; override with Redis in prod)
 CACHES = {

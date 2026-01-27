@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from shortuuid.django_fields import ShortUUIDField
 from django.utils.html import mark_safe
@@ -194,7 +195,7 @@ class Bill(models.Model):
     client = models.ForeignKey(Client, on_delete=models.CASCADE)
     date = models.DateField(auto_now_add=True)
 
-    quantity = models.IntegerField()
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.CharField(max_length=255)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -206,3 +207,24 @@ class Bill(models.Model):
 
     def __str__(self):
         return f"Bill for {self.client} on {self.date}"
+
+    def total_quantity(self):
+        return sum((item.quantity for item in self.items.all()), Decimal('0'))
+
+    def total_amount(self):
+        return sum((item.amount for item in self.items.all()), Decimal('0'))
+
+
+class BillItem(models.Model):
+    bill = models.ForeignKey(Bill, on_delete=models.CASCADE, related_name='items')
+    description = models.CharField(max_length=255)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = "Bill Items"
+
+    def __str__(self):
+        return f"{self.description} x {self.quantity}"

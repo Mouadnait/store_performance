@@ -32,41 +32,33 @@
         <form method="POST" id="bill-form" action="{% url 'core:create-bill' %}">
             {% csrf_token %}
             <div class="billheader">
-                <div class="firstline d-flex">
-                    <span>Store Name:&nbsp; {{request.user.username}}&nbsp; </span>
-                    <span>Phone Number:&nbsp; {{request.user.phone}}&nbsp; </span>
-                </div>
-
-                <div class="name d-flex">
-                    <input type="text" name="" id="">
+                <div class="firstline d-flex" style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                    <span style="font-weight: 600;">Store Name:&nbsp; {{request.user.username}}&nbsp; </span>
+                    <span style="font-weight: 600;">Phone Number:&nbsp; {{request.user.phone}}&nbsp; </span>
                 </div>
 
                 <!-- Client Information Section -->
-                <div class="firstline d-flex" style="margin-top: 15px;">
-                    <span>Client Name &nbsp;:</span>
-                    <input type="text" name="clientName" id="clientName" required placeholder="Enter client name">
+                <div class="firstline d-flex" style="margin-top: 15px; align-items: center;">
+                    <span style="min-width: 120px;">Client Name:</span>
+                    <input type="text" name="clientName" id="clientName" required placeholder="Enter client name" style="flex: 1; margin-right: 20px;">
 
-                    <span>DATE &nbsp;:</span>
-                    <input type="date" name="billDate" id="billDate" required>
+                    <span style="min-width: 80px;">Date:</span>
+                    <input type="date" name="billDate" id="billDate" required style="flex: 1;">
                 </div>
 
                 <!-- Client Contact Information -->
-                <div class="firstline d-flex" style="margin-top: 15px;">
-                    <span>Phone &nbsp;:</span>
-                    <input type="tel" name="phone" id="phone" placeholder="Client phone (optional)">
+                <div class="firstline d-flex" style="margin-top: 15px; align-items: center;">
+                    <span style="min-width: 120px;">Phone:</span>
+                    <input type="tel" name="phone" id="phone" placeholder="Client phone (optional)" style="flex: 1; margin-right: 20px;">
 
-                    <span>Email &nbsp;:</span>
-                    <input type="email" name="email" id="email" placeholder="Client email (optional)">
+                    <span style="min-width: 80px;">Email:</span>
+                    <input type="email" name="email" id="email" placeholder="Client email (optional)" style="flex: 1;">
                 </div>
 
                 <!-- Client Address -->
-                <div class="firstline d-flex" style="margin-top: 15px;">
-                    <span>Address &nbsp;:</span>
-                    <input type="text" name="address" id="address" placeholder="Client address (optional)">
-                </div>
-
-                <div class="name d-flex">
-                    <input type="text" name="" id="">
+                <div class="firstline d-flex" style="margin-top: 15px; margin-bottom: 20px; align-items: center;">
+                    <span style="min-width: 120px;">Address:</span>
+                    <input type="text" name="address" id="address" placeholder="Client address (optional)" style="flex: 1;">
                 </div>
 
             </div>

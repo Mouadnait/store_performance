@@ -6,7 +6,7 @@ from .settings_base import *
 
 # Production overrides
 DEBUG = False
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost').split(',')
+ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', 'localhost')
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 if not SECRET_KEY:
@@ -55,19 +55,23 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = os.environ.get('SECURE_REFERRER_POLICY', 'same-origin')
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
 X_FRAME_OPTIONS = 'DENY'
 
 # CSRF
-CSRF_TRUSTED_ORIGINS = os.environ.get(
+CSRF_TRUSTED_ORIGINS = env_list(
     'CSRF_TRUSTED_ORIGINS',
     'https://storeperformance.local'
-).split(',')
+)
 
 # CORS Restricted
-CORS_ALLOWED_ORIGINS = os.environ.get(
+CORS_ALLOWED_ORIGINS = env_list(
     'CORS_ALLOWED_ORIGINS',
     'https://storeperformance.local'
-).split(',')
+)
 
 # SendGrid Email
 EMAIL_BACKEND = 'sendgrid_backend.SendgridBackend'
@@ -85,6 +89,11 @@ SENTRY_DSN = os.environ.get('SENTRY_DSN')
 
 # Logging: File-based with rotation
 LOGGING['handlers']['file']['filename'] = '/var/log/store_performance/app.log'
+
+# Enable WhiteNoise for static files
+if 'whitenoise.middleware.WhiteNoiseMiddleware' not in MIDDLEWARE:
+    security_index = MIDDLEWARE.index('django.middleware.security.SecurityMiddleware')
+    MIDDLEWARE.insert(security_index + 1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 # Static Files: Use whitenoise or CDN in production
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

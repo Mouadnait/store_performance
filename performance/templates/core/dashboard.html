@@ -3,6 +3,8 @@
 
 {% block style-content %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<!-- Leaflet CSS for interactive map -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 {% endblock style-content %}
 
 {% block title %}Dashboard | Store Performance{% endblock title %}
@@ -10,6 +12,8 @@
 
 {% block content %}
 <div class="dashboard-area">
+    <!-- Load Plotly once via CDN for all charts -->
+    <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
     
     <!-- Header Section -->
     <div class="dashboard-header">
@@ -129,6 +133,23 @@
 
     <!-- Charts Section -->
     <div class="charts-section">
+        <!-- Controls -->
+        <div class="charts-controls" style="display:flex; gap:12px; margin-bottom:12px;">
+            <a href="{% url 'core:dashboard' %}?show_geo=1" class="action-btn secondary" style="display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid #e5e7eb; border-radius:8px;">
+                <span class="material-icons-sharp">map</span>
+                <span>Show Geographic Distribution</span>
+            </a>
+            {% if show_geo %}
+            <a href="{% url 'core:dashboard' %}" class="action-btn secondary" style="display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid #e5e7eb; border-radius:8px;">
+                <span class="material-icons-sharp">close</span>
+                <span>Hide Geographic Distribution</span>
+            </a>
+            {% endif %}
+            <a href="{% url 'core:dashboard' %}?debug=1" class="action-btn secondary" style="display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid #e5e7eb; border-radius:8px;">
+                <span class="material-icons-sharp">speed</span>
+                <span>Show Timings</span>
+            </a>
+        </div>
         <!-- Row 1: Key Performance Charts -->
         <div class="charts-row">
             {% if top_clients_chart %}
@@ -188,15 +209,15 @@
             {% endif %}
         </div>
 
-        <!-- Row 4: Map & Table -->
+        <!-- Row 4: Map -->
         <div class="charts-row">
-            {% if map_chart %}
+            {% if show_geo and geo_data %}
             <div class="chart-container wide">
                 <div class="chart-header">
                     <h3>Geographic Distribution</h3>
-                    <span class="chart-subtitle">Client locations</span>
+                    <span class="chart-subtitle">All client locations</span>
                 </div>
-                {{ map_chart|safe }}
+                <div id="client-map" style="width:100%; height:500px; border-radius:8px; border:1px solid #e5e7eb;"></div>
             </div>
             {% endif %}
         </div>
@@ -217,6 +238,23 @@
 
 </div>
 
+{% if debug and timings %}
+<div class="timings-panel" style="margin-top:16px; padding:12px; border:1px dashed #e5e7eb; border-radius:8px; color:#6b7280;">
+    <strong>Timings (ms):</strong>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:8px; margin-top:8px;">
+        {% for k,v in timings.items %}
+        <div style="background:#f9fafb; padding:8px 10px; border-radius:6px;">
+            <span style="font-weight:600;">{{ k }}</span>: {{ v }}
+        </div>
+        {% endfor %}
+    </div>
+    <div style="margin-top:8px; font-size:0.9em;">Plotly loaded via CDN once; charts exclude embedded JS. Leaflet map renders client locations dynamically.</div>
+</div>
+{% endif %}
+
+<!-- Leaflet JS for map rendering -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
 <script>
     // Display current date
     document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', {
@@ -225,5 +263,75 @@
         month: 'long',
         day: 'numeric'
     });
+
+    // Initialize map with client locations if enabled
+    {% if show_geo and geo_data %}
+    (function() {
+        const clientData = {{ geo_data|safe }};
+        const mapElement = document.getElementById('client-map');
+        
+        if (mapElement && clientData && clientData.length > 0) {
+            // Calculate center point from all clients
+            let centerLat = 33.5731, centerLon = -7.5898; // Default Morocco
+            if (clientData.length > 0) {
+                const avgLat = clientData.reduce((sum, c) => sum + c.lat, 0) / clientData.length;
+                const avgLon = clientData.reduce((sum, c) => sum + c.lon, 0) / clientData.length;
+                centerLat = avgLat;
+                centerLon = avgLon;
+            }
+            
+            // Initialize Leaflet map centered on average client location
+            const map = L.map('client-map').setView([centerLat, centerLon], 8);
+            
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+            
+            // Add markers for each client with actual geocoded coordinates
+            const markers = [];
+            const colors = ['red', 'blue', 'green', 'purple', 'orange', 'darkred', 'darkblue', 'darkgreen'];
+            
+            clientData.forEach(function(client, index) {
+                const markerColor = colors[index % colors.length];
+                
+                // Create custom colored marker
+                const customIcon = L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-' + markerColor + '.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41]
+                });
+                
+                // Use actual geocoded coordinates
+                const marker = L.marker([client.lat, client.lon], {
+                    icon: customIcon,
+                    title: client.name
+                }).bindPopup(
+                    '<div style="text-align:center; min-width:200px;">' +
+                    '<img src="' + client.profile_image + '" alt="' + client.name + '" style="width:80px; height:80px; border-radius:50%; border:3px solid #667eea; object-fit:cover; margin-bottom:8px;">' +
+                    '<div style="font-weight:600; color:#1f2937; font-size:1em; margin-bottom:4px;">' + client.name + '</div>' +
+                    '<div style="color:#6b7280; font-size:0.9em; margin-bottom:8px;">' + client.location + '</div>' +
+                    (client.city ? '<div style="color:#9ca3af; font-size:0.85em;">🏙️ ' + client.city + '</div>' : '') +
+                    (client.address ? '<div style="color:#9ca3af; font-size:0.85em;">📍 ' + client.address + '</div>' : '') +
+                    (client.phone ? '<div style="color:#9ca3af; font-size:0.85em;">📞 ' + client.phone + '</div>' : '') +
+                    '<div style="margin-top:10px;"><a href="/client/' + client.lid + '/" style="color:#667eea; text-decoration:none; font-weight:600; font-size:0.9em;">View & Update</a></div>' +
+                    '</div>'
+                ).addTo(map);
+                
+                markers.push(marker);
+            });
+            
+            // Auto-fit map bounds to show all markers
+            if (markers.length > 0) {
+                const group = new L.featureGroup(markers);
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+    })();
+    {% endif %}
 </script>
 {% endblock content %}

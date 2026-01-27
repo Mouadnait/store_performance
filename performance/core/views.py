@@ -1,3 +1,5 @@
+import json
+from decimal import Decimal, InvalidOperation
 import pandas as pd
 from core.models import *
 import plotly.express as px
@@ -13,6 +15,8 @@ from geopy.exc import GeocoderInsufficientPrivileges
 from django.db import transaction
 from django.contrib import messages
 from django.db.models import Sum, Count, Avg
+import time
+import logging
 
 @login_required(login_url='/login/')
 def analytics(request):
@@ -47,7 +51,7 @@ def clients(request):
 def client_detail(request, lid):
     client = Client.objects.get(lid=lid)
     # Fetch bills related to the client
-    bills = Bill.objects.filter(client=client)
+    bills = Bill.objects.filter(client=client).prefetch_related('items').order_by('-date', '-id')
     
     # Calculate statistics
     total_revenue = bills.aggregate(total=Sum("total_price"))["total"] or 0
@@ -65,10 +69,14 @@ def client_detail(request, lid):
 
 @login_required(login_url='/login/')
 def dashboard(request):
+    logger = logging.getLogger(__name__)
+    t_start = time.perf_counter()
+    timings = {}
     # Filter data for current user
     bills = Bill.objects.filter(store_name=request.user).select_related('client')
     products = Product.objects.filter(user=request.user)
     clients = Client.objects.filter(user=request.user)
+    timings["query_load"] = round((time.perf_counter() - t_start) * 1000)
     
     today = timezone.now().date()
     this_month_start = today.replace(day=1)
@@ -88,6 +96,7 @@ def dashboard(request):
     month_revenue = this_month_bills.aggregate(total=Sum("total_price"))["total"] or 0
     month_bills_count = this_month_bills.count()
     
+    bills_count = bills.count()
     kpis = {
         "total_revenue": total_revenue,
         "total_quantity": total_quantity,
@@ -97,8 +106,9 @@ def dashboard(request):
         "today_bills": today_bills_count,
         "month_revenue": month_revenue,
         "month_bills": month_bills_count,
-        "avg_bill_value": (total_revenue / bills.count()) if bills.count() > 0 else 0,
+        "avg_bill_value": (total_revenue / bills_count) if bills_count > 0 else 0,
     }
+    timings["kpis"] = round((time.perf_counter() - t_start) * 1000)
 
     # Top clients (by revenue)
     top_clients_qs = (
@@ -116,7 +126,8 @@ def dashboard(request):
             color="qty",
             title="Top Clients by Revenue",
             labels={"client__full_name": "Client", "revenue": "Revenue ($)", "qty": "Units Sold"},
-        ).to_html()
+        ).to_html(full_html=False, include_plotlyjs=False)
+    timings["top_clients_chart"] = round((time.perf_counter() - t_start) * 1000)
 
     # Top products (by quantity)
     top_products_qs = (
@@ -134,7 +145,8 @@ def dashboard(request):
             color="revenue",
             title="Top Products by Quantity",
             labels={"description": "Product", "qty": "Quantity Sold", "revenue": "Revenue ($)"},
-        ).to_html()
+        ).to_html(full_html=False, include_plotlyjs=False)
+    timings["top_products_chart"] = round((time.perf_counter() - t_start) * 1000)
 
     # Monthly revenue trend
     monthly_chart = None
@@ -149,7 +161,8 @@ def dashboard(request):
             markers=True,
             title="Monthly Revenue Trend",
             labels={"month": "Month", "total_price": "Revenue"},
-        ).to_html()
+        ).to_html(full_html=False, include_plotlyjs=False)
+    timings["monthly_chart"] = round((time.perf_counter() - t_start) * 1000)
 
     # Today's bar chart (kept)
     bar_chart = None
@@ -158,16 +171,18 @@ def dashboard(request):
         quantities_sold = [bill.quantity for bill in today_bills]
         fig = px.bar(x=product_descriptions, y=quantities_sold, title="Today's Sold Products")
         fig.update_layout(xaxis_title="Products", yaxis_title="Quantities")
-        bar_chart = fig.to_html()
+        bar_chart = fig.to_html(full_html=False, include_plotlyjs=False)
+    timings["bar_chart"] = round((time.perf_counter() - t_start) * 1000)
 
     # Table (recent bills)
     table_chart = None
-    recent = bills.order_by("-date")[:10]
+    recent = bills.only("description", "quantity", "total_price", "date", "client").order_by("-date")[:10]
     if recent.exists():
         table_data = [["Client", "Product", "Qty", "Total Price", "Date"]]
         for b in recent:
             table_data.append([str(b.client), b.description, b.quantity, b.total_price, b.date])
-        table_chart = ff.create_table(table_data, height_constant=40).to_html()
+        table_chart = ff.create_table(table_data, height_constant=40).to_html(full_html=False, include_plotlyjs=False)
+    timings["table_chart"] = round((time.perf_counter() - t_start) * 1000)
 
     # Pie: product share
     pie_chart = None
@@ -178,31 +193,64 @@ def dashboard(request):
             values="qty",
             names="description",
             title="Product Share",
-        ).to_html()
+        ).to_html(full_html=False, include_plotlyjs=False)
+    timings["pie_chart"] = round((time.perf_counter() - t_start) * 1000)
 
     # Line: monthly high/low simplified to trend already covered; keep original line as fallback
     line_chart = monthly_chart
 
-    # Map (kept if data present)
+    # Optional dynamic map showing all client locations (cities/addresses)
+    geo_data = None
+    show_geo = request.GET.get("show_geo") == "1"
+    if show_geo and clients.exists():
+        # Fetch all clients with their address/city/image; prepare JSON for Leaflet map
+        client_list = clients  # Use queryset directly to access image URL method
+        if client_list:
+            # Geocode each client location and build location entries
+            geolocator = Nominatim(user_agent="store_performance")
+            locations = []
+            
+            for client in client_list:
+                # Use address if available, otherwise use city
+                location_str = client.address or client.city or "Unknown"
+                lat, lon = None, None
+                
+                # Try to geocode the location
+                try:
+                    if location_str != "Unknown":
+                        geo = geolocator.geocode(location_str, timeout=3)
+                        if geo:
+                            lat, lon = geo.latitude, geo.longitude
+                except (GeocoderInsufficientPrivileges, Exception):
+                    # If geocoding fails, skip or use default Morocco center
+                    lat, lon = 33.5731, -7.5898
+                
+                # Only add if we have coordinates
+                if lat and lon:
+                    # Get the full image URL
+                    image_url = client.profile_image.url if client.profile_image else "/media/client.png"
+                    
+                    locations.append({
+                        "lid": client.lid,
+                        "name": client.full_name or "",
+                        "location": location_str,
+                        "address": client.address or "",
+                        "city": client.city or "",
+                        "phone": client.phone or "",
+                        "profile_image": image_url,
+                        "lat": lat,
+                        "lon": lon,
+                    })
+            
+            if locations:
+                geo_data = json.dumps(locations)
+    timings["geo_data"] = round((time.perf_counter() - t_start) * 1000)
+
+    # Heavy map rendering disabled
     map_chart = None
-    clients = Client.objects.all()
-    if clients.exists():
-        teams = [[c.full_name, c.address] for c in clients]
-        df_map = pd.DataFrame({"clients": [c[0] for c in teams], "district": [a[1] for a in teams if a]})
-        if not df_map.empty and not df_map["district"].isnull().all():
-            geojson = px.data.election_geojson()
-            fig = px.choropleth_mapbox(
-                df_map,
-                geojson=geojson,
-                color="clients",
-                locations="district",
-                featureidkey="properties.district",
-                center={"lat": 33.518302, "lon": -7.595525},
-                mapbox_style="carto-positron",
-                zoom=9,
-            )
-            fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-            map_chart = fig.to_html()
+
+    # Log timings summary
+    logger.info("Dashboard timings (ms): %s", timings)
 
     context = {
         "kpis": kpis,
@@ -213,6 +261,10 @@ def dashboard(request):
         "map_chart": map_chart,
         "top_clients_chart": top_clients_chart,
         "top_products_chart": top_products_chart,
+        "geo_data": geo_data,
+        "show_geo": show_geo,
+        "debug": request.GET.get("debug") == "1",
+        "timings": timings,
     }
     return render(request, 'core/dashboard.html', context)
 
@@ -236,13 +288,16 @@ def products(request):
     else:
         form = ProductForm()
 
-    products = Product.objects.filter(user=request.user, product_status="published", featured=True)
+    products = Product.objects.filter(user=request.user).order_by('-date')
     # Fetch distinct categories
     categories = Category.objects.all()
+    # Fetch all clients for the current user
+    clients = Client.objects.filter(user=request.user).order_by('full_name')
 
     context = {
         'products': products,
         'categories': categories,
+        'clients': clients,
         'form': form,
     }
 
@@ -262,37 +317,80 @@ def create_bill(request):
         if not client_name:
             messages.error(request, 'Client name is required.')
             return redirect(products_url)
-        
-        # Get optional fields with defaults
-        quantity = request.POST.get('quantity') or 0
-        description = request.POST.get('description') or ''
-        price = request.POST.get('price') or 0
-        amount = request.POST.get('amount') or 0
-        total_price = request.POST.get('totalPrice') or 0
+
+        # Parse bill items sent as JSON
+        items_json = request.POST.get('items_json', '')
+        try:
+            items_data = json.loads(items_json) if items_json else []
+        except json.JSONDecodeError:
+            messages.error(request, 'Invalid items payload. Please try again.')
+            return redirect(products_url)
+
+        if not items_data:
+            messages.error(request, 'Please add at least one product to the bill.')
+            return redirect(products_url)
 
         try:
-            # Check if the client exists or create a new one
-            client, created = Client.objects.get_or_create(
-                full_name=client_name,
-                user=request.user,
-                defaults={
-                    'address': request.POST.get('address', ''),
-                    'phone': request.POST.get('phone', ''),
-                    'email': request.POST.get('email', ''),
-                }
-            )
+            # Resolve or create client
+            client_select = request.POST.get('clientSelect')
+            if client_select:
+                client = Client.objects.get(lid=client_select, user=request.user)
+                created = False
+            else:
+                client, created = Client.objects.get_or_create(
+                    full_name=client_name,
+                    user=request.user,
+                    defaults={
+                        'address': request.POST.get('address', ''),
+                        'phone': request.POST.get('phone', ''),
+                        'email': request.POST.get('email', ''),
+                        'city': request.POST.get('city', ''),
+                        'country': request.POST.get('country', ''),
+                        'postal_code': request.POST.get('postal_code', ''),
+                    }
+                )
 
-            # Create the bill and associate it with the client
+            parsed_items = []
+            total_price = Decimal('0')
+            total_qty = Decimal('0')
+
+            for item in items_data:
+                title = (item.get('title') or item.get('description') or '').strip()
+                price = Decimal(str(item.get('price', 0)))
+                qty = Decimal(str(item.get('quantity', 0)))
+                amount = price * qty
+                total_price += amount
+                total_qty += qty
+                parsed_items.append({
+                    'description': title,
+                    'price': price,
+                    'quantity': qty,
+                    'amount': amount,
+                })
+
+            # Build a summary description for quick views/search
+            description_summary = ", ".join([p['description'] for p in parsed_items if p['description']])
+
             bill = Bill.objects.create(
                 store_name=request.user,
                 client=client,
                 date=bill_date if bill_date else timezone.now().date(),
-                quantity=int(quantity) if quantity else 0,
-                description=description,
-                price=float(price) if price else 0.0,
-                amount=float(amount) if amount else 0.0,
-                total_price=float(total_price) if total_price else 0.0
+                quantity=total_qty,
+                description=description_summary[:255],
+                price=parsed_items[0]['price'] if parsed_items else Decimal('0'),
+                amount=total_price,
+                total_price=total_price,
             )
+
+            BillItem.objects.bulk_create([
+                BillItem(
+                    bill=bill,
+                    description=item['description'],
+                    quantity=item['quantity'],
+                    price=item['price'],
+                    amount=item['amount'],
+                ) for item in parsed_items
+            ])
 
             # Success message
             if created:
@@ -300,10 +398,12 @@ def create_bill(request):
             else:
                 messages.success(request, f'Bill saved successfully for existing client "{client_name}"!')
 
-            # Redirect to the clients page to see the client and their bills
-            return redirect('core:clients')
+            return redirect('core:client_detail', lid=client.lid)
             
-        except ValueError as ve:
+        except Client.DoesNotExist:
+            messages.error(request, 'Selected client not found.')
+            return redirect(products_url)
+        except (ValueError, InvalidOperation) as ve:
             messages.error(request, f'Invalid number format: {str(ve)}')
             return redirect(products_url)
         except Exception as e:
@@ -382,12 +482,21 @@ def edit_bill(request, bill_id):
         if request.method == 'POST':
             # Update bill fields
             bill.description = request.POST.get('description', bill.description)
-            bill.quantity = float(request.POST.get('quantity', bill.quantity))
-            bill.price = float(request.POST.get('price', bill.price))
-            bill.amount = float(request.POST.get('amount', bill.amount))
-            bill.total_price = float(request.POST.get('total_price', bill.total_price))
+            bill.quantity = Decimal(str(request.POST.get('quantity', bill.quantity)))
+            bill.price = Decimal(str(request.POST.get('price', bill.price)))
+            bill.amount = Decimal(str(request.POST.get('amount', bill.amount)))
+            bill.total_price = Decimal(str(request.POST.get('total_price', bill.total_price)))
             
             bill.save()
+
+            # Update the first bill item to stay in sync (basic edit support)
+            first_item = bill.items.first()
+            if first_item:
+                first_item.description = bill.description
+                first_item.quantity = bill.quantity
+                first_item.price = bill.price
+                first_item.amount = bill.amount
+                first_item.save()
             messages.success(request, 'Bill updated successfully!')
             
             # Redirect back to client bills page
@@ -463,6 +572,17 @@ def duplicate_bill(request, bill_id):
             total_price=original_bill.total_price,
             date=timezone.now().date(),
         )
+        # Copy bill items
+        if hasattr(original_bill, 'items'):
+            BillItem.objects.bulk_create([
+                BillItem(
+                    bill=new_bill,
+                    description=item.description,
+                    quantity=item.quantity,
+                    price=item.price,
+                    amount=item.amount,
+                ) for item in original_bill.items.all()
+            ])
         
         messages.success(request, f'Bill #{new_bill.id} created successfully!')
         return redirect('core:client_detail', lid=client_lid)
@@ -473,3 +593,165 @@ def duplicate_bill(request, bill_id):
     except Exception as e:
         messages.error(request, f'Error duplicating bill: {str(e)}')
         return redirect('core:clients')
+
+
+@login_required(login_url='/login/')
+def get_bill_data(request, bill_id):
+    """API endpoint to get bill data for editing"""
+    try:
+        from django.http import JsonResponse
+        
+        bill = Bill.objects.get(id=bill_id)
+        
+        # Get bill items or create from legacy data
+        items = []
+        if bill.items.exists():
+            items = [
+                {
+                    'id': item.id,
+                    'description': item.description,
+                    'quantity': float(item.quantity),
+                    'price': float(item.price),
+                    'amount': float(item.amount)
+                }
+                for item in bill.items.all()
+            ]
+        elif bill.description:
+            # Legacy bill - convert to item format
+            items = [{
+                'id': None,
+                'description': bill.description,
+                'quantity': float(bill.quantity),
+                'price': float(bill.price),
+                'amount': float(bill.amount)
+            }]
+        
+        data = {
+            'id': bill.id,
+            'client_name': bill.client.full_name if bill.client else 'Unknown',
+            'client_id': bill.client.lid if bill.client else None,
+            'date': bill.date.strftime('%b %d, %Y'),
+            'items': items,
+            'total': float(bill.total_price)
+        }
+        
+        return JsonResponse(data)
+        
+    except Bill.DoesNotExist:
+        return JsonResponse({'error': 'Bill not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required(login_url='/login/')
+def update_bill_items(request, bill_id):
+    """API endpoint to update bill items"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+    
+    try:
+        from django.http import JsonResponse
+        
+        bill = Bill.objects.get(id=bill_id)
+        data = json.loads(request.body)
+        items_data = data.get('items', [])
+        
+        if not items_data:
+            return JsonResponse({'error': 'No items provided'}, status=400)
+        
+        # Delete existing items
+        bill.items.all().delete()
+        
+        # Create new items
+        total_price = Decimal('0')
+        total_qty = Decimal('0')
+        descriptions = []
+        
+        for item_data in items_data:
+            desc = item_data.get('description', '').strip()
+            qty = Decimal(str(item_data.get('quantity', 0)))
+            price = Decimal(str(item_data.get('price', 0)))
+            amount = qty * price
+            
+            BillItem.objects.create(
+                bill=bill,
+                description=desc,
+                quantity=qty,
+                price=price,
+                amount=amount
+            )
+            
+            total_price += amount
+            total_qty += qty
+            descriptions.append(desc)
+        
+        # Update bill summary
+        bill.description = ', '.join(descriptions)[:255]
+        bill.quantity = total_qty
+        bill.price = Decimal(str(items_data[0].get('price', 0))) if items_data else Decimal('0')
+        bill.amount = total_price
+        bill.total_price = total_price
+        bill.save()
+        
+        messages.success(request, 'Bill updated successfully!')
+        return JsonResponse({'success': True})
+        
+    except Bill.DoesNotExist:
+        return JsonResponse({'error': 'Bill not found'}, status=404)
+    except (ValueError, InvalidOperation) as e:
+        return JsonResponse({'error': f'Invalid number format: {str(e)}'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required(login_url='/login/')
+def products_api(request):
+    """API endpoint to get products for bill editor"""
+    try:
+        from django.http import JsonResponse
+        
+        products = Product.objects.filter(user=request.user).order_by('-date')[:100]
+        
+        products_data = [
+            {
+                'id': p.id,
+                'title': p.title,
+                'price': float(p.price),
+                'image': p.image.url if p.image else '/static/images/product-placeholder.png',
+                'category': p.category.title if p.category else 'Uncategorized'
+            }
+            for p in products
+        ]
+        
+        return JsonResponse({'products': products_data})
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@login_required(login_url='/login/')
+def update_client_picture(request):
+    """Update client's profile picture"""
+    if request.method == 'POST':
+        client_lid = request.POST.get('client_lid')
+        
+        try:
+            client = Client.objects.get(lid=client_lid, user=request.user)
+            
+            if 'profile_image' in request.FILES:
+                client.profile_image = request.FILES['profile_image']
+                client.save()
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Picture updated successfully',
+                    'image_url': client.profile_image.url if client.profile_image else ''
+                })
+            else:
+                return JsonResponse({'success': False, 'error': 'No image file provided'}, status=400)
+                
+        except Client.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Client not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)

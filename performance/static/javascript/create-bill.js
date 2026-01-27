@@ -1,3 +1,5 @@
+console.log('create-bill.js file loaded successfully');
+
 // Create a new bill
 function loadBillItems() {
     const products = JSON.parse(localStorage.getItem('billProducts')) || [];
@@ -36,6 +38,7 @@ function loadBillItems() {
                 products.splice(idx, 1);
                 localStorage.setItem('billProducts', JSON.stringify(products));
                 loadBillItems();
+                updateBillCounter(); // Update counter after removal
             });
         });
 
@@ -47,6 +50,7 @@ function loadBillItems() {
                     products[idx].quantity = newQty;
                     localStorage.setItem('billProducts', JSON.stringify(products));
                     loadBillItems();
+                    updateBillCounter(); // Update counter after quantity change
                 } else {
                     input.value = products[idx].quantity;
                 }
@@ -64,7 +68,10 @@ function loadBillItems() {
     if (totalInput) totalInput.value = grandTotal.toFixed(2);
 }
 
-document.addEventListener('DOMContentLoaded', loadBillItems);
+document.addEventListener('DOMContentLoaded', function() {
+    loadBillItems();
+    updateBillCounter();
+});
 
 // Set today's date on the bill date field if present
 document.addEventListener('DOMContentLoaded', function() {
@@ -73,6 +80,110 @@ document.addEventListener('DOMContentLoaded', function() {
         billDate.valueAsDate = new Date();
     }
 });
+
+// Handle client selection and auto-populate fields
+function handleClientSelection() {
+    const selectElement = document.getElementById('clientSelect');
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const clientDetailsSection = document.getElementById('clientDetailsSection');
+    const indicator = document.getElementById('clientModeIndicator');
+    
+    if (selectedOption.value === '') {
+        // Create new client - show all fields as editable
+        if (indicator) {
+            indicator.innerHTML = '<span class="material-icons-sharp" style="font-size: 16px; vertical-align: middle; color: #4CAF50;">person_add</span> Creating new client - fill in the details below';
+            indicator.style.color = '#4CAF50';
+        }
+        
+        document.getElementById('clientName').value = '';
+        document.getElementById('clientName').readOnly = false;
+        document.getElementById('phone').value = '';
+        document.getElementById('phone').readOnly = false;
+        document.getElementById('email').value = '';
+        document.getElementById('email').readOnly = false;
+        document.getElementById('address').value = '';
+        document.getElementById('address').readOnly = false;
+        
+        const cityField = document.getElementById('city');
+        const countryField = document.getElementById('country');
+        const postalField = document.getElementById('postal_code');
+        if (cityField) {
+            cityField.value = '';
+            cityField.readOnly = false;
+        }
+        if (countryField) {
+            countryField.value = '';
+            countryField.readOnly = false;
+        }
+        if (postalField) {
+            postalField.value = '';
+            postalField.readOnly = false;
+        }
+        
+        // Reset styling
+        document.getElementById('clientName').style.backgroundColor = '';
+        document.getElementById('phone').style.backgroundColor = '';
+        document.getElementById('email').style.backgroundColor = '';
+        document.getElementById('address').style.backgroundColor = '';
+        if (cityField) cityField.style.backgroundColor = '';
+        if (countryField) countryField.style.backgroundColor = '';
+        if (postalField) postalField.style.backgroundColor = '';
+    } else {
+        // Existing client selected - populate and make fields readonly
+        const name = selectedOption.getAttribute('data-name') || '';
+        const phone = selectedOption.getAttribute('data-phone') || '';
+        const email = selectedOption.getAttribute('data-email') || '';
+        const address = selectedOption.getAttribute('data-address') || '';
+        const city = selectedOption.getAttribute('data-city') || '';
+        const country = selectedOption.getAttribute('data-country') || '';
+        const postal = selectedOption.getAttribute('data-postal') || '';
+        
+        if (indicator) {
+            indicator.innerHTML = '<span class="material-icons-sharp" style="font-size: 16px; vertical-align: middle; color: #2196F3;">person</span> Using existing client - information is pre-filled';
+            indicator.style.color = '#2196F3';
+        }
+        
+        // Populate fields
+        document.getElementById('clientName').value = name;
+        document.getElementById('phone').value = phone;
+        document.getElementById('email').value = email;
+        document.getElementById('address').value = address;
+        
+        const cityField = document.getElementById('city');
+        const countryField = document.getElementById('country');
+        const postalField = document.getElementById('postal_code');
+        if (cityField) cityField.value = city;
+        if (countryField) countryField.value = country;
+        if (postalField) postalField.value = postal;
+        
+        // Make fields readonly and style them
+        document.getElementById('clientName').readOnly = true;
+        document.getElementById('phone').readOnly = true;
+        document.getElementById('email').readOnly = true;
+        document.getElementById('address').readOnly = true;
+        
+        document.getElementById('clientName').style.backgroundColor = '#f0f0f0';
+        document.getElementById('phone').style.backgroundColor = '#f0f0f0';
+        document.getElementById('email').style.backgroundColor = '#f0f0f0';
+        document.getElementById('address').style.backgroundColor = '#f0f0f0';
+        
+        if (cityField) {
+            cityField.readOnly = true;
+            cityField.style.backgroundColor = '#f0f0f0';
+        }
+        if (countryField) {
+            countryField.readOnly = true;
+            countryField.style.backgroundColor = '#f0f0f0';
+        }
+        if (postalField) {
+            postalField.readOnly = true;
+            postalField.style.backgroundColor = '#f0f0f0';
+        }
+    }
+}
+
+// Make handleClientSelection available globally
+window.handleClientSelection = handleClientSelection;
 
 // Function To Clear the Bill
 const clearBillBtn = document.getElementById('clear-bill-btn');
@@ -83,11 +194,55 @@ function clearBill() {
     // Clear the products from local storage
     localStorage.removeItem('billProducts');
 
+    // Reset client selection
+    const clientSelect = document.getElementById('clientSelect');
+    if (clientSelect) {
+        clientSelect.value = '';
+    }
+    
+    // Reset indicator
+    const indicator = document.getElementById('clientModeIndicator');
+    if (indicator) {
+        indicator.innerHTML = '<span class="material-icons-sharp" style="font-size: 16px; vertical-align: middle;">info</span> Select an existing client or create a new one';
+        indicator.style.color = '#666';
+    }
+
     // Reset all form fields
     document.getElementById('clientName').value = '';
+    document.getElementById('clientName').readOnly = false;
+    document.getElementById('clientName').style.backgroundColor = '';
+    
     document.getElementById('phone').value = '';
+    document.getElementById('phone').readOnly = false;
+    document.getElementById('phone').style.backgroundColor = '';
+    
     document.getElementById('email').value = '';
+    document.getElementById('email').readOnly = false;
+    document.getElementById('email').style.backgroundColor = '';
+    
     document.getElementById('address').value = '';
+    document.getElementById('address').readOnly = false;
+    document.getElementById('address').style.backgroundColor = '';
+    
+    const cityField = document.getElementById('city');
+    const countryField = document.getElementById('country');
+    const postalField = document.getElementById('postal_code');
+    
+    if (cityField) {
+        cityField.value = '';
+        cityField.readOnly = false;
+        cityField.style.backgroundColor = '';
+    }
+    if (countryField) {
+        countryField.value = '';
+        countryField.readOnly = false;
+        countryField.style.backgroundColor = '';
+    }
+    if (postalField) {
+        postalField.value = '';
+        postalField.readOnly = false;
+        postalField.style.backgroundColor = '';
+    }
     
     // Reset grand total
     let grandTotalInput = document.getElementById('totalPrice');
@@ -126,13 +281,46 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            console.log('Form validation passed, submitting...');
-            // Let the form submit normally to Django
+            // Get products from localStorage
+            const products = JSON.parse(localStorage.getItem('billProducts')) || [];
+            
+            if (products.length === 0) {
+                e.preventDefault();
+                alert('Please add at least one product to the bill');
+                return;
+            }
+            
+            console.log('Products to submit:', products);
+            console.log('Total products:', products.length);
+            
+            // Prepare a single bill with multiple items (sent as JSON)
+            const totalAmount = products.reduce((sum, product) => sum + (product.price * product.quantity), 0);
+            const totalQuantity = products.reduce((sum, product) => sum + Number(product.quantity), 0);
+            const descriptionSummary = products.map(p => p.title).join(', ');
+
+            const descriptionInput = document.getElementById('description');
+            const quantityInput = document.getElementById('quantity');
+            const priceInput = document.getElementById('price');
+            const amountInput = document.getElementById('amount');
+            const totalPriceInput = document.getElementById('totalPrice');
+            const itemsJsonInput = document.getElementById('items_json');
+
+            if (descriptionInput) descriptionInput.value = descriptionSummary;
+            if (quantityInput) quantityInput.value = totalQuantity.toFixed(2);
+            if (priceInput) priceInput.value = products.length === 1 ? parseFloat(products[0].price).toFixed(2) : '0.00';
+            if (amountInput) amountInput.value = totalAmount.toFixed(2);
+            if (totalPriceInput) totalPriceInput.value = totalAmount.toFixed(2);
+            if (itemsJsonInput) itemsJsonInput.value = JSON.stringify(products);
+
+            // Allow normal form submission to carry the payload
+            console.log('Prepared multi-item bill payload, submitting form normally');
+
+            // Clear local storage so the builder resets on next visit
+            localStorage.removeItem('billProducts');
+            updateBillCounter();
         });
     }
 });
-
-
 
 // Add Product Form
 function toggleProductForm() {
@@ -166,6 +354,8 @@ if (productSearchInput) {
 }
 
 function addToBill(productTitle, productPrice) {
+    console.log('addToBill called:', productTitle, productPrice);
+    
     // Ensure price is a valid number
     let price = parseFloat(productPrice);
     if (isNaN(price)) {
@@ -187,20 +377,78 @@ function addToBill(productTitle, productPrice) {
     let existingProduct = products.find(p => p.title === productTitle);
     if (existingProduct) {
         existingProduct.quantity += 1; // Increment quantity
+        showBillToast(`${product.title} quantity updated (${existingProduct.quantity})`);
     } else {
         products.push(product); // Add new product
+        showBillToast(`${product.title} added to bill`);
     }
 
     // Save the updated products array back to local storage
     localStorage.setItem('billProducts', JSON.stringify(products));
+    console.log('Products saved to localStorage:', products);
 
-    // Reload bill items to display the product
+    // Reload bill items to display the product (if modal is open)
     loadBillItems();
     
-    // Scroll to the bill builder
-    const billBuilder = document.getElementById('bill-builder');
-    if (billBuilder) {
-        billBuilder.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Update the bill counter badge
+    updateBillCounter();
+    
+    // Auto-open the modal to show the bill
+    const modal = document.getElementById('billBuilderModal');
+    if (modal) {
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        console.log('Bill builder modal opened automatically');
+    }
+    
+    console.log('Bill items reloaded and counter updated');
+}
+
+let billToastTimeout;
+function showBillToast(message) {
+    console.log('showBillToast called with:', message);
+    const toast = document.getElementById('bill-toast');
+    console.log('Toast element:', toast);
+    
+    if (!toast) {
+        console.error('Toast element not found!');
+        return;
+    }
+
+    toast.textContent = message;
+    toast.style.display = 'block';
+    toast.classList.add('show');
+    // Force a reflow to ensure the animation triggers
+    void toast.offsetWidth;
+    console.log('Toast displayed');
+
+    if (billToastTimeout) {
+        clearTimeout(billToastTimeout);
+    }
+
+    billToastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+        console.log('Toast hiding');
+        // Hide after animation
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 300);
+    }, 2000);
+}
+
+// Update bill counter badge
+function updateBillCounter() {
+    const products = JSON.parse(localStorage.getItem('billProducts')) || [];
+    const totalItems = products.reduce((sum, product) => sum + product.quantity, 0);
+    const badge = document.getElementById('bill-counter-badge');
+    
+    if (badge) {
+        if (totalItems > 0) {
+            badge.textContent = totalItems;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
     }
 }
 

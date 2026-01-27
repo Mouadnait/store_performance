@@ -1,11 +1,22 @@
+/**
+ * Products Page JavaScript
+ * Handles modal operations, search/filter functionality, and image preview
+ */
+
 // ============================================================================
 // MODAL FUNCTIONS
 // ============================================================================
 
+/**
+ * Toggle product form modal
+ */
 function toggleProductForm() {
     openProductFormModal();
 }
 
+/**
+ * Open product form modal
+ */
 function openProductFormModal() {
     const modal = document.getElementById('productFormModal');
     if (modal) {
@@ -17,6 +28,9 @@ function openProductFormModal() {
     }
 }
 
+/**
+ * Close product form modal
+ */
 function closeProductFormModal() {
     const modal = document.getElementById('productFormModal');
     if (modal) {
@@ -26,6 +40,9 @@ function closeProductFormModal() {
     }
 }
 
+/**
+ * Open bill builder modal
+ */
 function openBillBuilderModal() {
     const modal = document.getElementById('billBuilderModal');
     if (modal) {
@@ -37,6 +54,9 @@ function openBillBuilderModal() {
     }
 }
 
+/**
+ * Close bill builder modal
+ */
 function closeBillBuilderModal() {
     const modal = document.getElementById('billBuilderModal');
     if (modal) {
@@ -46,6 +66,9 @@ function closeBillBuilderModal() {
     }
 }
 
+/**
+ * Open bill builder modal when scrolling
+ */
 function scrollToBillBuilder() {
     openBillBuilderModal();
 }
@@ -54,6 +77,9 @@ function scrollToBillBuilder() {
 // FILTER FUNCTION
 // ============================================================================
 
+/**
+ * Filter products by search term and category
+ */
 function myFunction() {
     const input = document.getElementById('myInput');
     const categoryFilter = document.getElementById('categoryFilter');
@@ -79,8 +105,11 @@ function myFunction() {
         const title = titleElement ? titleElement.textContent.toUpperCase() : '';
         const category = categoryElement ? categoryElement.textContent.toUpperCase() : '';
         
-        const matchesSearch = searchFilter === '' || title.indexOf(searchFilter) > -1 || category.indexOf(searchFilter) > -1;
-        const matchesCategory = selectedCategory === '' || category.indexOf(selectedCategory) > -1;
+        const matchesSearch = searchFilter === '' || 
+                            title.indexOf(searchFilter) > -1 || 
+                            category.indexOf(searchFilter) > -1;
+        const matchesCategory = selectedCategory === '' || 
+                               category.indexOf(selectedCategory) > -1;
         
         if (matchesSearch && matchesCategory) {
             card.style.display = '';
@@ -88,19 +117,18 @@ function myFunction() {
             card.style.display = 'none';
         }
     });
+    
+    console.log('Products filtered - Search:', searchFilter, 'Category:', selectedCategory);
 }
 
-// NOTE: addToBill function is now in create-bill.js
-// This ensures consistent behavior across the application
-
 // ============================================================================
-// EVENT LISTENERS - SET UP ON PAGE LOAD
+// IMAGE PREVIEW FUNCTIONALITY
 // ============================================================================
 
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Products page loaded - initializing');
-    
-    // Image preview functionality
+/**
+ * Initialize image preview for product image input
+ */
+function initializeImagePreview() {
     const imageInput = document.querySelector('input[name="image"]');
     if (imageInput) {
         imageInput.addEventListener('change', function(e) {
@@ -113,24 +141,50 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (previewImg && preview) {
                         previewImg.src = event.target.result;
                         preview.style.display = 'block';
+                        console.log('Image preview loaded');
                     }
                 };
                 reader.readAsDataURL(file);
             }
         });
     }
+}
 
-    // Close modals when clicking outside
+// ============================================================================
+// MODAL CLOSE ON OUTSIDE CLICK
+// ============================================================================
+
+/**
+ * Close modals when clicking outside the modal content
+ */
+function initializeModalCloseOnOutsideClick() {
     const productModal = document.getElementById('productFormModal');
     const billModal = document.getElementById('billBuilderModal');
     
     window.addEventListener('click', function(event) {
-        if (productModal && event.target == productModal) {
+        if (productModal && event.target === productModal) {
             closeProductFormModal();
         }
-        if (billModal && event.target == billModal) {
+        if (billModal && event.target === billModal) {
             closeBillBuilderModal();
         }
     });
-});
+    
+    console.log('Modal close-on-outside-click initialized');
+}
 
+// ============================================================================
+// PAGE INITIALIZATION
+// ============================================================================
+
+/**
+ * Initialize all page functionality when DOM is ready
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Products page loaded - initializing components');
+    
+    initializeImagePreview();
+    initializeModalCloseOnOutsideClick();
+    
+    console.log('All components initialized successfully');
+});

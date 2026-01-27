@@ -2,7 +2,10 @@
 {% load static %}
 
 {% block style-content %}
-    <link rel="stylesheet" href="{% static 'css/product.css' %}">
+    <link rel="stylesheet" href="{% static 'css/product.css' %}?v=2.0">
+    <link rel="stylesheet" href="{% static 'css/create-bill.css' %}?v=1.3">
+    <script src="{% static 'javascript/create-bill.js' %}?v=4.0"></script>
+    <script src="{% static 'javascript/products-page.js' %}?v=1.0"></script>
 {% endblock style-content %}
 
 {% block title %}Products | Store Performance{% endblock title %}
@@ -11,26 +14,241 @@
 
 {% block content %}
 <div class="products-area">
+    <div id="bill-toast" class="bill-toast" style="display:none;">
+        Added to bill
+    </div>
     <!-- Top bar -->
     <div class="products-top">
         <div class="search_filter">
             <div class="search-box">
                 <span class="material-icons-sharp">search</span>
                 <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search products..." title="Type to search">
+                <select id="categoryFilter" onchange="myFunction()" style="margin-left: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer;">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category.title }}">{{ category.title }}</option>
+                    {% endfor %}
+                </select>
             </div>
-            <button type="button" class="add-product-btn" onclick="toggleProductForm()">
-                <span class="material-icons-sharp">add_circle_outline</span>
-                Add Product
-            </button>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="add-product-btn" onclick="toggleProductForm()">
+                    <span class="material-icons-sharp">add_circle_outline</span>
+                    Add Product
+                </button>
+                <button type="button" class="add-product-btn" onclick="scrollToBillBuilder()" style="background: #4CAF50; position: relative;">
+                    <span class="material-icons-sharp">receipt_long</span>
+                    Bill Builder
+                    <span id="bill-counter-badge" style="position: absolute; top: -8px; right: -8px; background: #ff4444; color: white; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; font-weight: bold; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">0</span>
+                </button>
+            </div>
         </div>
 
-        <!-- Collapsible form -->
-        <div id="productForm" class="product-form-container" style="display:none;">
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                {{ form.as_p }}
-                <button class="signup-link" type="submit">Save Product</button>
-            </form>
+        <!-- Add Product Modal -->
+        <div id="productFormModal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
+                <div class="modal-header">
+                    <h2>Add New Product</h2>
+                    <button type="button" class="close-modal" onclick="closeProductFormModal()">&times;</button>
+                </div>
+
+                <div class="modal-body">
+                    <form method="post" enctype="multipart/form-data" id="productFormModal-form">
+                        {% csrf_token %}
+                        
+                        <!-- Basic Information Section -->
+                        <div class="form-section">
+                            <h3 class="section-title">Basic Information</h3>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="{{ form.title.id_for_label }}">
+                                        <span class="label-text">Product Title *</span>
+                                        {{ form.title }}
+                                    </label>
+                                    {% if form.title.errors %}
+                                        <span class="form-error">{{ form.title.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="form-row-two">
+                                <div class="form-group">
+                                    <label for="{{ form.category.id_for_label }}">
+                                        <span class="label-text">Category *</span>
+                                        {{ form.category }}
+                                    </label>
+                                    {% if form.category.errors %}
+                                        <span class="form-error">{{ form.category.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="newCategoryInput">
+                                        <span class="label-text">Or Create New Category</span>
+                                        <input type="text" id="newCategoryInput" name="new_category" placeholder="Enter new category name">
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="{{ form.description.id_for_label }}">
+                                        <span class="label-text">Description</span>
+                                        {{ form.description }}
+                                    </label>
+                                    <small class="form-hint">Brief description of your product</small>
+                                    {% if form.description.errors %}
+                                        <span class="form-error">{{ form.description.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pricing Section -->
+                        <div class="form-section">
+                            <h3 class="section-title">Pricing</h3>
+                            
+                            <div class="form-row-two">
+                                <div class="form-group">
+                                    <label for="{{ form.price.id_for_label }}">
+                                        <span class="label-text">Price *</span>
+                                        <div class="input-with-icon">
+                                            <span class="currency-icon">$</span>
+                                            {{ form.price }}
+                                        </div>
+                                    </label>
+                                    {% if form.price.errors %}
+                                        <span class="form-error">{{ form.price.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="{{ form.old_price.id_for_label }}">
+                                        <span class="label-text">Old Price (Discount)</span>
+                                        <div class="input-with-icon">
+                                            <span class="currency-icon">$</span>
+                                            {{ form.old_price }}
+                                        </div>
+                                    </label>
+                                    <small class="form-hint">Leave empty if no discount</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Product Details Section -->
+                        <div class="form-section">
+                            <h3 class="section-title">Product Details</h3>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="{{ form.specifications.id_for_label }}">
+                                        <span class="label-text">Specifications</span>
+                                        {{ form.specifications }}
+                                    </label>
+                                    <small class="form-hint">Add product specifications or details</small>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="{{ form.tags.id_for_label }}">
+                                        <span class="label-text">Tags</span>
+                                        {{ form.tags }}
+                                    </label>
+                                    <small class="form-hint">Separate tags with commas</small>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="{{ form.sku.id_for_label }}">
+                                        <span class="label-text">SKU</span>
+                                        {{ form.sku }}
+                                    </label>
+                                    <small class="form-hint">Stock Keeping Unit (unique identifier)</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Image & Media Section -->
+                        <div class="form-section">
+                            <h3 class="section-title">Image & Media</h3>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="{{ form.image.id_for_label }}">
+                                        <span class="label-text">Product Image *</span>
+                                        <div class="file-input-wrapper">
+                                            {{ form.image }}
+                                            <span class="file-input-label">
+                                                <span class="material-icons-sharp">image</span>
+                                                Click to upload image
+                                            </span>
+                                        </div>
+                                    </label>
+                                    <div id="imagePreview" class="image-preview" style="display: none;">
+                                        <img id="previewImg" src="" alt="Preview">
+                                    </div>
+                                    <small class="form-hint">Recommended size: 500x500px</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status Section -->
+                        <div class="form-section">
+                            <h3 class="section-title">Status & Availability</h3>
+                            
+                            <div class="form-row-two">
+                                <div class="form-group">
+                                    <label for="{{ form.product_status.id_for_label }}">
+                                        <span class="label-text">Product Status</span>
+                                        {{ form.product_status }}
+                                    </label>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="{{ form.status.id_for_label }}">
+                                        <span class="label-text">Visibility</span>
+                                        {{ form.status }}
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-row-three">
+                                <div class="form-group checkbox-group">
+                                    <label for="{{ form.in_stock.id_for_label }}" class="checkbox-label">
+                                        {{ form.in_stock }}
+                                        <span>In Stock</span>
+                                    </label>
+                                </div>
+
+                                <div class="form-group checkbox-group">
+                                    <label for="{{ form.featured.id_for_label }}" class="checkbox-label">
+                                        {{ form.featured }}
+                                        <span>Featured Product</span>
+                                    </label>
+                                </div>
+
+                                <div class="form-group checkbox-group">
+                                    <label for="{{ form.digital.id_for_label }}" class="checkbox-label">
+                                        {{ form.digital }}
+                                        <span>Digital Product</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="form-actions">
+                            <button type="button" class="btn secondary" onclick="closeProductFormModal()">Cancel</button>
+                            <button type="submit" class="btn primary">
+                                <span class="material-icons-sharp">check_circle</span>
+                                Save Product
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -66,75 +284,124 @@
         {% endfor %}
     </div>
 
-    <!-- Bill Builder -->
-    <div id="bill-builder" class="bill-builder">
-        <div class="bill-header">
-            <div>
-                <h3>Bill Builder</h3>
-                <p>Add products and save a bill without leaving this page.</p>
-            </div>
-            <div class="bill-meta">
-                <span class="meta">Store: {{ request.user.username }}</span>
-                <span class="meta">Phone: {{ request.user.phone }}</span>
-            </div>
-        </div>
-
-        {% if messages %}
-        <div class="bill-messages">
-            {% for message in messages %}
-                <div class="bill-alert bill-alert-{{ message.tags }}">{{ message }}</div>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <form method="POST" id="bill-form" action="{% url 'core:create-bill' %}">
-            {% csrf_token %}
-            <div class="bill-form-grid">
-                <label>Client Name
-                    <input type="text" name="clientName" id="clientName" required placeholder="Enter client name">
-                </label>
-                <label>Bill Date
-                    <input type="date" name="billDate" id="billDate" required>
-                </label>
-                <label>Phone
-                    <input type="tel" name="phone" id="phone" placeholder="Client phone (optional)">
-                </label>
-                <label>Email
-                    <input type="email" name="email" id="email" placeholder="Client email (optional)">
-                </label>
-                <label class="full">Address
-                    <input type="text" name="address" id="address" placeholder="Client address (optional)">
-                </label>
-            </div>
-
-            <div class="bill-table-wrapper">
-                <table class="bill-table">
-                    <thead>
-                        <tr>
-                            <th>Quantity</th>
-                            <th>Description</th>
-                            <th>Price</th>
-                            <th>Amount</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="bill-total-row">
-                            <td colspan="3" class="text-right"><strong>Gr. Total:</strong></td>
-                            <td colspan="2"><input type="number" name="totalPrice" id="totalPrice" placeholder="0.00" step="0.01" readonly></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="bill-actions">
+    <!-- Bill Builder Modal -->
+    <div id="billBuilderModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
                 <div>
-                    <button type="button" id="clear-bill-btn" class="btn secondary">Clear Bill</button>
-                    <a href="#productsGrid" class="btn ghost">Add more products</a>
+                    <h2>Bill Builder</h2>
+                    <p id="clientModeIndicator" style="margin: 5px 0; font-size: 14px; color: #666; font-weight: normal;">
+                        <span class="material-icons-sharp" style="font-size: 16px; vertical-align: middle;">info</span>
+                        Select an existing client or create a new one
+                    </p>
                 </div>
-                <button type="submit" id="save-bill-btn" name="save_bill" class="btn primary">Save Bill</button>
+                <button type="button" class="close-modal" onclick="closeBillBuilderModal()">&times;</button>
             </div>
-        </form>
+
+            <div class="modal-body">
+                <div class="bill-header">
+                    <div>
+                        <p style="margin: 5px 0;">Create and manage bills easily</p>
+                    </div>
+                    <div class="bill-meta">
+                        <span class="meta">Store: {{ request.user.username }}</span>
+                        <span class="meta">Phone: {{ request.user.phone }}</span>
+                    </div>
+                </div>
+
+                {% if messages %}
+                <div class="bill-messages">
+                    {% for message in messages %}
+                        <div class="bill-alert bill-alert-{{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <form method="POST" id="bill-form" action="{% url 'core:create-bill' %}">
+                    {% csrf_token %}
+                    <!-- Hidden fields for bill items that will be populated by JavaScript -->
+                    <input type="hidden" name="description" id="description">
+                    <input type="hidden" name="quantity" id="quantity">
+                    <input type="hidden" name="price" id="price">
+                    <input type="hidden" name="amount" id="amount">
+                    <input type="hidden" name="items_json" id="items_json">
+                    
+                    <div class="bill-form-grid">
+                        <label class="full">Select Existing Client or Create New
+                            <select id="clientSelect" name="clientSelect" onchange="handleClientSelection()">
+                                <option value="">-- Create New Client --</option>
+                                {% for client in clients %}
+                                <option value="{{ client.lid }}" 
+                                    data-name="{{ client.full_name }}" 
+                                    data-phone="{{ client.phone|default:'' }}" 
+                                    data-email="{{ client.email|default:'' }}" 
+                                    data-address="{{ client.address|default:'' }}" 
+                                    data-city="{{ client.city|default:'' }}" 
+                                    data-country="{{ client.country|default:'' }}"
+                                    data-postal="{{ client.postal_code|default:'' }}">
+                                    {{ client.full_name }} {% if client.phone %}({{ client.phone }}){% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                    </div>
+                    
+                    <div class="bill-form-grid" id="clientDetailsSection">
+                        <label>Client Name *
+                            <input type="text" name="clientName" id="clientName" required placeholder="Enter client name">
+                        </label>
+                        <label>Bill Date *
+                            <input type="date" name="billDate" id="billDate" required>
+                        </label>
+                        <label>Phone
+                            <input type="tel" name="phone" id="phone" placeholder="Client phone (optional)">
+                        </label>
+                        <label>Email
+                            <input type="email" name="email" id="email" placeholder="Client email (optional)">
+                        </label>
+                        <label class="full">Address
+                            <input type="text" name="address" id="address" placeholder="Client address (optional)">
+                        </label>
+                        <label>City
+                            <input type="text" name="city" id="city" placeholder="City (optional)">
+                        </label>
+                        <label>Country
+                            <input type="text" name="country" id="country" placeholder="Country (optional)">
+                        </label>
+                        <label>Postal Code
+                            <input type="text" name="postal_code" id="postal_code" placeholder="Postal code (optional)">
+                        </label>
+                    </div>
+
+                    <div class="bill-table-wrapper">
+                        <table class="bill-table">
+                            <thead>
+                                <tr>
+                                    <th>Quantity</th>
+                                    <th>Description</th>
+                                    <th>Price</th>
+                                    <th>Amount</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Products will be added here by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="bill-actions">
+                        <div>
+                            <button type="button" id="clear-bill-btn" class="btn secondary">Clear Bill</button>
+                        </div>
+                        <div>
+                            <button type="button" class="btn ghost" onclick="closeBillBuilderModal()">Close</button>
+                            <button type="submit" id="save-bill-btn" name="save_bill" class="btn primary">Save Bill</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock content %}
@@ -204,22 +471,4 @@
 {% endblock section %}
 
 {% block scripts %}
-<script src="{% static 'javascript/create-bill.js' %}"></script>
-<script>
-function toggleProductForm() {
-    const form = document.getElementById('productForm');
-    form.style.display = form.style.display === 'none' ? 'block' : 'none';
-}
-
-function myFunction() {
-    const input = document.getElementById('myInput');
-    const filter = input.value.toUpperCase();
-    const cards = document.querySelectorAll('#productsGrid .product-card');
-    cards.forEach(card => {
-        const title = card.querySelector('.product-title')?.textContent.toUpperCase() || '';
-        const category = card.querySelector('.product-category')?.textContent.toUpperCase() || '';
-        card.style.display = (title.indexOf(filter) > -1 || category.indexOf(filter) > -1) ? '' : 'none';
-    });
-}
-</script>
 {% endblock scripts %}
