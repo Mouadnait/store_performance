@@ -20,7 +20,84 @@ import logging
 
 @login_required(login_url='/login/')
 def analytics(request):
-    return render(request, 'core/analytics.html')
+    from django.db.models import Sum, Count, Avg, F, Q
+    from django.db.models.functions import TruncDate, TruncMonth
+    from datetime import datetime, timedelta
+    import json
+    
+    user = request.user
+    
+    # Date range filter
+    days = int(request.GET.get('days', 30))
+    start_date = datetime.now() - timedelta(days=days)
+    
+    # Overall metrics
+    total_revenue = Bill.objects.filter(store_name=user).aggregate(Sum('total_price'))['total_price__sum'] or 0
+    total_bills = Bill.objects.filter(store_name=user).count()
+    total_products = Product.objects.filter(user=user).count()
+    total_clients = Client.objects.filter(user=user).count()
+    
+    # Recent period metrics
+    recent_revenue = Bill.objects.filter(store_name=user, date__gte=start_date).aggregate(Sum('total_price'))['total_price__sum'] or 0
+    recent_bills = Bill.objects.filter(store_name=user, date__gte=start_date).count()
+    
+    # Previous period for comparison
+    prev_start = start_date - timedelta(days=days)
+    prev_revenue = Bill.objects.filter(store_name=user, date__gte=prev_start, date__lt=start_date).aggregate(Sum('total_price'))['total_price__sum'] or 1
+    prev_bills = Bill.objects.filter(store_name=user, date__gte=prev_start, date__lt=start_date).count() or 1
+    
+    # Growth calculations
+    revenue_growth = ((recent_revenue - prev_revenue) / prev_revenue * 100) if prev_revenue > 0 else 0
+    bills_growth = ((recent_bills - prev_bills) / prev_bills * 100) if prev_bills > 0 else 0
+    
+    # Top products by revenue
+    top_products = Product.objects.filter(user=user).annotate(
+        revenue=Sum('bill__total_price')
+    ).order_by('-revenue')[:5]
+    
+    # Top clients by revenue
+    top_clients = Client.objects.filter(user=user).annotate(
+        revenue=Sum('bill__total_price'),
+        bill_count=Count('bill')
+    ).order_by('-revenue')[:5]
+    
+    # Revenue trend (daily)
+    revenue_trend_raw = Bill.objects.filter(
+        store_name=user, 
+        date__gte=start_date
+    ).annotate(day=TruncDate('date')).values('day').annotate(
+        total=Sum('total_price')
+    ).order_by('day')
+    
+    # Convert to JSON-serializable format
+    revenue_trend = json.dumps([
+        {'day': item['day'].isoformat(), 'total': float(item['total'] or 0)}
+        for item in revenue_trend_raw
+    ])
+    
+    # Recent transactions
+    recent_transactions = Bill.objects.filter(store_name=user).select_related('client').order_by('-date')[:10]
+    
+    # Average order value
+    avg_order_value = Bill.objects.filter(store_name=user).aggregate(Avg('total_price'))['total_price__avg'] or 0
+    
+    context = {
+        'total_revenue': total_revenue,
+        'recent_revenue': recent_revenue,
+        'revenue_growth': revenue_growth,
+        'total_bills': total_bills,
+        'recent_bills': recent_bills,
+        'bills_growth': bills_growth,
+        'total_products': total_products,
+        'total_clients': total_clients,
+        'avg_order_value': avg_order_value,
+        'top_products': top_products,
+        'top_clients': top_clients,
+        'revenue_trend': revenue_trend,
+        'recent_transactions': recent_transactions,
+        'days': days,
+    }
+    return render(request, 'core/analytics.html', context)
 
 @login_required(login_url='/login/')
 def clients(request):
@@ -415,7 +492,97 @@ def create_bill(request):
 
 @login_required(login_url='/login/')
 def reports(request):
-    return render(request, 'core/reports.html')
+    from django.db.models import Sum, Count, Avg, F, Q
+    from django.db.models.functions import TruncMonth, TruncWeek
+    from datetime import datetime, timedelta
+    import json
+    
+    user = request.user
+    
+    # Report type filter
+    report_type = request.GET.get('type', 'summary')
+    period = request.GET.get('period', 'monthly')
+    
+    # Date range
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    
+    if start_date and end_date:
+        start_date = datetime.strptime(start_date, '%Y-%m-%d')
+        end_date = datetime.strptime(end_date, '%Y-%m-%d')
+    else:
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=90)
+    
+    # Base queryset
+    bills = Bill.objects.filter(store_name=user, date__gte=start_date, date__lte=end_date)
+    
+    # Summary Report
+    summary_data = {
+        'total_revenue': bills.aggregate(Sum('total_price'))['total_price__sum'] or 0,
+        'total_transactions': bills.count(),
+        'avg_transaction': bills.aggregate(Avg('total_price'))['total_price__avg'] or 0,
+        'total_quantity': bills.aggregate(Sum('quantity'))['quantity__sum'] or 0,
+        'unique_clients': bills.values('client').distinct().count(),
+    }
+    
+    # Revenue by period
+    if period == 'monthly':
+        revenue_by_period_raw = bills.annotate(
+            period=TruncMonth('date')
+        ).values('period').annotate(
+            revenue=Sum('total_price'),
+            transactions=Count('id')
+        ).order_by('period')
+    else:
+        revenue_by_period_raw = bills.annotate(
+            period=TruncWeek('date')
+        ).values('period').annotate(
+            revenue=Sum('total_price'),
+            transactions=Count('id')
+        ).order_by('period')
+    
+    # Convert to JSON-serializable format
+    revenue_by_period = json.dumps([
+        {
+            'period': item['period'].isoformat() if item['period'] else None,
+            'revenue': float(item['revenue'] or 0),
+            'transactions': item['transactions']
+        }
+        for item in revenue_by_period_raw
+    ])
+    
+    # Product performance
+    product_performance = Product.objects.filter(user=user).annotate(
+        total_sold=Count('bill'),
+        revenue=Sum('bill__total_price')
+    ).order_by('-revenue')[:10]
+    
+    # Client analysis
+    client_analysis = Client.objects.filter(user=user).annotate(
+        total_spent=Sum('bill__total_price'),
+        visit_count=Count('bill'),
+        avg_purchase=Avg('bill__total_price')
+    ).order_by('-total_spent')[:10]
+    
+    # Category breakdown
+    category_breakdown = Category.objects.filter(user=user).annotate(
+        product_count=Count('product'),
+        revenue=Sum('product__bill__total_price')
+    ).order_by('-revenue')
+    
+    context = {
+        'report_type': report_type,
+        'period': period,
+        'start_date': start_date,
+        'end_date': end_date,
+        'summary_data': summary_data,
+        'revenue_by_period': revenue_by_period,
+        'product_performance': product_performance,
+        'client_analysis': client_analysis,
+        'category_breakdown': category_breakdown,
+    }
+    return render(request, 'core/reports.html', context)
 
 @login_required(login_url='/login/')
 def settings(request):
