@@ -21,8 +21,10 @@ import logging
 @login_required(login_url='/login/')
 def analytics(request):
     from django.db.models import Sum, Count, Avg, F, Q
-    from django.db.models.functions import TruncDate, TruncMonth
+    from django.db.models.functions import ExtractYear, ExtractMonth
     from datetime import datetime, timedelta
+    from django.views.decorators.cache import cache_page
+    from django.core.cache import cache
     import json
     
     user = request.user
@@ -31,53 +33,79 @@ def analytics(request):
     days = int(request.GET.get('days', 30))
     start_date = datetime.now() - timedelta(days=days)
     
-    # Overall metrics
-    total_revenue = Bill.objects.filter(store_name=user).aggregate(Sum('total_price'))['total_price__sum'] or 0
-    total_bills = Bill.objects.filter(store_name=user).count()
-    total_products = Product.objects.filter(user=user).count()
-    total_clients = Client.objects.filter(user=user).count()
+    # Check cache first
+    cache_key = f"analytics_{user.id}_{days}"
+    cached_data = cache.get(cache_key)
+    if cached_data:
+        return render(request, 'core/analytics.html', cached_data)
     
-    # Recent period metrics
-    recent_revenue = Bill.objects.filter(store_name=user, date__gte=start_date).aggregate(Sum('total_price'))['total_price__sum'] or 0
-    recent_bills = Bill.objects.filter(store_name=user, date__gte=start_date).count()
+    # Base bill queryset with all filters
+    all_bills = Bill.objects.filter(store_name=user)
+    recent_bills_qs = all_bills.filter(date__gte=start_date)
+    prev_bills_qs = all_bills.filter(date__gte=start_date - timedelta(days=days*2), date__lt=start_date)
     
-    # Previous period for comparison
-    prev_start = start_date - timedelta(days=days)
-    prev_revenue = Bill.objects.filter(store_name=user, date__gte=prev_start, date__lt=start_date).aggregate(Sum('total_price'))['total_price__sum'] or 1
-    prev_bills = Bill.objects.filter(store_name=user, date__gte=prev_start, date__lt=start_date).count() or 1
+    # Aggregate all metrics in single queries where possible
+    all_metrics = all_bills.aggregate(
+        total_revenue=Sum('total_price'),
+        total_bills=Count('id'),
+        avg_order_value=Avg('total_price')
+    )
+    
+    recent_metrics = recent_bills_qs.aggregate(
+        recent_revenue=Sum('total_price'),
+        recent_bills=Count('id')
+    )
+    
+    prev_metrics = prev_bills_qs.aggregate(
+        prev_revenue=Sum('total_price'),
+        prev_bills=Count('id')
+    )
     
     # Growth calculations
+    total_revenue = all_metrics['total_revenue'] or 0
+    total_bills = all_metrics['total_bills'] or 0
+    avg_order_value = all_metrics['avg_order_value'] or 0
+    
+    recent_revenue = recent_metrics['recent_revenue'] or 0
+    recent_bills = recent_metrics['recent_bills'] or 0
+    
+    prev_revenue = prev_metrics['prev_revenue'] or 1
+    prev_bills = prev_metrics['prev_bills'] or 1
+    
     revenue_growth = ((recent_revenue - prev_revenue) / prev_revenue * 100) if prev_revenue > 0 else 0
     bills_growth = ((recent_bills - prev_bills) / prev_bills * 100) if prev_bills > 0 else 0
     
-    # Top products by price (since bills don't reference products directly)
-    top_products = Product.objects.filter(user=user, status=True, product_status='published').order_by('-price')[:5]
+    # Use .only() to reduce data transfer for products and clients
+    top_products = Product.objects.filter(
+        user=user, status=True, product_status='published'
+    ).only('title', 'price', 'category_id').order_by('-price')[:5]
     
-    # Top clients by revenue
+    # Optimize client query with annotations
     top_clients = Client.objects.filter(user=user).annotate(
         revenue=Sum('bill__total_price'),
-        bill_count=Count('bill')
-    ).filter(revenue__isnull=False).order_by('-revenue')[:5]
+        bill_count=Count('bill', distinct=True)
+    ).filter(revenue__isnull=False).only(
+        'full_name', 'email', 'phone'
+    ).order_by('-revenue')[:5]
     
-    # Revenue trend (daily) - simplified for SQLite compatibility
-    bills_for_trend = Bill.objects.filter(
-        store_name=user, 
-        date__gte=start_date
-    ).values('date').annotate(
+    # Revenue trend - batch all in one query
+    bills_for_trend = recent_bills_qs.values('date').annotate(
         total=Sum('total_price')
     ).order_by('date')
     
-    # Convert to JSON-serializable format with date grouping
     revenue_trend = json.dumps([
         {'day': str(item['date']), 'total': float(item['total'] or 0)}
         for item in bills_for_trend
     ])
     
-    # Recent transactions
-    recent_transactions = Bill.objects.filter(store_name=user).select_related('client').order_by('-date')[:10]
+    # Recent transactions with select_related for client
+    recent_transactions = all_bills.select_related('client').only(
+        'date', 'description', 'total_price', 'client__full_name'
+    ).order_by('-date')[:10]
     
-    # Average order value
-    avg_order_value = Bill.objects.filter(store_name=user).aggregate(Avg('total_price'))['total_price__avg'] or 0
+    # Count queries separately (these are cheap)
+    total_products = Product.objects.filter(user=user).count()
+    total_clients = Client.objects.filter(user=user).count()
     
     context = {
         'total_revenue': total_revenue,
@@ -95,6 +123,9 @@ def analytics(request):
         'recent_transactions': recent_transactions,
         'days': days,
     }
+    
+    # Cache for 5 minutes
+    cache.set(cache_key, context, 300)
     return render(request, 'core/analytics.html', context)
 
 @login_required(login_url='/login/')
@@ -493,8 +524,8 @@ def reports(request):
     from django.db.models import Sum, Count, Avg, F, Q
     from django.db.models.functions import ExtractYear, ExtractMonth
     from datetime import datetime, timedelta
+    from django.core.cache import cache
     import json
-    from collections import defaultdict
     
     user = request.user
     
@@ -513,27 +544,40 @@ def reports(request):
         end_date = datetime.now()
         start_date = end_date - timedelta(days=90)
     
-    # Base queryset
+    # Check cache
+    cache_key = f"reports_{user.id}_{report_type}_{period}_{start_date.date()}_{end_date.date()}"
+    cached_data = cache.get(cache_key)
+    if cached_data:
+        return render(request, 'core/reports.html', cached_data)
+    
+    # Base queryset - filtered once, reused multiple times
     bills = Bill.objects.filter(store_name=user, date__gte=start_date, date__lte=end_date)
     
-    # Summary Report
+    # Aggregate all summary stats in single query
+    summary_metrics = bills.aggregate(
+        total_revenue=Sum('total_price'),
+        total_transactions=Count('id'),
+        avg_transaction=Avg('total_price'),
+        total_quantity=Sum('quantity'),
+        unique_clients=Count('client', distinct=True)
+    )
+    
     summary_data = {
-        'total_revenue': bills.aggregate(Sum('total_price'))['total_price__sum'] or 0,
-        'total_transactions': bills.count(),
-        'avg_transaction': bills.aggregate(Avg('total_price'))['total_price__avg'] or 0,
-        'total_quantity': bills.aggregate(Sum('quantity'))['quantity__sum'] or 0,
-        'unique_clients': bills.values('client').distinct().count(),
+        'total_revenue': summary_metrics['total_revenue'] or 0,
+        'total_transactions': summary_metrics['total_transactions'] or 0,
+        'avg_transaction': summary_metrics['avg_transaction'] or 0,
+        'total_quantity': summary_metrics['total_quantity'] or 0,
+        'unique_clients': summary_metrics['unique_clients'] or 0,
     }
     
-    # Revenue by period - group data in Python for SQLite compatibility
+    # Revenue by period - optimized
     if period == 'monthly':
-        # Get all bills and group by year-month
         monthly_data = bills.annotate(
             year=ExtractYear('date'),
             month=ExtractMonth('date')
         ).values('year', 'month').annotate(
             revenue=Sum('total_price'),
-            transactions=Count('id')
+            transactions=Count('id', distinct=True)
         ).order_by('year', 'month')
         
         revenue_by_period = json.dumps([
@@ -545,10 +589,9 @@ def reports(request):
             for item in monthly_data
         ])
     else:
-        # Group by date
         daily_data = bills.values('date').annotate(
             revenue=Sum('total_price'),
-            transactions=Count('id')
+            transactions=Count('id', distinct=True)
         ).order_by('date')
         
         revenue_by_period = json.dumps([
@@ -560,25 +603,41 @@ def reports(request):
             for item in daily_data
         ])
     
-    # Product performance (by stock/price since bills don't reference products)
-    product_performance = Product.objects.filter(user=user, status=True, product_status='published').annotate(
-        total_sold=Count('id')  # Placeholder, shows 1 for each product
-    ).order_by('-price')[:10]
+    # Product performance - use only() to reduce data
+    product_performance = Product.objects.filter(
+        user=user, status=True, product_status='published'
+    ).only('title', 'price', 'stock', 'product_status', 'category_id').order_by('-price')[:10]
     
-    # Client analysis
+    # Client analysis - optimized with only()
     client_analysis = Client.objects.filter(user=user).annotate(
         total_spent=Sum('bill__total_price'),
-        visit_count=Count('bill'),
+        visit_count=Count('bill', distinct=True),
         avg_purchase=Avg('bill__total_price')
-    ).order_by('-total_spent')[:10]
+    ).only('full_name', 'email', 'phone').order_by('-total_spent')[:10]
     
-    # Category breakdown - filter through user's products
+    # Category breakdown - optimized
     category_breakdown = Category.objects.filter(
         product__user=user
     ).annotate(
-        product_count=Count('product'),
+        product_count=Count('product', distinct=True),
         avg_price=Avg('product__price')
     ).filter(product_count__gt=0).order_by('-product_count').distinct()
+    
+    context = {
+        'report_type': report_type,
+        'period': period,
+        'start_date': start_date,
+        'end_date': end_date,
+        'summary_data': summary_data,
+        'revenue_by_period': revenue_by_period,
+        'product_performance': product_performance,
+        'client_analysis': client_analysis,
+        'category_breakdown': category_breakdown,
+    }
+    
+    # Cache for 5 minutes
+    cache.set(cache_key, context, 300)
+    return render(request, 'core/reports.html', context)
     
     context = {
         'report_type': report_type,
