@@ -1,153 +1,275 @@
 console.log('create-bill.js file loaded successfully');
 
-// Create a new bill
+/**
+ * Load and display bill items from localStorage
+ * @function
+ */
 function loadBillItems() {
-    const products = JSON.parse(localStorage.getItem('billProducts')) || [];
-    const billBody = document.querySelector('.bill-table tbody');
+    try {
+        const products = JSON.parse(localStorage.getItem('billProducts')) || [];
+        const billBody = document.querySelector('.bill-table tbody');
 
-    if (!billBody) return;
+        if (!billBody) {
+            console.warn('Bill table body not found in DOM');
+            return;
+        }
 
-    // Rebuild tbody each time to avoid stale DOM and force live updates
-    billBody.innerHTML = '';
+        // Rebuild tbody each time to avoid stale DOM and force live updates
+        billBody.innerHTML = '';
 
-    let grandTotal = 0;
+        let grandTotal = 0;
 
-    if (!products.length) {
-        const emptyRow = document.createElement('tr');
-        emptyRow.classList.add('bill-empty-row');
-        emptyRow.innerHTML = '<td colspan="5" class="bill-empty-message">No products added yet. Click "Add to Bill" on any product above.</td>';
-        billBody.appendChild(emptyRow);
-    } else {
-        products.forEach((product, index) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td><input type="number" class="quantity-input" data-index="${index}" value="${product.quantity}" step="0.01" min="1"></td>
-                <td><input type="text" class="description-input" data-index="${index}" value="${product.title}" readonly style="cursor: default;"></td>
-                <td><input type="number" class="price-input" data-index="${index}" value="${parseFloat(product.price).toFixed(2)}" step="0.01" readonly style="cursor: default;"></td>
-                <td><input type="number" class="amount-input" data-index="${index}" value="${(product.price * product.quantity).toFixed(2)}" step="0.01" readonly style="cursor: default;"></td>
-                <td><button type="button" class="delete-btn" data-index="${index}" style="background:#ff6b6b; color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">Remove</button></td>
-            `;
-            billBody.appendChild(row);
-            grandTotal += product.price * product.quantity;
-        });
-
-        billBody.querySelectorAll('.delete-btn').forEach(button => {
-            button.addEventListener('click', (e) => {
-                e.preventDefault();
-                const idx = Number(button.getAttribute('data-index'));
-                products.splice(idx, 1);
-                localStorage.setItem('billProducts', JSON.stringify(products));
-                loadBillItems();
-                updateBillCounter(); // Update counter after removal
+        if (!products || products.length === 0) {
+            const emptyRow = document.createElement('tr');
+            emptyRow.classList.add('bill-empty-row');
+            emptyRow.innerHTML = '<td colspan="5" class="bill-empty-message">No products added yet. Click "Add to Bill" on any product above.</td>';
+            billBody.appendChild(emptyRow);
+        } else {
+            products.forEach((product, index) => {
+                const row = document.createElement('tr');
+                const quantity = parseFloat(product.quantity) || 0;
+                const price = parseFloat(product.price) || 0;
+                const amount = (price * quantity).toFixed(2);
+                
+                row.innerHTML = `
+                    <td><input type="number" class="quantity-input" data-index="${index}" value="${quantity}" step="0.01" min="0.01" required></td>
+                    <td><input type="text" class="description-input" data-index="${index}" value="${escapeHtml(product.title || '')}" readonly style="cursor: default;"></td>
+                    <td><input type="number" class="price-input" data-index="${index}" value="${price.toFixed(2)}" step="0.01" readonly style="cursor: default;"></td>
+                    <td><input type="number" class="amount-input" data-index="${index}" value="${amount}" step="0.01" readonly style="cursor: default;"></td>
+                    <td><button type="button" class="delete-btn" data-index="${index}" style="background:#ff6b6b; color:white; padding:5px 10px; border:none; border-radius:4px; cursor:pointer;">Remove</button></td>
+                `;
+                billBody.appendChild(row);
+                grandTotal += price * quantity;
             });
-        });
 
-        billBody.querySelectorAll('.quantity-input').forEach(input => {
-            input.addEventListener('change', () => {
-                const idx = Number(input.getAttribute('data-index'));
-                const newQty = parseFloat(input.value);
-                if (newQty > 0) {
-                    products[idx].quantity = newQty;
-                    localStorage.setItem('billProducts', JSON.stringify(products));
-                    loadBillItems();
-                    updateBillCounter(); // Update counter after quantity change
-                } else {
-                    input.value = products[idx].quantity;
-                }
+            // Attach event listeners to delete buttons
+            billBody.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const idx = parseInt(button.getAttribute('data-index'), 10);
+                    if (!isNaN(idx) && idx >= 0 && idx < products.length) {
+                        products.splice(idx, 1);
+                        localStorage.setItem('billProducts', JSON.stringify(products));
+                        loadBillItems();
+                        updateBillCounter();
+                    }
+                });
             });
-        });
 
+            // Attach event listeners to quantity inputs
+            billBody.querySelectorAll('.quantity-input').forEach(input => {
+                input.addEventListener('change', () => {
+                    const idx = parseInt(input.getAttribute('data-index'), 10);
+                    const newQty = parseFloat(input.value) || 0;
+                    
+                    if (!isNaN(idx) && idx >= 0 && idx < products.length) {
+                        if (newQty > 0) {
+                            products[idx].quantity = newQty;
+                            localStorage.setItem('billProducts', JSON.stringify(products));
+                            loadBillItems();
+                            updateBillCounter();
+                        } else {
+                            input.value = products[idx].quantity;
+                            showToast('Quantity must be greater than 0');
+                        }
+                    }
+                });
+            });
+        }
+
+        // Add total row
+        const totalRow = document.createElement('tr');
+        totalRow.classList.add('bill-total-row');
+        totalRow.innerHTML = '<td colspan="3" class="text-right"><strong>Gr. Total:</strong></td><td colspan="2"><input type="number" name="totalPrice" id="totalPrice" placeholder="0.00" step="0.01" readonly></td>';
+        billBody.appendChild(totalRow);
+
+        const totalInput = totalRow.querySelector('#totalPrice');
+        if (totalInput) {
+            totalInput.value = grandTotal.toFixed(2);
+        }
+    } catch (error) {
+        console.error('Error loading bill items:', error);
+        showToast('Error loading bill items. Please refresh the page.');
     }
-
-    const totalRow = document.createElement('tr');
-    totalRow.classList.add('bill-total-row');
-    totalRow.innerHTML = '<td colspan="3" class="text-right"><strong>Gr. Total:</strong></td><td colspan="2"><input type="number" name="totalPrice" id="totalPrice" placeholder="0.00" step="0.01" readonly></td>';
-    billBody.appendChild(totalRow);
-
-    const totalInput = totalRow.querySelector('#totalPrice');
-    if (totalInput) totalInput.value = grandTotal.toFixed(2);
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    loadBillItems();
-    updateBillCounter();
-});
+/**
+ * Escape HTML special characters to prevent XSS
+ * @param {string} text - Text to escape
+ * @returns {string} - Escaped text
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 
-// Set today's date on the bill date field if present
+/**
+ * Show toast notification
+ * @param {string} message - Message to display
+ * @param {string} type - Type of toast (success, error, info)
+ */
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 4px;
+        z-index: 10000;
+        animation: slideIn 0.3s ease-in;
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+/**
+ * Update bill counter display
+ * @function
+ */
+function updateBillCounter() {
+    try {
+        const products = JSON.parse(localStorage.getItem('billProducts')) || [];
+        const counter = document.getElementById('billCounter');
+        if (counter) {
+            counter.textContent = products.length;
+        }
+    } catch (error) {
+        console.error('Error updating bill counter:', error);
+    }
+}
+
+// Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', function() {
-    const billDate = document.getElementById('billDate');
-    if (billDate && !billDate.value) {
-        billDate.valueAsDate = new Date();
+    try {
+        loadBillItems();
+        updateBillCounter();
+        
+        // Set today's date on the bill date field if present
+        const billDate = document.getElementById('billDate');
+        if (billDate && !billDate.value) {
+            const today = new Date().toISOString().split('T')[0];
+            billDate.value = today;
+        }
+    } catch (error) {
+        console.error('DOMContentLoaded error:', error);
     }
 });
 
-// Handle client selection and auto-populate fields
+
+/**
+ * Handle client selection and auto-populate fields
+ * @function
+ */
 function handleClientSelection() {
-    const selectElement = document.getElementById('clientSelect');
-    const selectedOption = selectElement.options[selectElement.selectedIndex];
-    const clientDetailsSection = document.getElementById('clientDetailsSection');
-    const indicator = document.getElementById('clientModeIndicator');
+    try {
+        const selectElement = document.getElementById('clientSelect');
+        if (!selectElement) {
+            console.warn('Client select element not found');
+            return;
+        }
+        
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        const clientDetailsSection = document.getElementById('clientDetailsSection');
+        const indicator = document.getElementById('clientModeIndicator');
+        
+        if (!selectedOption.value) {
+            // Create new client - show all fields as editable
+            if (indicator) {
+                indicator.innerHTML = '<span class="material-icons-sharp" style="font-size: 16px; vertical-align: middle; color: #4CAF50;">person_add</span> Creating new client - fill in the details below';
+                indicator.style.color = '#4CAF50';
+            }
+            
+            resetClientForm();
+            setFieldsEditable(true);
+        } else {
+            // Existing client selected - populate and make fields readonly
+            const name = selectedOption.getAttribute('data-name') || '';
+            const phone = selectedOption.getAttribute('data-phone') || '';
+            const email = selectedOption.getAttribute('data-email') || '';
+            const address = selectedOption.getAttribute('data-address') || '';
+            const city = selectedOption.getAttribute('data-city') || '';
+            const country = selectedOption.getAttribute('data-country') || '';
+            const postal = selectedOption.getAttribute('data-postal') || '';
+            
+            if (indicator) {
+                indicator.innerHTML = '<span class="material-icons-sharp" style="font-size: 16px; vertical-align: middle; color: #2196F3;">person</span> Using existing client - information is pre-filled';
+                indicator.style.color = '#2196F3';
+            }
+            
+            // Populate fields safely
+            const fields = {
+                'clientName': escapeHtml(name),
+                'phone': escapeHtml(phone),
+                'email': escapeHtml(email),
+                'address': escapeHtml(address),
+                'city': escapeHtml(city),
+                'country': escapeHtml(country),
+                'postal_code': escapeHtml(postal)
+            };
+            
+            Object.keys(fields).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.value = fields[id];
+                    el.readOnly = true;
+                    el.style.backgroundColor = '#f5f5f5';
+                }
+            });
+            
+            setFieldsEditable(false);
+        }
+    } catch (error) {
+        console.error('Error in handleClientSelection:', error);
+        showToast('Error selecting client. Please try again.', 'error');
+    }
+}
+
+/**
+ * Reset client form fields
+ * @function
+ */
+function resetClientForm() {
+    const fieldIds = ['clientName', 'phone', 'email', 'address', 'city', 'country', 'postal_code'];
+    fieldIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.value = '';
+            el.style.backgroundColor = '';
+        }
+    });
     
-    if (selectedOption.value === '') {
-        // Create new client - show all fields as editable
-        if (indicator) {
-            indicator.innerHTML = '<span class="material-icons-sharp" style="font-size: 16px; vertical-align: middle; color: #4CAF50;">person_add</span> Creating new client - fill in the details below';
-            indicator.style.color = '#4CAF50';
+    const indicator = document.getElementById('clientModeIndicator');
+    if (indicator) {
+        indicator.innerHTML = '<span class="material-icons-sharp" style="font-size: 16px; vertical-align: middle;">info</span> Select an existing client or create a new one';
+        indicator.style.color = '#666';
+    }
+    
+    const selectElement = document.getElementById('clientSelect');
+    if (selectElement) {
+        selectElement.value = '';
+    }
+}
+
+/**
+ * Set form fields editable or readonly
+ * @param {boolean} editable - Whether fields should be editable
+ */
+function setFieldsEditable(editable) {
+    const fieldIds = ['clientName', 'phone', 'email', 'address', 'city', 'country', 'postal_code'];
+    fieldIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.readOnly = !editable;
+            el.style.backgroundColor = editable ? '' : '#f5f5f5';
         }
-        
-        document.getElementById('clientName').value = '';
-        document.getElementById('clientName').readOnly = false;
-        document.getElementById('phone').value = '';
-        document.getElementById('phone').readOnly = false;
-        document.getElementById('email').value = '';
-        document.getElementById('email').readOnly = false;
-        document.getElementById('address').value = '';
-        document.getElementById('address').readOnly = false;
-        
-        const cityField = document.getElementById('city');
-        const countryField = document.getElementById('country');
-        const postalField = document.getElementById('postal_code');
-        if (cityField) {
-            cityField.value = '';
-            cityField.readOnly = false;
-        }
-        if (countryField) {
-            countryField.value = '';
-            countryField.readOnly = false;
-        }
-        if (postalField) {
-            postalField.value = '';
-            postalField.readOnly = false;
-        }
-        
-        // Reset styling
-        document.getElementById('clientName').style.backgroundColor = '';
-        document.getElementById('phone').style.backgroundColor = '';
-        document.getElementById('email').style.backgroundColor = '';
-        document.getElementById('address').style.backgroundColor = '';
-        if (cityField) cityField.style.backgroundColor = '';
-        if (countryField) countryField.style.backgroundColor = '';
-        if (postalField) postalField.style.backgroundColor = '';
-    } else {
-        // Existing client selected - populate and make fields readonly
-        const name = selectedOption.getAttribute('data-name') || '';
-        const phone = selectedOption.getAttribute('data-phone') || '';
-        const email = selectedOption.getAttribute('data-email') || '';
-        const address = selectedOption.getAttribute('data-address') || '';
-        const city = selectedOption.getAttribute('data-city') || '';
-        const country = selectedOption.getAttribute('data-country') || '';
-        const postal = selectedOption.getAttribute('data-postal') || '';
-        
-        if (indicator) {
-            indicator.innerHTML = '<span class="material-icons-sharp" style="font-size: 16px; vertical-align: middle; color: #2196F3;">person</span> Using existing client - information is pre-filled';
-            indicator.style.color = '#2196F3';
-        }
-        
-        // Populate fields
-        document.getElementById('clientName').value = name;
-        document.getElementById('phone').value = phone;
-        document.getElementById('email').value = email;
-        document.getElementById('address').value = address;
+    });
+}
         
         const cityField = document.getElementById('city');
         const countryField = document.getElementById('country');
@@ -258,68 +380,72 @@ function clearBill() {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, setting up form handler');
     const billForm = document.getElementById('bill-form');
-    console.log('Bill form found:', billForm);
     
-    if (billForm) {
-        billForm.addEventListener('submit', function (e) {
-            console.log('Form submit triggered');
-            const clientName = document.getElementById('clientName').value;
-            const billDate = document.getElementById('billDate').value;
-            
-            console.log('Client name:', clientName);
-            console.log('Bill date:', billDate);
-            
-            if (!clientName) {
-                e.preventDefault();
-                alert('Please enter client name');
-                return;
-            }
-            
-            if (!billDate) {
-                e.preventDefault();
-                alert('Please select bill date');
-                return;
-            }
-            
-            // Get products from localStorage
-            const products = JSON.parse(localStorage.getItem('billProducts')) || [];
-            
-            if (products.length === 0) {
-                e.preventDefault();
-                alert('Please add at least one product to the bill');
-                return;
-            }
-            
-            console.log('Products to submit:', products);
-            console.log('Total products:', products.length);
-            
-            // Prepare a single bill with multiple items (sent as JSON)
-            const totalAmount = products.reduce((sum, product) => sum + (product.price * product.quantity), 0);
-            const totalQuantity = products.reduce((sum, product) => sum + Number(product.quantity), 0);
-            const descriptionSummary = products.map(p => p.title).join(', ');
-
-            const descriptionInput = document.getElementById('description');
-            const quantityInput = document.getElementById('quantity');
-            const priceInput = document.getElementById('price');
-            const amountInput = document.getElementById('amount');
-            const totalPriceInput = document.getElementById('totalPrice');
-            const itemsJsonInput = document.getElementById('items_json');
-
-            if (descriptionInput) descriptionInput.value = descriptionSummary;
-            if (quantityInput) quantityInput.value = totalQuantity.toFixed(2);
-            if (priceInput) priceInput.value = products.length === 1 ? parseFloat(products[0].price).toFixed(2) : '0.00';
-            if (amountInput) amountInput.value = totalAmount.toFixed(2);
-            if (totalPriceInput) totalPriceInput.value = totalAmount.toFixed(2);
-            if (itemsJsonInput) itemsJsonInput.value = JSON.stringify(products);
-
-            // Allow normal form submission to carry the payload
-            console.log('Prepared multi-item bill payload, submitting form normally');
-
-            // Clear local storage so the builder resets on next visit
-            localStorage.removeItem('billProducts');
-            updateBillCounter();
-        });
+    // Only proceed if form exists on this page
+    if (!billForm) {
+        console.log('Bill form not found on this page - skipping initialization');
+        return;
     }
+    
+    console.log('Bill form found:', billForm);
+    billForm.addEventListener('submit', function (e) {
+        console.log('Form submit triggered');
+        const clientName = document.getElementById('clientName').value;
+        const billDate = document.getElementById('billDate').value;
+        
+        console.log('Client name:', clientName);
+        console.log('Bill date:', billDate);
+        
+        if (!clientName) {
+            e.preventDefault();
+            alert('Please enter client name');
+            return;
+        }
+        
+        if (!billDate) {
+            e.preventDefault();
+            alert('Please select bill date');
+            return;
+        }
+        
+        // Get products from localStorage
+        const products = JSON.parse(localStorage.getItem('billProducts')) || [];
+        
+        if (products.length === 0) {
+            e.preventDefault();
+            alert('Please add at least one product to the bill');
+            return;
+        }
+        
+        console.log('Products to submit:', products);
+        console.log('Total products:', products.length);
+        
+        // Prepare a single bill with multiple items (sent as JSON)
+        const totalAmount = products.reduce((sum, product) => sum + (product.price * product.quantity), 0);
+        const totalQuantity = products.reduce((sum, product) => sum + Number(product.quantity), 0);
+        const descriptionSummary = products.map(p => p.title).join(', ');
+
+        const descriptionInput = document.getElementById('description');
+        const quantityInput = document.getElementById('quantity');
+        const priceInput = document.getElementById('price');
+        const amountInput = document.getElementById('amount');
+        const totalPriceInput = document.getElementById('totalPrice');
+        const itemsJsonInput = document.getElementById('items_json');
+
+        if (descriptionInput) descriptionInput.value = descriptionSummary;
+        if (quantityInput) quantityInput.value = totalQuantity.toFixed(2);
+        if (priceInput) priceInput.value = products.length === 1 ? parseFloat(products[0].price).toFixed(2) : '0.00';
+        if (amountInput) amountInput.value = totalAmount.toFixed(2);
+        if (totalPriceInput) totalPriceInput.value = totalAmount.toFixed(2);
+        if (itemsJsonInput) itemsJsonInput.value = JSON.stringify(products);
+
+        // Allow normal form submission to carry the payload
+        console.log('Prepared multi-item bill payload, submitting form normally');
+
+        // Clear local storage so the builder resets on next visit
+        localStorage.removeItem('billProducts');
+        updateBillCounter();
+    });
 });
 
 // Add Product Form
