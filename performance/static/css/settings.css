@@ -280,18 +280,26 @@
     align-items: center;
     cursor: pointer;
     gap: 15px;
+    width: 100%; /* Ensure full width */
+}
+
+.label-text {
+    flex: 1; /* Allow text to take available space */
+    min-width: 0; /* Prevent overflow issues */
 }
 
 .label-text h4 {
     margin: 0 0 5px 0;
     color: #333;
     font-size: 15px;
+    word-wrap: break-word; /* Prevent text overflow */
 }
 
 .label-text p {
     margin: 0;
     color: #999;
     font-size: 13px;
+    word-wrap: break-word; /* Prevent text overflow */
 }
 
 /* Toggle Switch */
@@ -306,6 +314,7 @@
     transition: var(--transition);
     border: none;
     outline: none;
+    flex-shrink: 0; /* Prevent toggle from shrinking */
 }
 
 .toggle-switch:checked {
@@ -322,10 +331,17 @@
     top: 2px;
     left: 2px;
     transition: var(--transition);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Add subtle shadow */
 }
 
 .toggle-switch:checked:before {
-    left: 26px;
+    left: calc(100% - 24px); /* Proper calculation: 100% - (22px width + 2px padding) */
+    transform: translateX(0); /* Smooth transition */
+}
+
+/* Hover effect */
+.toggle-switch:hover {
+    opacity: 0.9;
 }
 
 /* Security & Notifications */
