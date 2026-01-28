@@ -94,18 +94,5 @@
 </div>
 
 {% block script %}
-<script>
-function filterClients() {
-    const query = (document.getElementById('clientSearch').value || '').toLowerCase();
-    const cards = document.querySelectorAll('#clientsGrid .client-card');
-    cards.forEach(card => {
-        const name = (card.dataset.name || '').toLowerCase();
-        const email = (card.dataset.email || '').toLowerCase();
-        const phone = (card.dataset.phone || '').toLowerCase();
-        const match = name.includes(query) || email.includes(query) || phone.includes(query);
-        card.style.display = match ? '' : 'none';
-    });
-}
-</script>
 {% endblock script %}
 {% endblock content %}

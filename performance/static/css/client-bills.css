@@ -667,3 +667,67 @@
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+/* Tab Buttons */
+.tab-btn.active {
+    color: #667eea !important;
+    border-bottom-color: #667eea !important;
+}
+
+.tab-btn:hover {
+    background: #f8f9fa;
+}
+
+/* Product Card Mini */
+.product-card-mini {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.product-card-mini:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    transform: translateY(-2px);
+}
+
+.product-card-mini img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-bottom: 12px;
+}
+
+.product-card-mini h4 {
+    margin: 0 0 8px 0;
+    font-size: 1em;
+    color: #212529;
+    font-weight: 600;
+}
+
+.product-card-mini .price {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: #667eea;
+    margin-bottom: 12px;
+}
+
+.product-card-mini button {
+    width: 100%;
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.product-card-mini button:hover {
+    background: #5568d3;
+}

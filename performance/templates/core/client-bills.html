@@ -287,61 +287,6 @@
     </div>
 </div>
 
-<style>
-.tab-btn.active {
-    color: #667eea !important;
-    border-bottom-color: #667eea !important;
-}
-.tab-btn:hover {
-    background: #f8f9fa;
-}
-.product-card-mini {
-    background: white;
-    border: 2px solid #e9ecef;
-    border-radius: 8px;
-    padding: 16px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-.product-card-mini:hover {
-    border-color: #667eea;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
-    transform: translateY(-2px);
-}
-.product-card-mini img {
-    width: 100%;
-    height: 120px;
-    object-fit: cover;
-    border-radius: 6px;
-    margin-bottom: 12px;
-}
-.product-card-mini h4 {
-    margin: 0 0 8px 0;
-    font-size: 1em;
-    color: #212529;
-    font-weight: 600;
-}
-.product-card-mini .price {
-    font-size: 1.2em;
-    font-weight: 700;
-    color: #667eea;
-    margin-bottom: 12px;
-}
-.product-card-mini button {
-    width: 100%;
-    background: #667eea;
-    color: white;
-    border: none;
-    padding: 10px;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-.product-card-mini button:hover {
-    background: #5568d3;
-}
-</style>
 
 <!-- Update Client Picture Modal -->
 <div id="updatePictureModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; overflow-y:auto;">
@@ -377,7 +322,6 @@
 {% endblock content %}
 
 {% block scripts %}
-<script>
 function openUpdatePictureModal(clientLid) {
     document.getElementById('clientLidInput').value = clientLid;
     document.getElementById('updatePictureModal').style.display = 'block';
@@ -387,54 +331,6 @@ function closeUpdatePictureModal() {
     document.getElementById('updatePictureModal').style.display = 'none';
     document.getElementById('profileImageInput').value = '';
     document.getElementById('imagePreview').style.display = 'none';
-    document.getElementById('uploadIcon').style.display = 'block';
-}
-
-function previewImage(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const preview = document.getElementById('imagePreview');
-            const previewImg = document.getElementById('previewImg');
-            const uploadIcon = document.getElementById('uploadIcon');
-            previewImg.src = e.target.result;
-            preview.style.display = 'block';
-            uploadIcon.style.display = 'none';
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-function submitUpdatePicture() {
-    const fileInput = document.getElementById('profileImageInput');
-    const clientLid = document.getElementById('clientLidInput').value;
-    
-    if (!fileInput.files[0]) {
-        alert('Please select an image');
-        return;
-    }
-    
-    const formData = new FormData();
-    formData.append('profile_image', fileInput.files[0]);
-    formData.append('client_lid', clientLid);
-    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-    
-    fetch('/update-client-picture/', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Picture updated successfully!');
-            closeUpdatePictureModal();
-            location.reload(); // Reload to show updated picture
-        } else {
-            alert('Error: ' + (data.error || 'Failed to update picture'));
-        }
-    })
-    .catch(error => {
         console.error('Error:', error);
         alert('Error updating picture');
     });

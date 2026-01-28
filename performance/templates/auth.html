@@ -34,13 +34,6 @@
                 {% endfor %}
             {% endif %}
             <!-- End of Alert Success / Warning / Error -->
-            <!-- Jquery code -->
-            <script>
-                setTimeout (() => {
-                    $('.alert').alert('close');
-                }, 3000);
-            </script>
-            <!-- End of Jquery code -->
         </header>
         <!-- End of Header -->
 
@@ -50,6 +43,7 @@
 
         <!-- jquery -->
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+        <script src="{% static 'javascript/auth.js' %}"></script>
         <!-- End of jquery -->
     </body>
 </html>

@@ -277,3 +277,69 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('All event listeners registered');
 });
+
+/**
+ * Profile Picture Update Functions
+ */
+
+function openUpdatePictureModal(clientLid) {
+    document.getElementById('clientLidInput').value = clientLid;
+    document.getElementById('updatePictureModal').style.display = 'block';
+}
+
+function closeUpdatePictureModal() {
+    document.getElementById('updatePictureModal').style.display = 'none';
+    document.getElementById('profileImageInput').value = '';
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('uploadIcon').style.display = 'block';
+}
+
+function previewImage(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('imagePreview');
+            const previewImg = document.getElementById('previewImg');
+            const uploadIcon = document.getElementById('uploadIcon');
+            previewImg.src = e.target.result;
+            preview.style.display = 'block';
+            uploadIcon.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function submitUpdatePicture() {
+    const fileInput = document.getElementById('profileImageInput');
+    const clientLid = document.getElementById('clientLidInput').value;
+    
+    if (!fileInput.files[0]) {
+        alert('Please select an image');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('profile_image', fileInput.files[0]);
+    formData.append('client_lid', clientLid);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    
+    fetch('/update-client-picture/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Picture updated successfully!');
+            closeUpdatePictureModal();
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to update picture'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating picture');
+    });
+}
