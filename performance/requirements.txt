@@ -15,6 +15,7 @@ django-filter==24.2
 django-cors-headers==4.3.1
 djangorestframework==3.15.2
 drf-yasg==1.21.7
+setuptools<81  # keep pkg_resources available until drf-yasg drops it
 celery==5.3.6
 redis==5.0.7
 psycopg2-binary==2.9.9
@@ -47,6 +48,23 @@ zipp==3.19.2
 geopy==2.4.1
 
 djangorestframework-simplejwt==5.5.1
+
+# Security & Rate Limiting
+django-ratelimit==4.1.0
+django-defender==0.9.7
+django-axes==6.1.1
+
+# Monitoring & Logging
+sentry-sdk==2.0.0
+
+# Additional Security
+django-csp==3.8
+bleach==6.1.0
+
+# Performance
+django-redis==5.4.0
+drf-spectacular==0.27.1
+crispy-bootstrap5==2.0.0
 django-ratelimit==4.1.0
 
 # API Docs
