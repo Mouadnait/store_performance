@@ -5,7 +5,7 @@
     <head>
         <meta charset="UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
         <!-- Favicon -->
         <link rel="icon" href="{% static 'images/store_performance.jpeg' %}" type="image/jpeg">
@@ -17,95 +17,1291 @@
 
         <!-- ======== CSS ======== -->
         <link rel="stylesheet" href="{% static 'css/style.css' %}">
+        <link rel="stylesheet" href="{% static 'css/sidebar-professional.css' %}">
         {% block style-content %}{% endblock style-content %}
         <style>
+            /* Global Mobile Fixes */
+            * {
+                box-sizing: border-box;
+            }
+            
+            html, body {
+                margin: 0;
+                padding: 0;
+                overflow-x: hidden;
+                width: 100%;
+                max-width: 100vw;
+            }
+            
+            /* Prevent horizontal scroll */
+            body {
+                position: relative;
+            }
+            
+            /* Mobile-first typography */
+            @media (max-width: 768px) {
+                html {
+                    font-size: 14px;
+                }
+                
+                body {
+                    font-size: 14px;
+                    line-height: 1.5;
+                }
+                
+                h1 {
+                    font-size: 1.5rem;
+                    line-height: 1.3;
+                }
+                
+                h2 {
+                    font-size: 1.3rem;
+                    line-height: 1.3;
+                }
+                
+                h3 {
+                    font-size: 1.1rem;
+                    line-height: 1.3;
+                }
+            }
+            
             /* Sidebar polish and quick actions */
             .sidebar {
                 max-height: 100vh;
                 overflow-y: auto;
+                overflow-x: hidden;
                 overscroll-behavior-y: contain;
+                box-shadow: 10px 0 30px rgba(17, 24, 39, 0.12);
+                border-right: 1px solid #e5e7eb;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                width: 250px !important;
             }
+            .sidebar::-webkit-scrollbar { width: 8px; }
+            .sidebar::-webkit-scrollbar-thumb { background: #ddd6fe; border-radius: 8px; }
+            .sidebar::-webkit-scrollbar-track { background: transparent; }
+
             .sidebar header {
-                padding-bottom: 12px;
                 position: relative;
+                padding: 16px 14px 14px;
+                margin: 0;
+                background: linear-gradient(135deg, #4c1d95, #7c3aed);
+                border-radius: 14px;
+                color: #f9fafb;
+                box-shadow: 0 10px 30px rgba(124,58,237,0.3);
             }
-            .sidebar::-webkit-scrollbar {
-                width: 8px;
-            }
-            .sidebar::-webkit-scrollbar-thumb {
-                background: #c7d2fe;
-                border-radius: 8px;
-            }
-            .sidebar::-webkit-scrollbar-track {
-                background: transparent;
-            }
-            .sidebar .section-label {
-                font-size: 0.78rem;
-                letter-spacing: 0.08em;
-                text-transform: uppercase;
-                color: #9ca3af;
-                padding: 12px 18px 4px;
-            }
-            .sidebar .quick-actions {
-                padding: 0 16px 10px;
+            .sidebar header .profile-row {
                 display: flex;
                 flex-direction: column;
-                gap: 8px;
+                align-items: center;
+                gap: 10px;
+                text-align: center;
+            }
+            .sidebar header .avatar-ring {
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                display: grid;
+                place-items: center;
+                background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3), rgba(255,255,255,0.08));
+                border: 2.5px solid rgba(255,255,255,0.4);
+                overflow: hidden;
+                position: relative;
+                flex-shrink: 0;
+            }
+            .sidebar header .avatar-ring img {
+                width: 100%; height: 100%; object-fit: cover;
+            }
+            .sidebar header .avatar-fallback {
+                position: absolute;
+                font-weight: 700;
+                font-size: 1.3rem;
+                color: #f5f3ff;
+                z-index: 2;
+            }
+            .sidebar header .logo-text {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                width: 100%;
+                gap: 2px;
+            }
+            .sidebar header .logo-text-main {
+                font-size: 1rem;
+                font-weight: 700;
+                letter-spacing: -0.01em;
+                line-height: 1.2;
+            }
+            .sidebar header .logo-text-sub {
+                font-size: 0.8rem;
+                color: rgba(249,250,251,0.7);
+                margin-bottom: 8px;
+                line-height: 1.2;
+            }
+            .sidebar header .chip-row {
+                display: flex;
+                gap: 5px;
+                flex-wrap: wrap;
+                justify-content: center;
+                margin-top: 2px;
+            }
+            .sidebar header .pill {
+                background: rgba(255,255,255,0.15);
+                color: #f5f3ff;
+                padding: 4px 10px;
+                border-radius: 999px;
+                font-size: 0.7rem;
+                border: 1px solid rgba(255,255,255,0.25);
+                white-space: nowrap;
+                line-height: 1.3;
+                font-weight: 500;
+            }
+            .sidebar header .pill.success { background: rgba(34,197,94,0.25); border-color: rgba(34,197,94,0.5); color: #86efac; }
+            .sidebar header .pill.muted { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+
+            .sidebar header .toggle {
+                position: absolute;
+                top: 16px;
+                right: 14px;
+                transform: rotate(180deg);
+                height: 32px;
+                width: 32px;
+                background: rgba(255,255,255,0.18);
+                color: #f9fafb;
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 20px;
+                cursor: pointer;
+                border: 1px solid rgba(255,255,255,0.3);
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .sidebar header .toggle:hover { 
+                background: rgba(255,255,255,0.28);
+                border-color: rgba(255,255,255,0.5);
+            }
+            .sidebar.close .toggle { 
+                transform: rotate(0deg);
+            }
+
+            .sidebar .section-label {
+                font-size: 0.7rem;
+                letter-spacing: 0.05em;
+                text-transform: uppercase;
+                color: #a78bfa;
+                padding: 14px 14px 6px;
+                margin-top: 8px;
+                font-weight: 700;
+                line-height: 1.2;
+            }
+            .sidebar .section-label:first-of-type { margin-top: 16px; }
+            .sidebar .section-divider {
+                height: 1px;
+                background: linear-gradient(90deg, transparent, #e5e7eb 20%, #e5e7eb 80%, transparent);
+                margin: 20px 16px 4px;
+            }
+            .sidebar .quick-actions {
+                padding: 0 12px 14px;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
             }
             .sidebar .quick-action {
                 display: flex;
                 align-items: center;
+                justify-content: flex-start;
                 gap: 10px;
-                padding: 10px 12px;
+                padding: 9px 12px;
                 border-radius: 10px;
-                background: #eef2ff;
-                color: #312e81;
+                background: linear-gradient(120deg, #f5f3ff, #faf5ff);
+                color: #5b21b6;
                 font-weight: 600;
-                border: 1px solid #e0e7ff;
-                transition: all 0.2s ease;
+                font-size: 0.82rem;
+                border: 1px solid #e9d5ff;
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                text-decoration: none;
+                min-height: 36px;
+                position: relative;
+                overflow: hidden;
             }
-            .sidebar .quick-action:hover {
-                background: #e0e7ff;
-                border-color: #c7d2fe;
+            .sidebar .quick-action .qa-text {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                flex: 1 1 auto;
+                display: block;
+                color: #5b21b6;
+                order: 1;
+                min-width: 0;
             }
-            .sidebar .quick-action .icon {
-                font-size: 18px;
+            .sidebar .quick-action .icon { 
+                font-size: 18px; 
+                color: #7c3aed; 
+                flex-shrink: 0; 
+                min-width: 20px;
+                width: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                order: 2;
             }
-            .sidebar .meta {
-                padding: 0 18px 12px;
-                color: #9ca3af;
-                font-size: 0.88rem;
+            .sidebar .quick-action .arrow {
+                font-size: 16px;
+                color: #7c3aed;
+                flex-shrink: 0;
+                min-width: 16px;
+                width: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                order: 3;
+                margin-left: 4px;
+                opacity: 0.5;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             }
-            .sidebar .meta strong {
-                color: #f9fafb;
+            .sidebar .quick-action:hover .arrow {
+                opacity: 1;
+                color: #6d28d9;
+                transform: translateX(3px);
             }
-            .sidebar .menu .grouped {
+            .sidebar .quick-action:hover { 
+                background: linear-gradient(120deg, #ede9fe, #f3e8ff); 
+                border-color: #ddd6fe; 
+                box-shadow: 0 8px 20px rgba(124,58,237,0.15);
+                transform: translateY(-1px);
+                padding-right: 8px;
+            }
+
+            .sidebar .meta { padding: 2px 14px 6px; color: #6b7280; font-size: 0.85rem; }
+            .sidebar .meta strong { color: #111827; }
+            .sidebar .menu .grouped { padding-top: 4px; margin-bottom: 12px; }
+            .sidebar .menu {
+                display: block !important;
+                width: 100%;
+            }
+            .sidebar .menu-links {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 4px;
+                list-style: none;
+                padding: 0;
+                margin: 0;
+                width: 100%;
+            }
+            .sidebar .menu-bar {
+                display: flex !important;
+                flex-direction: column !important;
+            }
+            .sidebar .bottom-content {
+                margin-top: 24px;
+                padding-top: 14px;
+                border-top: 1px solid #e5e7eb;
+            }
+            .sidebar .bottom-content .section-label {
                 padding-top: 8px;
+                margin-top: 0;
             }
-            /* Persistent toggle at bottom */
-            .sidebar header .toggle {
-                position: fixed;
-                bottom: 18px;
-                left: 230px;
-                top: auto;
-                right: auto;
-                transform: rotate(180deg);
-                box-shadow: 0 6px 18px rgba(0,0,0,0.15);
-                z-index: 250;
+            .sidebar .nav-link {
+                width: 100% !important;
+                display: block !important;
+                float: none !important;
+                clear: both;
             }
-            .sidebar.close .toggle {
-                left: 70px;
-                transform: rotate(0deg);
+            .sidebar .nav-link a {
+                width: 100%;
+                display: flex !important;
+                flex-direction: row !important;
+                align-items: center;
+                justify-content: space-between;
+                padding: 10px 14px !important;
+                gap: 8px;
             }
-            /* Hide text elements on collapse for a cleaner icon rail */
+            .sidebar .nav-link .icon {
+                font-size: 20px;
+                min-width: 24px;
+                width: 24px;
+                flex-shrink: 0;
+                text-align: center;
+                order: 2;
+            }
+            .sidebar .nav-link .text {
+                font-size: 0.875rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                flex: 1;
+                margin: 0;
+                text-align: left;
+                order: 1;
+            }
+
+            /* Collapse behavior */
             .sidebar.close .section-label,
-            .sidebar.close .meta,
-            .sidebar.close .quick-actions,
-            .sidebar.close .logo-text-main {
+            .sidebar.close .section-divider,
+            .sidebar.close .logo-text { display: none; }
+            .sidebar.close .menu-links .nav-text { display: none; }
+            .sidebar.close .quick-action .qa-text { display: none; }
+            .sidebar.close header {
+                padding: 12px 10px;
+                margin-bottom: 4px;
+            }
+            .sidebar.close header .profile-row {
+                gap: 0;
+                animation: none;
+            }
+            .sidebar.close header .avatar-ring { 
+                width: 48px; 
+                height: 48px; 
+                margin: 0 auto;
+            }
+            .sidebar.close header .avatar-fallback { 
+                font-size: 1.1rem; 
+            }
+            .sidebar.close .bottom-content { 
+                border-top: none; 
+                padding-top: 8px;
+                margin-top: 12px;
+            }
+            .sidebar.close { 
+                width: 90px !important;
+            }
+            .sidebar.close .nav-link a { 
+                justify-content: center; 
+                padding: 12px 8px !important;
+                gap: 0;
+            }
+            .sidebar.close .nav-link { 
+                position: relative; 
+            }
+            .sidebar.close .quick-actions {
+                padding: 8px 6px 8px;
+                gap: 4px;
+            }
+            .sidebar.close .quick-action {
+                width: calc(100% - 2px);
+                justify-content: center;
+                padding: 8px 4px !important;
+                min-height: 40px;
+                margin: 0 1px;
+            }
+            .sidebar.close .quick-action .arrow {
                 display: none;
             }
-            .sidebar.close .menu-links .nav-text {
+
+            /* Tooltip on hover for collapsed sidebar */
+            .sidebar.close .nav-link::before {
+                content: attr(data-tooltip);
+                position: absolute;
+                left: 90px;
+                top: 50%;
+                transform: translateY(-50%);
+                background: #3730a3;
+                color: #f5f3ff;
+                padding: 6px 12px;
+                border-radius: 8px;
+                font-size: 0.85rem;
+                white-space: nowrap;
+                font-weight: 600;
+                opacity: 0;
+                pointer-events: none;
+                visibility: hidden;
+                transition: opacity 0.2s ease, visibility 0.2s ease;
+                z-index: 100;
+                box-shadow: 0 10px 25px rgba(124,58,237,0.3);
+            }
+            .sidebar.close .nav-link::after {
+                content: '';
+                position: absolute;
+                left: 86px;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 0;
+                height: 0;
+                border: 5px solid transparent;
+                border-right-color: #3730a3;
+                opacity: 0;
+                pointer-events: none;
+                visibility: hidden;
+                transition: opacity 0.2s ease, visibility 0.2s ease;
+                z-index: 100;
+            }
+            .sidebar.close .nav-link:hover::before,
+            .sidebar.close .nav-link:hover::after {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            /* Quick action tooltips for collapsed state */
+            .sidebar.close .quick-action:hover::before {
+                content: attr(data-tooltip);
+                position: absolute;
+                left: 58px;
+                top: 50%;
+                transform: translateY(-50%);
+                background: #5b21b6;
+                color: #f5f3ff;
+                padding: 6px 12px;
+                border-radius: 8px;
+                font-size: 0.75rem;
+                white-space: nowrap;
+                font-weight: 600;
+                z-index: 100;
+                box-shadow: 0 10px 25px rgba(124,58,237,0.3);
+                opacity: 1;
+                pointer-events: none;
+                visibility: visible;
+            }
+            .sidebar.close .quick-action:hover::after {
+                content: '';
+                position: absolute;
+                left: 54px;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 0;
+                height: 0;
+                border: 5px solid transparent;
+                border-right-color: #5b21b6;
+                z-index: 100;
+                opacity: 1;
+                visibility: visible;
+            }
+
+            /* Mobile Header (Hidden on desktop) */
+            .mobile-header {
                 display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 60px;
+                background: linear-gradient(135deg, #4c1d95, #7c3aed);
+                color: #fff;
+                z-index: 200;
+                padding: 0 16px;
+                align-items: center;
+                justify-content: space-between;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            }
+            
+            .mobile-menu-toggle {
+                background: none;
+                border: none;
+                color: #fff;
+                font-size: 28px;
+                cursor: pointer;
+                padding: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+                -webkit-tap-highlight-color: transparent;
+                border-radius: 8px;
+                min-width: 44px;
+                min-height: 44px;
+            }
+            
+            .mobile-menu-toggle:hover {
+                background: rgba(255, 255, 255, 0.1);
+            }
+            
+            .mobile-menu-toggle:active {
+                transform: scale(0.95);
+                background: rgba(255, 255, 255, 0.2);
+            }
+            
+            .mobile-logo {
+                flex: 1;
+                text-align: center;
+            }
+            
+            .mobile-logo-text {
+                font-size: 1.1rem;
+                font-weight: 600;
+                letter-spacing: -0.01em;
+            }
+            
+            .mobile-user-avatar {
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                overflow: hidden;
+                background: rgba(255, 255, 255, 0.2);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 2px solid rgba(255, 255, 255, 0.3);
+            }
+            
+            .mobile-user-avatar img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+            
+            .mobile-user-avatar span {
+                font-weight: 600;
+                font-size: 0.9rem;
+            }
+            
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 150;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                pointer-events: none;
+            }
+            
+            .sidebar-overlay.active {
+                display: block;
+                opacity: 1;
+                pointer-events: all;
+            }
+
+            /* Tablet Responsiveness */
+            @media (max-width: 1024px) {
+                .sidebar { width: 230px; }
+                .sidebar header { margin-top: 4px; }
+                .home {
+                    left: 230px;
+                    width: calc(100% - 230px);
+                }
+                .sidebar.close~.home {
+                    left: 90px;
+                    width: calc(100% - 90px);
+                }
+            }
+            
+            /* Mobile Responsiveness */
+            @media (max-width: 768px) {
+                /* Show mobile header */
+                .mobile-header {
+                    display: flex;
+                }
+                
+                /* Adjust main content for mobile header */
+                .home {
+                    position: fixed;
+                    top: 60px;
+                    left: 0;
+                    width: 100%;
+                    height: calc(100vh - 60px);
+                    overflow-x: hidden;
+                    overflow-y: auto;
+                    -webkit-overflow-scrolling: touch;
+                }
+                
+                .content-wrapper {
+                    width: 100%;
+                    height: 100%;
+                }
+                
+                .page-title {
+                    font-size: 22px;
+                    padding: 16px 20px;
+                    position: sticky;
+                    top: 0;
+                    z-index: 10;
+                }
+                
+                .page-content {
+                    width: 100%;
+                    min-height: auto;
+                }
+                
+                /* Sidebar mobile behavior */
+                .sidebar {
+                    position: fixed;
+                    top: 60px;
+                    left: -280px;
+                    width: 280px !important;
+                    height: calc(100vh - 60px);
+                    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    z-index: 160;
+                    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+                    border-right: none;
+                }
+                
+                .sidebar.mobile-open {
+                    left: 0;
+                }
+                
+                .sidebar.close {
+                    left: -280px !important;
+                    width: 280px !important;
+                }
+                
+                /* Hide desktop toggle on mobile */
+                .sidebar header .toggle {
+                    display: none;
+                }
+                
+                /* Optimize sidebar for mobile */
+                .sidebar header {
+                    padding: 12px 14px 10px;
+                    margin-bottom: 8px;
+                }
+                
+                .sidebar header .avatar-ring {
+                    width: 50px;
+                    height: 50px;
+                }
+                
+                .sidebar header .logo-text-main {
+                    font-size: 0.95rem;
+                }
+                
+                .sidebar header .logo-text-sub {
+                    font-size: 0.75rem;
+                }
+                
+                .sidebar .section-label {
+                    font-size: 0.65rem;
+                    padding: 12px 14px 5px;
+                }
+                
+                .sidebar .quick-actions {
+                    padding: 0 10px 12px;
+                }
+                
+                .sidebar .quick-action {
+                    padding: 12px 14px;
+                    min-height: 44px;
+                    font-size: 0.85rem;
+                }
+                
+                .sidebar .nav-link a {
+                    padding: 12px 14px !important;
+                    min-height: 44px;
+                }
+                
+                /* Ensure sidebar doesn't interfere with home when closed */
+                .sidebar.close {
+                    left: -280px;
+                }
+            }
+            
+            /* Small Mobile Devices */
+            @media (max-width: 480px) {
+                .sidebar {
+                    width: 100% !important;
+                    left: -100% !important;
+                }
+                
+                .sidebar.mobile-open {
+                    left: 0 !important;
+                }
+                
+                .page-title {
+                    font-size: 20px;
+                    padding: 14px 16px;
+                }
+                
+                .mobile-logo-text {
+                    font-size: 1rem;
+                }
+                
+                .mobile-header {
+                    padding: 0 12px;
+                }
+            }
+            
+            /* Touch device optimizations */
+            @media (hover: none) and (pointer: coarse) {
+                .sidebar .quick-action,
+                .sidebar .nav-link a {
+                    min-height: 48px;
+                }
+                
+                .sidebar .quick-action .arrow {
+                    opacity: 0.7;
+                }
+            }
+            
+            /* Landscape mobile optimization */
+            @media (max-width: 768px) and (orientation: landscape) {
+                .mobile-header {
+                    height: 50px;
+                }
+                
+                .sidebar {
+                    top: 50px;
+                    height: calc(100vh - 50px);
+                }
+                
+                .home {
+                    top: 50px;
+                    height: calc(100vh - 50px);
+                }
+                
+                .mobile-user-avatar {
+                    width: 32px;
+                    height: 32px;
+                }
+            }
+            
+            /* Prevent body scroll when mobile menu is open */
+            body.mobile-menu-open {
+                overflow: hidden !important;
+                position: fixed;
+                width: 100%;
+            }
+
+            /* Dark Mode Support */
+            body.dark .sidebar {
+                background: #1f2937;
+                border-right-color: #374151;
+            }
+            body.dark .sidebar header {
+                background: linear-gradient(135deg, #1f2937, #111827);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            }
+            body.dark .sidebar .section-label {
+                color: #a78bfa;
+            }
+            body.dark .sidebar .quick-action {
+                background: linear-gradient(120deg, #2d1b4e, #3d2366);
+                border-color: #4c1d95;
+                color: #e9d5ff;
+            }
+            body.dark .sidebar .quick-action .qa-text {
+                color: #e9d5ff;
+            }
+            body.dark .sidebar .quick-action .icon {
+                color: #a78bfa;
+            }
+            body.dark .sidebar .quick-action .arrow {
+                color: #a78bfa;
+            }
+            body.dark .sidebar .quick-action:hover {
+                background: linear-gradient(120deg, #3d2366, #4c1d95);
+                border-color: #5b21b6;
+                box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
+            }
+            body.dark .sidebar .section-divider {
+                background: linear-gradient(90deg, transparent, #4b5563 20%, #4b5563 80%, transparent);
+            }
+            body.dark .sidebar .nav-link a {
+                color: #e5e7eb;
+            }
+            body.dark .sidebar .nav-link a:hover {
+                background: linear-gradient(120deg, #2d1b4e, #3d2366) !important;
+                border-color: #4c1d95 !important;
+            }
+            body.dark .sidebar .nav-link a.active {
+                background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 50%, #a855f7 100%) !important;
+            }
+            body.dark .sidebar.close {
+                background: #111827;
+            }
+            
+            /* ========== Home Section Improvements ========== */
+            .home {
+                position: absolute;
+                top: 0;
+                left: 250px;
+                width: calc(100% - 250px);
+                min-height: 100vh;
+                background-color: var(--body-color);
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                overflow-x: hidden;
+                overflow-y: auto;
+            }
+            
+            .sidebar.close~.home {
+                left: 90px;
+                width: calc(100% - 90px);
+            }
+            
+            .content-wrapper {
+                width: 100%;
+                animation: fadeIn 0.4s ease-in-out;
+            }
+            
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            
+            .page-title {
+                font-size: 28px;
+                font-weight: 600;
+                color: #111827;
+                padding: 20px 30px 16px;
+                margin: 0;
+                border-bottom: 1px solid #e5e7eb;
+                background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                backdrop-filter: blur(10px);
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            }
+            
+            .page-content {
+                width: 100%;
+                min-height: calc(100vh - 100px);
+            }
+            
+            /* Ensure content areas have proper structure */
+            .page-content > * {
+                width: 100%;
+            }
+            
+            body.dark .page-title {
+                color: #f9fafb;
+                border-bottom-color: #374151;
+                background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+            }
+            
+            /* ========== Message/Alert Improvements ========== */
+            .message-container {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 1000;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                max-width: 400px;
+                pointer-events: none;
+            }
+            
+            .message-container .alert {
+                pointer-events: all;
+                padding: 14px 18px;
+                border-radius: 12px;
+                border: 1px solid;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+                animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                backdrop-filter: blur(10px);
+            }
+            
+            @keyframes slideInRight {
+                from {
+                    opacity: 0;
+                    transform: translateX(100px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+            }
+            
+            .alert-content {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex: 1;
+            }
+            
+            .alert-icon {
+                font-size: 20px;
+                flex-shrink: 0;
+            }
+            
+            .alert-close {
+                background: none;
+                border: none;
+                padding: 4px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 6px;
+                transition: all 0.2s;
+                font-size: 20px;
+                opacity: 0.6;
+            }
+            
+            .alert-close:hover {
+                opacity: 1;
+                background: rgba(0, 0, 0, 0.05);
+            }
+            
+            .alert-success {
+                background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+                border-color: #6ee7b7;
+                color: #065f46;
+            }
+            
+            .alert-success .alert-icon {
+                color: #059669;
+            }
+            
+            .alert-error {
+                background: linear-gradient(135deg, #fee2e2, #fecaca);
+                border-color: #fca5a5;
+                color: #991b1b;
+            }
+            
+            .alert-error .alert-icon {
+                color: #dc2626;
+            }
+            
+            .alert-warning {
+                background: linear-gradient(135deg, #fef3c7, #fde68a);
+                border-color: #fcd34d;
+                color: #92400e;
+            }
+            
+            .alert-warning .alert-icon {
+                color: #f59e0b;
+            }
+            
+            .alert-info {
+                background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+                border-color: #93c5fd;
+                color: #1e3a8a;
+            }
+            
+            .alert-info .alert-icon {
+                color: #3b82f6;
+            }
+            
+            body.dark .alert-success {
+                background: linear-gradient(135deg, #064e3b, #065f46);
+                border-color: #059669;
+                color: #6ee7b7;
+            }
+            
+            body.dark .alert-error {
+                background: linear-gradient(135deg, #7f1d1d, #991b1b);
+                border-color: #dc2626;
+                color: #fca5a5;
+            }
+            
+            body.dark .alert-warning {
+                background: linear-gradient(135deg, #78350f, #92400e);
+                border-color: #f59e0b;
+                color: #fcd34d;
+            }
+            
+            body.dark .alert-info {
+                background: linear-gradient(135deg, #1e3a8a, #1e40af);
+                border-color: #3b82f6;
+                color: #93c5fd;
+            }
+            
+            body.dark .alert-close:hover {
+                background: rgba(255, 255, 255, 0.1);
+            }
+            
+            /* Mobile Message Adjustments */
+            @media (max-width: 768px) {
+                .message-container {
+                    top: 70px;
+                    right: 10px;
+                    left: 10px;
+                    max-width: none;
+                }
+                
+                .message-container .alert {
+                    padding: 12px 14px;
+                    font-size: 0.9rem;
+                }
+                
+                /* Global Mobile Content Styles */
+                .dashboard-area,
+                .analytics-area,
+                .products-area,
+                .clients-area,
+                .bills-area,
+                .settings-area,
+                .profile-area {
+                    width: 100% !important;
+                    max-width: 100vw !important;
+                    box-sizing: border-box !important;
+                    overflow-x: hidden !important;
+                    padding: 12px !important;
+                }
+                
+                /* Headings on mobile */
+                h1, h2, h3, h4, h5, h6 {
+                    word-wrap: break-word;
+                    overflow-wrap: break-word;
+                }
+                
+                /* Tables on mobile */
+                .table-wrapper {
+                    overflow-x: auto;
+                    -webkit-overflow-scrolling: touch;
+                    width: 100%;
+                    margin: 0;
+                }
+                
+                .table-wrapper table {
+                    min-width: 600px;
+                }
+                
+                table {
+                    font-size: 13px;
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                
+                table th,
+                table td {
+                    padding: 10px 8px !important;
+                    white-space: nowrap;
+                    font-size: 13px;
+                }
+                
+                /* Cards on mobile */
+                .card,
+                .kpi-card,
+                .chart-container {
+                    margin: 0 0 12px 0 !important;
+                    width: 100% !important;
+                    max-width: 100% !important;
+                }
+                
+                /* Forms on mobile */
+                input,
+                select,
+                textarea {
+                    font-size: 16px !important;
+                    max-width: 100%;
+                    width: 100% !important;
+                    padding: 12px !important;
+                    border-radius: 8px;
+                }
+                
+                input[type="checkbox"],
+                input[type="radio"] {
+                    width: auto !important;
+                    min-width: 20px;
+                    min-height: 20px;
+                }
+                
+                label {
+                    font-size: 14px;
+                    margin-bottom: 6px;
+                    display: block;
+                }
+                
+                /* Buttons on mobile */
+                .btn,
+                button,
+                .action-btn,
+                input[type="submit"],
+                input[type="button"] {
+                    padding: 14px 20px !important;
+                    width: 100% !important;
+                    max-width: 100% !important;
+                    font-size: 15px !important;
+                    border-radius: 8px;
+                    margin-bottom: 10px;
+                    touch-action: manipulation;
+                    min-height: 48px;
+                }
+                
+                button:not([type="submit"]):not([type="button"]) {
+                    width: auto !important;
+                }
+                
+                /* Grid layouts on mobile */
+                .grid,
+                .kpi-row,
+                .charts-row,
+                .products-grid,
+                .clients-grid {
+                    grid-template-columns: 1fr !important;
+                    gap: 12px !important;
+                    display: grid !important;
+                }
+                
+                /* Flexbox on mobile */
+                .flex-row,
+                .dashboard-header,
+                .header-actions {
+                    flex-direction: column !important;
+                    gap: 12px !important;
+                }
+                
+                /* Images on mobile */
+                img {
+                    max-width: 100%;
+                    height: auto;
+                    display: block;
+                }
+                
+                /* Canvas elements (charts) */
+                canvas {
+                    max-width: 100% !important;
+                    height: auto !important;
+                }
+                
+                /* Control groups */
+                .charts-controls,
+                .filter-controls,
+                .action-controls {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
+                    width: 100%;
+                }
+                
+                .charts-controls a,
+                .filter-controls a,
+                .action-controls a {
+                    width: 100% !important;
+                    justify-content: center;
+                    padding: 12px 16px !important;
+                }
+                
+                /* Modals on mobile */
+                .modal,
+                .modal-content {
+                    width: 95% !important;
+                    max-width: 95% !important;
+                    margin: 10px auto;
+                }
+                
+                /* Text overflow handling */
+                .text-overflow,
+                .kpi-label,
+                .chart-subtitle {
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    max-width: 100%;
+                }
+                
+                /* Tables on mobile */
+                .table-wrapper {
+                    overflow-x: auto;
+                    -webkit-overflow-scrolling: touch;
+                    width: 100%;
+                    margin: 0 -16px;
+                    padding: 0 16px;
+                }
+                
+                table {
+                    font-size: 13px;
+                }
+                
+                table th,
+                table td {
+                    padding: 10px 8px !important;
+                    white-space: nowrap;
+                }
+                
+                /* Cards on mobile */
+                .card,
+                .kpi-card,
+                .chart-container {
+                    margin: 0 0 12px 0 !important;
+                }
+                
+                /* Forms on mobile */
+                input,
+                select,
+                textarea,
+                button {
+                    font-size: 16px !important;
+                    max-width: 100%;
+                }
+                
+                /* Grid layouts on mobile */
+                .grid,
+                .kpi-row,
+                .charts-row {
+                    grid-template-columns: 1fr !important;
+                    gap: 12px !important;
+                }
+                
+                /* Buttons on mobile */
+                .btn,
+                button,
+                .action-btn {
+                    padding: 12px 16px !important;
+                    width: 100% !important;
+                    max-width: 100% !important;
+                }
+                
+                /* Images on mobile */
+                img {
+                    max-width: 100%;
+                    height: auto;
+                }
+            }
+            
+            @media (max-width: 480px) {
+                html {
+                    font-size: 13px;
+                }
+                
+                .dashboard-area,
+                .analytics-area,
+                .products-area,
+                .clients-area,
+                .bills-area,
+                .settings-area,
+                .profile-area {
+                    padding: 10px !important;
+                }
+                
+                table {
+                    font-size: 12px;
+                }
+                
+                table th,
+                table td {
+                    padding: 8px 6px !important;
+                    font-size: 12px;
+                }
+                
+                .btn,
+                button,
+                .action-btn {
+                    padding: 12px 16px !important;
+                    font-size: 14px !important;
+                }
+                
+                .kpi-card {
+                    padding: 12px !important;
+                }
+                
+                .chart-container {
+                    padding: 12px !important;
+                }
+                
+                h1 {
+                    font-size: 1.3rem;
+                }
+                
+                h2 {
+                    font-size: 1.2rem;
+                }
+                
+                h3 {
+                    font-size: 1.05rem;
+                }
+            }
+            
+            /* Performance Optimizations */
+            * {
+                -webkit-tap-highlight-color: transparent;
+            }
+            
+            .sidebar,
+            .home,
+            .mobile-header {
+                will-change: transform;
+            }
+            
+            img {
+                will-change: auto;
             }
         </style>
 
@@ -115,103 +1311,140 @@
     </head>
 
     <body>
+        <!-- Mobile Overlay -->
+        <div class="sidebar-overlay"></div>
+        
+        <!-- Mobile Header -->
+        <div class="mobile-header">
+            <button class="mobile-menu-toggle" aria-label="Toggle menu">
+                <i class='bx bx-menu'></i>
+            </button>
+            <div class="mobile-logo">
+                <span class="mobile-logo-text">Store Performance</span>
+            </div>
+            <div class="mobile-user-avatar">
+                {% if request.user.image %}
+                    <img src="{{ request.user.image.url }}" alt="User" loading="lazy">
+                {% else %}
+                    <span>{{ request.user.username|first|upper }}</span>
+                {% endif %}
+            </div>
+        </div>
+        
         <nav class="sidebar">
             <header>
-                <!-- User Profile -->
-                <div class="image-text">
-                    <span class="image">
-                        &nbsp;&nbsp; <img src="{{request.user.image.url}}" alt="">
-                    </span>
-
+                <div class="profile-row">
+                    <div class="avatar-ring">
+                        {% if request.user.image %}
+                            <img src="{{ request.user.image.url }}" alt="User avatar" loading="lazy">
+                        {% else %}
+                            <div class="avatar-placeholder"></div>
+                        {% endif %}
+                        <span class="avatar-fallback {% if request.user.image %}hide{% endif %}">{{ request.user.username|first|upper }}</span>
+                    </div>
                     <div class="text logo-text">
-                        <span class="name">&nbsp; {{request.user.username}}</span>
-                        <!-- <span class="profession">Web developer</span> -->
+                        <span class="logo-text-main">{{ request.user.username }}</span>
+                        <span class="logo-text-sub">Store Performance</span>
+                        <div class="chip-row">
+                            <span class="pill success">Team</span>
+                            {% if request.user.email %}<span class="pill muted">{{ request.user.email }}</span>{% endif %}
+                        </div>
                     </div>
                 </div>
-
-                <i class='bx bx-chevron-right toggle'></i>
+                <i class='bx bx-chevron-right toggle' aria-label="Toggle sidebar"></i>
             </header>
 
-            <div class="meta">
-                {% if request.user.email %}<div><strong>Email:</strong> {{ request.user.email }}</div>{% endif %}
-                <div><strong>Plan:</strong> Team</div>
+            <div class="section-label">Quick Actions</div>
+            <div class="quick-actions">
+                <a class="quick-action" href="{% url 'core:create-bill' %}" data-tooltip="New Bill">
+                    <span class="qa-text">New Bill</span>
+                    <i class='bx bx-receipt icon'></i>
+                    <i class='bx bx-chevron-right arrow'></i>
+                </a>
+                <a class="quick-action" href="{% url 'core:clients' %}" data-tooltip="Add Client">
+                    <span class="qa-text">Add Client</span>
+                    <i class='bx bx-user-plus icon'></i>
+                    <i class='bx bx-chevron-right arrow'></i>
+                </a>
+                <a class="quick-action" href="{% url 'core:products' %}" data-tooltip="Add Product">
+                    <span class="qa-text">Add Product</span>
+                    <i class='bx bx-package icon'></i>
+                    <i class='bx bx-chevron-right arrow'></i>
+                </a>
             </div>
 
-            <div class="section-label">Quick actions</div>
-            <div class="quick-actions">
-                <a class="quick-action" href="{% url 'core:create-bill' %}"><i class='bx bx-receipt icon'></i> New bill</a>
-                <a class="quick-action" href="{% url 'core:clients' %}"><i class='bx bx-user-plus icon'></i> Add client</a>
-                <a class="quick-action" href="{% url 'core:products' %}"><i class='bx bx-package icon'></i> Add product</a>
-            </div>
+            <div class="section-divider"></div>
 
             <div class="menu-bar">
                 <div class="menu">
                     <div class="section-label">Overview</div>
                     <ul class="menu-links" title="Dashboard">
-                        <li class="nav-link">
+                        <li class="nav-link" data-tooltip="Dashboard">
                             <a href="{% url 'core:dashboard' %}"
                                 class="{% if request.resolver_match.url_name == 'dashboard' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Dashboard</span>
                                 <i class='bx bx-home-alt icon'></i>
-                                <h3 class="text nav-text">Dashboard</h3>
                             </a>
                         </li>
-                        <li class="nav-link" title="Analytics">
+                        <li class="nav-link" data-tooltip="Analytics">
                             <a href="{% url 'core:analytics' %}"
                                 class="{% if request.resolver_match.url_name == 'analytics' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Analytics</span>
                                 <i class='bx bx-pie-chart-alt icon'></i>
-                                <h3 class="text nav-text">Analytics</h3>
                             </a>
                         </li>
-                        <li class="nav-link" title="Reports">
+                        <li class="nav-link" data-tooltip="Reports">
                             <a href="{% url 'core:reports' %}"
                                 class="{% if request.resolver_match.url_name == 'reports' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Reports</span>
                                 <i class='bx bx-file icon'></i>
-                                <h3 class="text nav-text">Reports</h3>
                             </a>
                         </li>
                     </ul>
 
                     <div class="section-label">Operations</div>
                     <ul class="menu-links grouped" title="Operations">
-                        <li class="nav-link" title="Bills">
+                        <li class="nav-link" data-tooltip="Bills">
                             <a href="{% url 'core:create-bill' %}"
                                 class="{% if request.resolver_match.url_name == 'create-bill' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Bills</span>
                                 <i class='bx bx-receipt icon'></i>
-                                <h3 class="text nav-text">Bills</h3>
                             </a>
                         </li>
-                        <li class="nav-link" title="Clients">
+                        <li class="nav-link" data-tooltip="Clients">
                             <a href="{% url 'core:clients' %}"
                                 class="{% if request.resolver_match.url_name == 'clients' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Clients</span>
                                 <i class='bx bx-user icon'></i>
-                                <h3 class="text nav-text">Clients</h3>
                             </a>
                         </li>
-                        <li class="nav-link" title="Products">
+                        <li class="nav-link" data-tooltip="Products">
                             <a href="{% url 'core:products' %}"
                                 class="{% if request.resolver_match.url_name == 'products' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Products</span>
                                 <i class='bx bx-box icon'></i>
-                                <h3 class="text nav-text">Products</h3>
                             </a>
                         </li>
                     </ul>
+
+                    <div class="section-divider"></div>
                 </div>
 
                 <div class="bottom-content">
                     <div class="section-label">Account</div>
                     <ul class="menu-links grouped" title="Account">
-                        <li class="nav-link" title="Profile">
+                        <li class="nav-link" data-tooltip="Profile">
                             <a href="{% url 'core:profile' %}"
                                 class="{% if request.resolver_match.url_name == 'profile' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Profile</span>
                                 <i class='bx bx-user-circle icon'></i>
-                                <h3 class="text nav-text">Profile</h3>
                             </a>
                         </li>
-                        <li class="nav-link" title="Settings">
+                        <li class="nav-link" data-tooltip="Settings">
                             <a href="{% url 'core:settings' %}"
                                 class="{% if request.resolver_match.url_name == 'settings' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Settings</span>
                                 <i class='bx bx-cog icon'></i>
-                                <h3 class="text nav-text">Settings</h3>
                             </a>
                         </li>
                     </ul>
@@ -221,26 +1454,37 @@
         </nav>
 
         <section class="home">
-            <div class="message">
+            <!-- Messages Container -->
+            <div class="message-container">
                 {% if messages %}
                 {% for message in messages %}
-                <div class="alert alert-{{message.tags}}">
-                    <strong>{{ message }}</strong>
-                    <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span>
+                <div class="alert alert-{{message.tags}}" role="alert">
+                    <div class="alert-content">
+                        <i class='bx bx-{% if message.tags == "success" %}check-circle{% elif message.tags == "error" %}error-circle{% elif message.tags == "warning" %}error{% else %}info-circle{% endif %} alert-icon'></i>
+                        <strong>{{ message }}</strong>
+                    </div>
+                    <button class="alert-close" onclick="this.parentElement.remove();" aria-label="Close">
+                        <i class='bx bx-x'></i>
+                    </button>
                 </div>
                 {% endfor %}
                 {% endif %}
             </div>
 
-            <!-- Header Title -->
-            <div class="text">
-                {% block content-title %}{% endblock content-title %}
-            </div>
-            <!-- End of Header Title -->
+            <!-- Content Wrapper -->
+            <div class="content-wrapper">
+                <!-- Header Title -->
+                <div class="text page-title">
+                    {% block content-title %}{% endblock content-title %}
+                </div>
+                <!-- End of Header Title -->
 
-            <!-- Block Content -->
-            {% block content %}{% endblock content %}
-            <!-- End of Block Content -->
+                <!-- Block Content -->
+                <div class="page-content">
+                    {% block content %}{% endblock content %}
+                </div>
+                <!-- End of Block Content -->
+            </div>
         </section>
         
         <!-- ======== JQuery ======== -->

@@ -373,7 +373,7 @@
 
     <!-- Bill Tabs -->
     <div class="bill-tabs">
-        <div class="bill-tab active" data-bill="1">
+        <div class="bill-tab active" data-bill="1" onclick="switchBill(1)">
             <span class="material-icons-sharp">receipt</span>
             Bill #1
         </div>
@@ -647,6 +647,16 @@ function getAllBills() {
 // Store selected bill ID for product page
 window.selectedBillForProducts = 1;
 
+// Ensure initial tab click works after DOM load
+document.addEventListener('DOMContentLoaded', function() {
+    const firstTab = document.querySelector('.bill-tab[data-bill="1"]');
+    if (firstTab) {
+        firstTab.addEventListener('click', function() {
+            switchBill(1);
+        });
+    }
+});
+
 // Set today's date for initial bill
 document.querySelectorAll('.bill-date').forEach(input => {
     input.valueAsDate = new Date();
@@ -684,7 +694,12 @@ document.addEventListener('input', function(e) {
 });
 
 function updateBillTotal(element) {
-    const billContent = element.closest('.bill-content');
+    // Accept either a child element or the bill-content itself
+    const billContent = element.classList?.contains('bill-content')
+        ? element
+        : element.closest('.bill-content');
+    if (!billContent) return; // Guard against unexpected calls without context
+    
     const itemRows = billContent.querySelectorAll('.item-row');
     let total = 0;
     
@@ -727,9 +742,10 @@ function addNewBill() {
         Bill #${billCounter}
         <span class="close-tab material-icons-sharp" onclick="removeBill(event, ${billCounter})">close</span>
     `;
+    const currentBillNum = billCounter;
     newTab.addEventListener('click', function(e) {
         if (!e.target.classList.contains('close-tab')) {
-            switchBill(billCounter);
+            switchBill(currentBillNum);
         }
     }, true);
     billTabs.insertBefore(newTab, billTabs.lastElementChild);
@@ -829,6 +845,7 @@ function addItem(button) {
 }
 
 function removeItem(button) {
+    const billContent = button.closest('.bill-content');
     const itemsBody = button.closest('.items-body');
     
     if (itemsBody.querySelectorAll('.item-row').length === 1) {
@@ -837,7 +854,7 @@ function removeItem(button) {
     }
     
     button.closest('.item-row').remove();
-    updateBillTotal(button);
+    updateBillTotal(billContent);
 }
 
 function clearBill(button) {

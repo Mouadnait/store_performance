@@ -133,21 +133,30 @@
     <!-- Charts Section -->
     <div class="charts-section">
         <!-- Controls -->
-        <div class="charts-controls" style="display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap;">
-            <a href="{% url 'core:dashboard' %}?show_geo=1" class="action-btn secondary" style="display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid #e5e7eb; border-radius:8px;">
+        <div class="charts-controls" style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+            {% if not show_geo %}
+            <a href="{% url 'core:dashboard' %}?show_geo=1" class="action-btn secondary" style="display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; text-decoration:none; color:#374151; transition:all 0.2s;">
                 <span class="material-icons-sharp">map</span>
                 <span>Show Geographic Distribution</span>
             </a>
-            {% if show_geo %}
-            <a href="{% url 'core:dashboard' %}" class="action-btn secondary" style="display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid #e5e7eb; border-radius:8px;">
-                <span class="material-icons-sharp">close</span>
+            {% else %}
+            <a href="{% url 'core:dashboard' %}" class="action-btn secondary" style="display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border:2px solid #7c3aed; border-radius:8px; background:#f5f3ff; text-decoration:none; color:#7c3aed; font-weight:600;">
+                <span class="material-icons-sharp">visibility_off</span>
                 <span>Hide Geographic Distribution</span>
             </a>
             {% endif %}
-            <a href="{% url 'core:dashboard' %}?debug=1" class="action-btn secondary" style="display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid #e5e7eb; border-radius:8px;">
+            
+            {% if not debug %}
+            <a href="{% url 'core:dashboard' %}?debug=1" class="action-btn secondary" style="display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; text-decoration:none; color:#374151; transition:all 0.2s;">
                 <span class="material-icons-sharp">speed</span>
                 <span>Show Timings</span>
             </a>
+            {% else %}
+            <a href="{% url 'core:dashboard' %}" class="action-btn secondary" style="display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border:2px solid #10b981; border-radius:8px; background:#d1fae5; text-decoration:none; color:#065f46; font-weight:600;">
+                <span class="material-icons-sharp">speed</span>
+                <span>Timings Active</span>
+            </a>
+            {% endif %}
         </div>
         <!-- Row 1: Key Performance Charts -->
         <div class="charts-row">
@@ -172,28 +181,15 @@
             {% endif %}
         </div>
 
-        <!-- Row 2: Sales Trend & Distribution -->
+        <!-- Row 2: Revenue Trend & Product Share -->
         <div class="charts-row">
             {% if line_chart %}
-            <div class="chart-container wide">
+            <div class="chart-container">
                 <div class="chart-header">
                     <h3>Revenue Trend</h3>
                     <span class="chart-subtitle">Monthly performance</span>
                 </div>
                 <canvas id="monthlyTrendChart"></canvas>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Row 3: Today & Distribution -->
-        <div class="charts-row">
-            {% if bar_chart %}
-            <div class="chart-container">
-                <div class="chart-header">
-                    <h3>Today's Sales</h3>
-                    <span class="chart-subtitle">Products sold today</span>
-                </div>
-                <canvas id="todaySalesChart"></canvas>
             </div>
             {% endif %}
 
@@ -204,6 +200,19 @@
                     <span class="chart-subtitle">Sales distribution</span>
                 </div>
                 <canvas id="productShareChart"></canvas>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Row 3: Today's Sales -->
+        <div class="charts-row">
+            {% if bar_chart %}
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3>Today's Sales</h3>
+                    <span class="chart-subtitle">Products sold today</span>
+                </div>
+                <canvas id="todaySalesChart"></canvas>
             </div>
             {% endif %}
         </div>
