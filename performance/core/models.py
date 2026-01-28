@@ -1,5 +1,6 @@
 from decimal import Decimal
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator, FileExtensionValidator
 from shortuuid.django_fields import ShortUUIDField
 from django.utils.html import mark_safe
 from django.utils import timezone
@@ -113,23 +114,43 @@ class Tags(models.Model):
     def __str__(self):
         return self.name
 
-class Product (models.Model):
+class Product(models.Model):
     pid = ShortUUIDField(unique=True, length=10, max_length=20, alphabet="abcdefgh12345")
 
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, blank=True, null=True)
 
-    title = models.CharField(max_length=100, default="Product Title")
-    image = models.ImageField(upload_to=user_directory_path, default="product.jpg")
+    title = models.CharField(max_length=255, default="Product Title")
+    image = models.ImageField(
+        upload_to=user_directory_path, 
+        default="product.jpg",
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif', 'webp'])]
+    )
     description = models.TextField(null=True, blank=True, default='This is a product description')
 
-    price = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
-    old_price = models.DecimalField(max_digits=12, decimal_places=2, default=1.00)
+    price = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        default=0.00,
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
+    old_price = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        default=1.00,
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
 
     specifications = models.TextField(null=True, blank=True, default='This is a product specification')
     tags = models.ForeignKey(Tags, on_delete=models.SET_NULL, blank=True, null=True)
 
-    stock = models.DecimalField(max_digits=12, decimal_places=0, blank=True, null=True)
+    stock = models.DecimalField(
+        max_digits=12, 
+        decimal_places=0, 
+        blank=True, 
+        null=True,
+        validators=[MinValueValidator(Decimal('0'))]
+    )
 
     product_status = models.CharField(choices=STATUS, max_length=20, default='in_review')
 
@@ -145,6 +166,11 @@ class Product (models.Model):
 
     class Meta:
         verbose_name_plural = "Product"
+        ordering = ['-date']
+        indexes = [
+            models.Index(fields=['user', '-date']),
+            models.Index(fields=['status', '-date']),
+        ]
 
     def product_image(self):
         return mark_safe('<img src="%s" width="50" height="50" />' % (self.image.url))
