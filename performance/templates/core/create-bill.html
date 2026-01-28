@@ -4,69 +4,149 @@
 {% block style-content %}
 <link rel="stylesheet" href="{% static 'css/create-bill.css' %}">
 <style>
-.multi-bill-container {
-    max-width: 1400px;
+/* Modern Professional Bill Creation Page */
+.bill-page-container {
+    max-width: 1600px;
     margin: 0 auto;
     padding: 30px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    background: white;
+    padding: 25px 30px;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.page-title {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.page-title h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.page-title .material-icons-sharp {
+    font-size: 36px;
+    color: #6366f1;
+}
+
+.quick-stats {
+    display: flex;
+    gap: 30px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #6366f1;
+    display: block;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Multi-Bill Tabs */
+.bill-tabs-container {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    margin-bottom: 25px;
 }
 
 .bill-tabs {
     display: flex;
     gap: 10px;
-    margin-bottom: 20px;
     flex-wrap: wrap;
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 12px;
+    margin-bottom: 15px;
 }
 
 .bill-tab {
     padding: 12px 20px;
-    background: white;
-    border: 2px solid #e5e7eb;
-    border-radius: 8px;
+    background: #f1f5f9;
+    border: 2px solid transparent;
+    border-radius: 10px;
     cursor: pointer;
     font-weight: 600;
     transition: all 0.3s;
     display: flex;
     align-items: center;
     gap: 8px;
+    position: relative;
 }
 
 .bill-tab.active {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
     color: white;
-    border-color: #667eea;
+    border-color: #6366f1;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 .bill-tab:hover:not(.active) {
-    border-color: #667eea;
-    background: #f3f4f6;
+    border-color: #6366f1;
+    background: #e0e7ff;
+}
+
+.bill-tab .tab-number {
+    font-size: 11px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
 }
 
 .bill-tab .close-tab {
     margin-left: 8px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 18px;
     opacity: 0.7;
 }
 
 .bill-tab .close-tab:hover {
     opacity: 1;
+    transform: scale(1.2);
 }
 
-.add-bill-btn {
-    padding: 12px 20px;
-    background: linear-gradient(135deg, #10b981, #059669);
-    color: white;
+.tab-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.add-bill-btn, .save-all-btn {
+    padding: 12px 24px;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
     font-weight: 600;
     display: flex;
     align-items: center;
     gap: 8px;
     transition: all 0.3s;
+    font-size: 14px;
+}
+
+.add-bill-btn {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
 }
 
 .add-bill-btn:hover {
@@ -74,103 +154,137 @@
     box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
 }
 
+.save-all-btn {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+}
+
+.save-all-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+}
+
+.save-all-btn .material-icons-sharp {
+    font-size: 20px;
+}
+
+/* Bill Content */
 .bill-content {
     display: none;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    margin-bottom: 30px;
 }
 
 .bill-content.active {
     display: block;
+    animation: fadeIn 0.3s ease-in-out;
 }
 
-.billApp {
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 8px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.form-group label .required {
+    color: #ef4444;
+}
+
+.form-group input,
+.form-group select {
+    padding: 12px 15px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.3s;
     background: white;
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    padding: 30px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Items Table */
+.items-section {
+    margin-top: 30px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 20px;
 }
 
-.bill-header-section {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 25px;
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: 120px 1fr;
-    gap: 15px;
-    margin-bottom: 15px;
+.section-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
     align-items: center;
+    gap: 10px;
 }
 
-.form-row label {
-    font-weight: 600;
-    color: #374151;
-}
-
-.form-row input {
-    padding: 10px 15px;
-    border: 2px solid #e5e7eb;
+.add-item-btn {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    border: none;
     border-radius: 8px;
-    font-size: 14px;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     transition: all 0.3s;
 }
 
-.form-row input:focus {
-    border-color: #667eea;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+.add-item-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
 }
 
-.autocomplete-list {
-    position: absolute;
-    top: 100%;
-    left: 120px;
-    right: 0;
-    background: white;
-    border: 2px solid #e5e7eb;
-    border-top: none;
-    border-radius: 0 0 8px 8px;
-    max-height: 200px;
-    overflow-y: auto;
-    display: none;
-    z-index: 1000;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.autocomplete-list.active {
-    display: block;
-}
-
-.autocomplete-item {
-    padding: 10px 15px;
-    cursor: pointer;
-    border-bottom: 1px solid #f3f4f6;
-    transition: background-color 0.2s;
-}
-
-.autocomplete-item:hover {
-    background-color: #f0f4ff;
-}
-
-.autocomplete-item.selected {
-    background-color: #f0f4ff;
-    border-left: 4px solid #667eea;
-}
-
-.bill-items-section {
-    margin: 25px 0;
+.items-table-container {
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .items-table {
     width: 100%;
     border-collapse: collapse;
+    background: white;
 }
 
 .items-table thead {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
     color: white;
 }
 
@@ -178,167 +292,324 @@
     padding: 15px;
     text-align: left;
     font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .items-table tbody tr {
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e2e8f0;
+    transition: all 0.2s;
 }
 
 .items-table tbody tr:hover {
-    background: #f9fafb;
+    background: #f8fafc;
 }
 
 .items-table td {
-    padding: 12px 15px;
+    padding: 15px;
 }
 
 .items-table input {
     width: 100%;
-    padding: 8px 12px;
-    border: 2px solid #e5e7eb;
-    border-radius: 6px;
+    padding: 10px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
     font-size: 14px;
+    transition: all 0.3s;
 }
 
 .items-table input:focus {
-    border-color: #667eea;
     outline: none;
-}
-
-.items-table tbody tr {
-    border-bottom: 1px solid #e5e7eb;
-    transition: background-color 0.2s;
-}
-
-.items-table tbody tr:hover {
-    background: #f9fafb;
-}
-
-.add-item-btn {
-    padding: 10px 20px;
-    background: #667eea;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 15px;
-}
-
-.add-item-btn:hover {
-    background: #764ba2;
+    border-color: #6366f1;
 }
 
 .remove-item-btn {
-    padding: 6px 12px;
     background: #ef4444;
     color: white;
     border: none;
+    padding: 8px 12px;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s;
 }
 
 .remove-item-btn:hover {
     background: #dc2626;
+    transform: scale(1.05);
 }
 
-.bill-total-section {
-    background: #f9fafb;
-    padding: 20px;
-    border-radius: 12px;
+/* Bill Summary */
+.bill-summary {
     margin-top: 25px;
+    padding: 25px;
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    border-radius: 12px;
+    border: 2px solid #bae6fd;
 }
 
-.total-row {
+.summary-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 18px;
-    font-weight: 700;
-    color: #1f2937;
+    margin-bottom: 15px;
+    font-size: 16px;
 }
 
-.total-amount {
-    color: #667eea;
-    font-size: 24px;
+.summary-row:last-child {
+    margin-bottom: 0;
+    padding-top: 15px;
+    border-top: 2px solid #7dd3fc;
 }
 
-.bill-actions {
-    display: flex;
-    gap: 15px;
-    justify-content: space-between;
-    margin-top: 25px;
-    padding-top: 25px;
-    border-top: 2px solid #e5e7eb;
-}
-
-.btn {
-    padding: 14px 28px;
-    border-radius: 10px;
+.summary-label {
     font-weight: 600;
-    font-size: 15px;
-    cursor: pointer;
-    transition: all 0.3s;
+    color: #0c4a6e;
+}
+
+.summary-value {
+    font-weight: 700;
+    color: #0369a1;
+    font-size: 18px;
+}
+
+.summary-row:last-child .summary-value {
+    font-size: 24px;
+    color: #6366f1;
+}
+
+/* Recent Bills Section */
+.recent-bills-section {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.section-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.section-title h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.view-all-btn {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
     border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+}
+
+.view-all-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+}
+
+.bills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.bill-card {
+    background: linear-gradient(135deg, #ffffff, #f8fafc);
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.bill-card:hover {
+    border-color: #6366f1;
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
+    transform: translateY(-4px);
+}
+
+.bill-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 15px;
+}
+
+.bill-id {
+    font-size: 14px;
+    font-weight: 700;
+    color: #6366f1;
+    background: #e0e7ff;
+    padding: 5px 12px;
+    border-radius: 6px;
+}
+
+.bill-date {
+    font-size: 12px;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.client-info {
+    margin-bottom: 15px;
+}
+
+.client-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 5px;
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-.btn-primary {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+.client-details {
+    font-size: 13px;
+    color: #64748b;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.bill-summary-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 15px;
+    border-top: 2px solid #e2e8f0;
+}
+
+.items-count {
+    font-size: 13px;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.bill-amount {
+    font-size: 20px;
+    font-weight: 700;
+    color: #10b981;
+}
+
+.bill-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: all 0.3s;
+}
+
+.action-btn.view {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
     color: white;
 }
 
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-}
-
-.btn-secondary {
-    background: #e5e7eb;
-    color: #374151;
-}
-
-.btn-secondary:hover {
-    background: #d1d5db;
-}
-
-.btn-save-all {
-    background: linear-gradient(135deg, #10b981, #059669);
+.action-btn.print {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
     color: white;
-    font-size: 16px;
-    padding: 16px 32px;
 }
 
-.btn-save-all:hover {
+.action-btn.duplicate {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+}
+
+.action-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #64748b;
+}
+
+.empty-state .material-icons-sharp {
+    font-size: 80px;
+    color: #cbd5e1;
+    margin-bottom: 20px;
+}
+
+.empty-state h3 {
+    font-size: 20px;
+    margin-bottom: 10px;
+    color: #475569;
+}
+
+.empty-state p {
+    font-size: 14px;
+}
+
+/* Progress Indicator */
 .progress-indicator {
     display: none;
-    background: white;
-    border-radius: 12px;
-    padding: 30px;
-    text-align: center;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
 }
 
 .progress-indicator.active {
-    display: block;
+    display: flex;
+}
+
+.progress-content {
+    background: white;
+    padding: 40px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
 .spinner {
-    border: 4px solid #f3f4f6;
-    border-top: 4px solid #667eea;
+    border: 4px solid #e2e8f0;
+    border-top: 4px solid #6366f1;
     border-radius: 50%;
-    width: 50px;
-    height: 50px;
+    width: 60px;
+    height: 60px;
     animation: spin 1s linear infinite;
     margin: 0 auto 20px;
 }
@@ -347,612 +618,688 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+.progress-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* Toast Notification */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    padding: 15px 25px;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    display: none;
+    align-items: center;
+    gap: 12px;
+    z-index: 10000;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.toast.show {
+    display: flex;
+}
+
+.toast.success {
+    border-left: 4px solid #10b981;
+}
+
+.toast.error {
+    border-left: 4px solid #ef4444;
+}
+
+.toast .material-icons-sharp {
+    font-size: 24px;
+}
+
+.toast.success .material-icons-sharp {
+    color: #10b981;
+}
+
+.toast.error .material-icons-sharp {
+    color: #ef4444;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .bill-page-container {
+        padding: 15px;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .quick-stats {
+        width: 100%;
+        justify-content: space-around;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .bills-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .bill-tabs {
+        flex-direction: column;
+    }
+    
+    .tab-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .add-bill-btn, .save-all-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
 </style>
 {% endblock style-content %}
 
-{% block title %}Create Multiple Bills | Store Performance{% endblock title %}
-{% block content-title %}Create Multiple Bills{% endblock content-title %}
-
 {% block content %}
-<div class="multi-bill-container">
-    {% if messages %}
-    <div style="padding: 15px; margin-bottom: 20px; border-radius: 10px;">
-        {% for message in messages %}
-            {% if message.tags == 'error' %}
-                <div style="background-color: #fee2e2; border: 2px solid #fca5a5; padding: 15px; border-radius: 8px; color: #991b1b;">
-                    <strong>Error:</strong> {{ message }}
-                </div>
-            {% elif message.tags == 'success' %}
-                <div style="background-color: #d1fae5; border: 2px solid #6ee7b7; padding: 15px; border-radius: 8px; color: #065f46;">
-                    <strong>Success:</strong> {{ message }}
-                </div>
-            {% endif %}
-        {% endfor %}
-    </div>
-    {% endif %}
-
-    <!-- Bill Tabs -->
-    <div class="bill-tabs">
-        <div class="bill-tab active" data-bill="1" onclick="switchBill(1)">
-            <span class="material-icons-sharp">receipt</span>
-            Bill #1
+<div class="bill-page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="page-title">
+            <span class="material-icons-sharp">receipt_long</span>
+            <h1>Create Bills</h1>
         </div>
-        <button type="button" class="add-bill-btn" onclick="addNewBill()">
-            <span class="material-icons-sharp">add</span>
-            Add New Bill
-        </button>
-        <button type="button" class="add-bill-btn" onclick="window.location.href='{% url 'core:products' %}'" style="background: linear-gradient(135deg, #667eea, #764ba2); margin-left: auto;">
-            <span class="material-icons-sharp">inventory_2</span>
-            Go to Products
-        </button>
+        <div class="quick-stats">
+            <div class="stat-item">
+                <span class="stat-value">{{ total_bills_today }}</span>
+                <span class="stat-label">Bills Today</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">${{ total_revenue_today|floatformat:2 }}</span>
+                <span class="stat-label">Revenue Today</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Multi-Bill Tabs -->
+    <div class="bill-tabs-container">
+        <div class="bill-tabs" id="billTabs">
+            <div class="bill-tab active" data-bill="1" onclick="switchBill(1)">
+                <span class="tab-number">#1</span>
+                <span>Bill 1</span>
+                <span class="close-tab" onclick="closeBill(event, 1)">×</span>
+            </div>
+        </div>
+        <div class="tab-actions">
+            <button class="add-bill-btn" onclick="addNewBill()">
+                <span class="material-icons-sharp">add</span>
+                Add New Bill
+            </button>
+            <button class="save-all-btn" onclick="saveAllBills()">
+                <span class="material-icons-sharp">save</span>
+                Save All Bills (1)
+            </button>
+        </div>
     </div>
 
     <!-- Bill Forms Container -->
-    <div id="bills-container">
-        <!-- Bill 1 (Template) -->
-        <div class="bill-content active" id="bill-1">
-            <div class="billApp">
-                <div class="bill-header-section">
-                    <h3 style="margin: 0 0 20px 0; color: #1f2937; display: flex; align-items: center; gap: 10px;">
-                        <span class="material-icons-sharp">person</span>
-                        Bill Information
-                    </h3>
-                    
-                    <div class="form-row">
-                        <label>Store Name:</label>
-                        <input type="text" value="{{request.user.username}}" readonly style="background: #f3f4f6;">
-                    </div>
-
-                    <div class="form-row">
-                        <label>Select Existing Client:</label>
-                        <select class="client-select" onchange="populateClientFromSelect(this);" style="padding: 10px 15px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
-                            <option value="">+ Create New Client</option>
+    <div id="billFormsContainer">
+        <!-- Bill 1 (Default) -->
+        <div class="bill-content active" data-bill="1">
+            <form class="bill-form" data-bill-number="1">
+                {% csrf_token %}
+                
+                <!-- Client Information -->
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>
+                            <span class="material-icons-sharp" style="font-size: 16px;">person</span>
+                            Select Existing Client
+                        </label>
+                        <select class="clientSelect" name="clientSelect" onchange="fillClientData(this, 1)">
+                            <option value="">-- New Client --</option>
                             {% for client in clients %}
                             <option value="{{ client.lid }}" 
-                                data-name="{{ client.full_name }}" 
-                                data-phone="{{ client.phone|default:'' }}" 
-                                data-email="{{ client.email|default:'' }}" 
-                                data-address="{{ client.address|default:'' }}">
-                                {{ client.full_name }} {% if client.phone %}<span style="color: #666;">({{ client.phone }})</span>{% endif %}
+                                    data-name="{{ client.full_name }}"
+                                    data-phone="{{ client.phone }}"
+                                    data-email="{{ client.email }}"
+                                    data-address="{{ client.address }}"
+                                    data-city="{{ client.city }}"
+                                    data-country="{{ client.country }}"
+                                    data-postal="{{ client.postal_code }}">
+                                {{ client.full_name }} - {{ client.phone }}
                             </option>
                             {% endfor %}
                         </select>
                     </div>
                     
-                    <div class="form-row">
-                        <label>Client Name:</label>
-                        <input type="text" class="client-name" placeholder="Enter client name" required>
+                    <div class="form-group">
+                        <label>
+                            Client Name <span class="required">*</span>
+                        </label>
+                        <input type="text" class="clientName" name="clientName" placeholder="Enter client name" required>
                     </div>
                     
-                    <div class="form-row">
-                        <label>Phone:</label>
-                        <input type="tel" class="client-phone" placeholder="Client phone (optional)">
+                    <div class="form-group">
+                        <label>
+                            <span class="material-icons-sharp" style="font-size: 16px;">phone</span>
+                            Phone
+                        </label>
+                        <input type="tel" class="phone" name="phone" placeholder="+1 234 567 8900">
                     </div>
                     
-                    <div class="form-row">
-                        <label>Email:</label>
-                        <input type="email" class="client-email" placeholder="Client email (optional)">
+                    <div class="form-group">
+                        <label>
+                            <span class="material-icons-sharp" style="font-size: 16px;">email</span>
+                            Email
+                        </label>
+                        <input type="email" class="email" name="email" placeholder="client@example.com">
                     </div>
                     
-                    <div class="form-row">
-                        <label>Address:</label>
-                        <input type="text" class="client-address" placeholder="Client address (optional)">
+                    <div class="form-group">
+                        <label>
+                            <span class="material-icons-sharp" style="font-size: 16px;">location_on</span>
+                            Address
+                        </label>
+                        <input type="text" class="address" name="address" placeholder="Street address">
                     </div>
                     
-                    <div class="form-row">
-                        <label>Date:</label>
-                        <input type="date" class="bill-date" required>
+                    <div class="form-group">
+                        <label>City</label>
+                        <input type="text" class="city" name="city" placeholder="City">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Country</label>
+                        <input type="text" class="country" name="country" placeholder="Country">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <span class="material-icons-sharp" style="font-size: 16px;">calendar_today</span>
+                            Bill Date <span class="required">*</span>
+                        </label>
+                        <input type="date" class="billDate" name="billDate" required value="{% now 'Y-m-d' %}">
                     </div>
                 </div>
 
-                <div class="bill-items-section">
-                    <h3 style="margin: 0 0 15px 0; color: #1f2937; display: flex; align-items: center; justify-content: space-between;">
-                        <span style="display: flex; align-items: center; gap: 8px;">
-                            <span class="material-icons-sharp">shopping_cart</span>
+                <!-- Items Section -->
+                <div class="items-section">
+                    <div class="section-header">
+                        <h3>
+                            <span class="material-icons-sharp">list</span>
                             Bill Items
-                        </span>
-                        <button type="button" class="add-item-btn" onclick="addItem(this)" style="margin: 0;">
-                            <span class="material-icons-sharp">add</span>
+                        </h3>
+                        <button type="button" class="add-item-btn" onclick="addItem(1)">
+                            <span class="material-icons-sharp">add_circle</span>
                             Add Item
                         </button>
-                    </h3>
-                    <table class="items-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 100px;">Qty</th>
-                                <th>Description</th>
-                                <th style="width: 120px;">Price</th>
-                                <th style="width: 120px;">Amount</th>
-                                <th style="width: 80px;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody class="items-body">
-                            <tr class="item-row">
-                                <td><input type="number" class="item-quantity" placeholder="0" step="0.01" min="0"></td>
-                                <td><input type="text" class="item-description" placeholder="Product description"></td>
-                                <td><input type="number" class="item-price" placeholder="0.00" step="0.01" min="0"></td>
-                                <td><input type="number" class="item-amount" placeholder="0.00" step="0.01" readonly style="background: #f3f4f6;"></td>
-                                <td><button type="button" class="remove-item-btn" onclick="removeItem(this)">Remove</button></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="bill-total-section">
-                    <div class="total-row">
-                        <span>Grand Total:</span>
-                        <span class="total-amount">$0.00</span>
+                    </div>
+                    
+                    <div class="items-table-container">
+                        <table class="items-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 5%;">#</th>
+                                    <th style="width: 35%;">Description</th>
+                                    <th style="width: 15%;">Price</th>
+                                    <th style="width: 15%;">Quantity</th>
+                                    <th style="width: 20%;">Amount</th>
+                                    <th style="width: 10%;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody class="items-body">
+                                <tr class="item-row">
+                                    <td>1</td>
+                                    <td>
+                                        <input type="text" class="item-title" placeholder="Item description" required>
+                                    </td>
+                                    <td>
+                                        <input type="number" class="item-price" placeholder="0.00" step="0.01" min="0" value="0" oninput="calculateRowTotal(this)">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="item-quantity" placeholder="1" min="1" value="1" oninput="calculateRowTotal(this)">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="item-amount" placeholder="0.00" readonly style="background: #f1f5f9; font-weight: 600;">
+                                    </td>
+                                    <td>
+                                        <button type="button" class="remove-item-btn" onclick="removeItem(this, 1)">
+                                            <span class="material-icons-sharp" style="font-size: 16px;">delete</span>
+                                            Remove
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                <div class="bill-actions">
-                    <button type="button" class="btn btn-secondary" onclick="clearBill(this)">
-                        <span class="material-icons-sharp">refresh</span>
-                        Clear Bill
-                    </button>
+                <!-- Bill Summary -->
+                <div class="bill-summary">
+                    <div class="summary-row">
+                        <span class="summary-label">Total Items:</span>
+                        <span class="summary-value total-items">1</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Total Quantity:</span>
+                        <span class="summary-value total-quantity">1</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Total Amount:</span>
+                        <span class="summary-value total-amount">$0.00</span>
+                    </div>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 
-    <!-- Save All Bills Button -->
-    <div style="text-align: center; margin-top: 30px;">
-        <button type="button" class="btn btn-save-all" onclick="saveAllBills()">
-            <span class="material-icons-sharp">save</span>
-            Save All Bills
-        </button>
-    </div>
-
-    <!-- Progress Indicator -->
-    <div class="progress-indicator" id="progress-indicator">
-        <div class="spinner"></div>
-        <h3>Saving bills...</h3>
-        <p id="progress-text">Processing bill 1 of 1</p>
+    <!-- Recent Bills Section -->
+    <div class="recent-bills-section">
+        <div class="section-title">
+            <h2>
+                <span class="material-icons-sharp">history</span>
+                Recent Bills
+            </h2>
+            <a href="{% url 'core:dashboard' %}" class="view-all-btn">
+                View All
+                <span class="material-icons-sharp">arrow_forward</span>
+            </a>
+        </div>
+        
+        {% if recent_bills %}
+        <div class="bills-grid">
+            {% for bill in recent_bills %}
+            <div class="bill-card" onclick="window.location.href='{% url 'core:client_detail' bill.client.lid %}'">
+                <div class="bill-card-header">
+                    <div class="bill-id">#{{ bill.id }}</div>
+                    <div class="bill-date">
+                        <span class="material-icons-sharp" style="font-size: 14px;">calendar_today</span>
+                        {{ bill.date|date:"M d, Y" }}
+                    </div>
+                </div>
+                
+                <div class="client-info">
+                    <div class="client-name">
+                        <span class="material-icons-sharp" style="font-size: 18px;">person</span>
+                        {{ bill.client.full_name }}
+                    </div>
+                    <div class="client-details">
+                        {% if bill.client.phone %}
+                        <span><span class="material-icons-sharp" style="font-size: 12px;">phone</span> {{ bill.client.phone }}</span>
+                        {% endif %}
+                        {% if bill.client.email %}
+                        <span><span class="material-icons-sharp" style="font-size: 12px;">email</span> {{ bill.client.email }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="bill-summary-info">
+                    <div class="items-count">
+                        <span class="material-icons-sharp" style="font-size: 16px;">list</span>
+                        {{ bill.items.count }} item{{ bill.items.count|pluralize }}
+                    </div>
+                    <div class="bill-amount">${{ bill.total_price|floatformat:2 }}</div>
+                </div>
+                
+                <div class="bill-actions" onclick="event.stopPropagation()">
+                    <button class="action-btn view" onclick="window.location.href='{% url 'core:client_detail' bill.client.lid %}'">
+                        <span class="material-icons-sharp" style="font-size: 14px;">visibility</span>
+                        View
+                    </button>
+                    <button class="action-btn print" onclick="window.open('{% url 'core:print-bill' bill.id %}', '_blank')">
+                        <span class="material-icons-sharp" style="font-size: 14px;">print</span>
+                        Print
+                    </button>
+                    <button class="action-btn duplicate" onclick="window.location.href='{% url 'core:duplicate-bill' bill.id %}'">
+                        <span class="material-icons-sharp" style="font-size: 14px;">content_copy</span>
+                        Copy
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <span class="material-icons-sharp">receipt</span>
+            <h3>No Bills Yet</h3>
+            <p>Create your first bill using the form above</p>
+        </div>
+        {% endif %}
     </div>
 </div>
 
+<!-- Progress Indicator -->
+<div class="progress-indicator" id="progressIndicator">
+    <div class="progress-content">
+        <div class="spinner"></div>
+        <div class="progress-text">Saving bills...</div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast" id="toast">
+    <span class="material-icons-sharp">check_circle</span>
+    <span class="toast-message"></span>
+</div>
+
 <script>
+'use strict';
+
 let billCounter = 1;
+let activeBill = 1;
 
-// Load items from localStorage when page loads (from Products page "Add to Bill")
-document.addEventListener('DOMContentLoaded', function() {
-    const savedItems = JSON.parse(localStorage.getItem('billProducts')) || [];
-    
-    if (savedItems.length > 0) {
-        const firstBill = document.getElementById('bill-1');
-        const itemsBody = firstBill.querySelector('.items-body');
-        
-        // Clear default row
-        itemsBody.innerHTML = '';
-        
-        // Add saved items
-        savedItems.forEach(item => {
-            const newRow = document.createElement('tr');
-            newRow.className = 'item-row';
-            newRow.innerHTML = `
-                <td><input type="number" class="item-quantity" placeholder="0" step="0.01" min="0" value="${item.quantity || 1}"></td>
-                <td><input type="text" class="item-description" placeholder="Product description" value="${item.title || ''}"></td>
-                <td><input type="number" class="item-price" placeholder="0.00" step="0.01" min="0" value="${item.price || 0}"></td>
-                <td><input type="number" class="item-amount" placeholder="0.00" step="0.01" readonly style="background: #f3f4f6;" value="${(item.price * (item.quantity || 1)).toFixed(2)}"></td>
-                <td><button type="button" class="remove-item-btn" onclick="removeItem(this)">Remove</button></td>
-            `;
-            itemsBody.appendChild(newRow);
-        });
-        
-        // Update total
-        updateBillTotalById('bill-1');
-        
-        // Clear localStorage after loading
-        localStorage.removeItem('billProducts');
-        
-        // Show success message
-        const toast = document.createElement('div');
-        toast.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 600;';
-        toast.textContent = `Loaded ${savedItems.length} item(s) from Products page`;
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
-            toast.style.transition = 'opacity 0.3s';
-            toast.style.opacity = '0';
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
-    }
-});
-
-// Handle existing client selection
-function populateClientFromSelect(selectElement) {
-    const billContent = selectElement.closest('.bill-content');
-    const option = selectElement.options[selectElement.selectedIndex];
-    
-    if (option.value) {
-        // Existing client selected - populate fields
-        billContent.querySelector('.client-name').value = option.getAttribute('data-name') || '';
-        billContent.querySelector('.client-phone').value = option.getAttribute('data-phone') || '';
-        billContent.querySelector('.client-email').value = option.getAttribute('data-email') || '';
-        billContent.querySelector('.client-address').value = option.getAttribute('data-address') || '';
-        
-        // Visual feedback
-        showToast('Client selected: ' + (option.getAttribute('data-name') || 'Unknown'));
-    } else {
-        // Create new client - clear fields
-        billContent.querySelector('.client-name').value = '';
-        billContent.querySelector('.client-phone').value = '';
-        billContent.querySelector('.client-email').value = '';
-        billContent.querySelector('.client-address').value = '';
-    }
+// XSS Prevention
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
-// Setup client autocomplete on all client name inputs
-document.addEventListener('DOMContentLoaded', function() {
-    document.addEventListener('input', function(e) {
-        if (e.target.classList.contains('client-name')) {
-            handleClientNameInput(e.target);
-        }
-    });
-});
-
-function handleClientNameInput(input) {
-    const billContent = input.closest('.bill-content');
-    const searchText = input.value.toLowerCase().trim();
-    
-    if (searchText.length < 1) {
-        return;
-    }
-    
-    // Get available clients from the select dropdown
-    const selectElement = billContent.querySelector('.client-select');
-    const options = selectElement ? Array.from(selectElement.options) : [];
-    
-    // Filter clients by name
-    const matches = options.filter(opt => 
-        opt.value && opt.text.toLowerCase().includes(searchText)
-    );
-    
-    if (matches.length > 0) {
-        // Auto-select first match if it's exact
-        if (matches.length === 1 || matches[0].text.toLowerCase() === searchText) {
-            const firstMatch = matches[0];
-            selectElement.value = firstMatch.value;
-            if (selectElement.value) {
-                populateClientFromSelect(selectElement);
-            }
-        }
-    }
-}
-
-function showToast(message) {
-    const toast = document.createElement('div');
-    toast.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #667eea; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; font-weight: 600; font-size: 13px;';
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.transition = 'opacity 0.3s';
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
-    }, 2500);
-}
-
-// Get all bills info for Products page integration
-function getAllBills() {
-    const bills = [];
-    document.querySelectorAll('.bill-content').forEach(content => {
-        const billId = content.id.replace('bill-', '');
-        const clientName = content.querySelector('.client-name').value || 'Unnamed';
-        bills.push({ id: billId, name: clientName, element: content });
-    });
-    return bills;
-}
-
-// Store selected bill ID for product page
-window.selectedBillForProducts = 1;
-
-// Ensure initial tab click works after DOM load
-document.addEventListener('DOMContentLoaded', function() {
-    const firstTab = document.querySelector('.bill-tab[data-bill="1"]');
-    if (firstTab) {
-        firstTab.addEventListener('click', function() {
-            switchBill(1);
-        });
-    }
-});
-
-// Set today's date for initial bill
-document.querySelectorAll('.bill-date').forEach(input => {
-    input.valueAsDate = new Date();
-});
-
-// Calculate amount for each item
-document.addEventListener('input', function(e) {
-    if (e.target.classList.contains('item-quantity') || e.target.classList.contains('item-price')) {
-        const row = e.target.closest('.item-row');
-        const qty = parseFloat(row.querySelector('.item-quantity').value) || 0;
-        const price = parseFloat(row.querySelector('.item-price').value) || 0;
-        
-        // Validate inputs
-        if (qty < 0) {
-            row.querySelector('.item-quantity').value = 0;
-        }
-        if (price < 0) {
-            row.querySelector('.item-price').value = 0;
-        }
-        
-        const amount = qty * price;
-        row.querySelector('.item-amount').value = amount.toFixed(2);
-        
-        // Recalculate bill total
-        updateBillTotal(e.target);
-    }
-    
-    // Validate negative values in real-time
-    if (e.target.classList.contains('item-quantity') && parseFloat(e.target.value) < 0) {
-        e.target.value = Math.abs(e.target.value);
-    }
-    if (e.target.classList.contains('item-price') && parseFloat(e.target.value) < 0) {
-        e.target.value = Math.abs(e.target.value);
-    }
-});
-
-function updateBillTotal(element) {
-    // Accept either a child element or the bill-content itself
-    const billContent = element.classList?.contains('bill-content')
-        ? element
-        : element.closest('.bill-content');
-    if (!billContent) return; // Guard against unexpected calls without context
-    
-    const itemRows = billContent.querySelectorAll('.item-row');
-    let total = 0;
-    
-    itemRows.forEach(row => {
-        const amount = parseFloat(row.querySelector('.item-amount').value) || 0;
-        total += amount;
-    });
-    
-    billContent.querySelector('.total-amount').textContent = '$' + total.toFixed(2);
-}
-
-function updateBillTotalById(billId) {
-    const billContent = document.getElementById(billId);
-    const itemRows = billContent.querySelectorAll('.item-row');
-    let total = 0;
-    
-    itemRows.forEach(row => {
-        const amount = parseFloat(row.querySelector('.item-amount').value) || 0;
-        total += amount;
-    });
-    
-    billContent.querySelector('.total-amount').textContent = '$' + total.toFixed(2);
-}
-
+// Add new bill tab
 function addNewBill() {
     billCounter++;
-    const billsContainer = document.getElementById('bills-container');
-    const billTabs = document.querySelector('.bill-tabs');
-    
-    // Deactivate all tabs and contents
-    document.querySelectorAll('.bill-tab').forEach(tab => tab.classList.remove('active'));
-    document.querySelectorAll('.bill-content').forEach(content => content.classList.remove('active'));
+    const billTabs = document.getElementById('billTabs');
+    const formsContainer = document.getElementById('billFormsContainer');
     
     // Create new tab
     const newTab = document.createElement('div');
-    newTab.className = 'bill-tab active';
+    newTab.className = 'bill-tab';
     newTab.setAttribute('data-bill', billCounter);
+    newTab.onclick = () => switchBill(billCounter);
     newTab.innerHTML = `
-        <span class="material-icons-sharp">receipt</span>
-        Bill #${billCounter}
-        <span class="close-tab material-icons-sharp" onclick="removeBill(event, ${billCounter})">close</span>
+        <span class="tab-number">#${billCounter}</span>
+        <span>Bill ${billCounter}</span>
+        <span class="close-tab" onclick="closeBill(event, ${billCounter})">×</span>
     `;
-    const currentBillNum = billCounter;
-    newTab.addEventListener('click', function(e) {
-        if (!e.target.classList.contains('close-tab')) {
-            switchBill(currentBillNum);
-        }
-    }, true);
-    billTabs.insertBefore(newTab, billTabs.lastElementChild);
+    billTabs.appendChild(newTab);
     
     // Clone first bill form
-    const template = document.getElementById('bill-1').cloneNode(true);
-    template.id = `bill-${billCounter}`;
-    template.classList.add('active');
+    const firstForm = document.querySelector('.bill-content[data-bill="1"]');
+    const newForm = firstForm.cloneNode(true);
+    newForm.setAttribute('data-bill', billCounter);
+    newForm.classList.remove('active');
     
-    // Clear values
-    template.querySelectorAll('input:not([readonly])').forEach(input => {
-        if (input.type === 'date') {
-            input.valueAsDate = new Date();
-        } else {
+    // Reset form values
+    const inputs = newForm.querySelectorAll('input:not([type="date"]), select');
+    inputs.forEach(input => {
+        if (input.type !== 'date') {
             input.value = '';
         }
     });
     
-    // Reset total
-    template.querySelector('.total-amount').textContent = '$0.00';
-    
     // Keep only one item row
-    const itemsBody = template.querySelector('.items-body');
-    const rows = itemsBody.querySelectorAll('.item-row');
-    rows.forEach((row, index) => {
-        if (index > 0) row.remove();
+    const tbody = newForm.querySelector('.items-body');
+    tbody.innerHTML = `
+        <tr class="item-row">
+            <td>1</td>
+            <td><input type="text" class="item-title" placeholder="Item description" required></td>
+            <td><input type="number" class="item-price" placeholder="0.00" step="0.01" min="0" value="0" oninput="calculateRowTotal(this)"></td>
+            <td><input type="number" class="item-quantity" placeholder="1" min="1" value="1" oninput="calculateRowTotal(this)"></td>
+            <td><input type="number" class="item-amount" placeholder="0.00" readonly style="background: #f1f5f9; font-weight: 600;"></td>
+            <td>
+                <button type="button" class="remove-item-btn" onclick="removeItem(this, ${billCounter})">
+                    <span class="material-icons-sharp" style="font-size: 16px;">delete</span>
+                    Remove
+                </button>
+            </td>
+        </tr>
+    `;
+    
+    newForm.querySelector('.bill-form').setAttribute('data-bill-number', billCounter);
+    formsContainer.appendChild(newForm);
+    
+    switchBill(billCounter);
+    updateSaveButton();
+    showToast(`Bill ${billCounter} added`, 'success');
+}
+
+// Switch between bills
+function switchBill(billNumber) {
+    activeBill = billNumber;
+    
+    // Update tabs
+    document.querySelectorAll('.bill-tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (parseInt(tab.getAttribute('data-bill')) === billNumber) {
+            tab.classList.add('active');
+        }
     });
     
-    billsContainer.appendChild(template);
-    
-    // Show success toast
-    showToast(`Bill #${billCounter} created - ready for items and client info`);
-    
-    // Scroll to new bill
-    setTimeout(() => {
-        document.getElementById(`bill-${billCounter}`).scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
+    // Update forms
+    document.querySelectorAll('.bill-content').forEach(content => {
+        content.classList.remove('active');
+        if (parseInt(content.getAttribute('data-bill')) === billNumber) {
+            content.classList.add('active');
+        }
+    });
 }
 
-function switchBill(billNum) {
-    // Remove active from all tabs and contents
-    document.querySelectorAll('.bill-tab').forEach(tab => tab.classList.remove('active'));
-    document.querySelectorAll('.bill-content').forEach(content => content.classList.remove('active'));
-    
-    // Activate the selected bill tab and content
-    const tab = document.querySelector(`[data-bill="${billNum}"]`);
-    const content = document.getElementById(`bill-${billNum}`);
-    
-    if (tab) {
-        tab.classList.add('active');
-        tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
-    }
-    if (content) {
-        content.classList.add('active');
-        content.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-    window.selectedBillForProducts = billNum;
-}
-
-function removeBill(event, billNum) {
+// Close bill tab
+function closeBill(event, billNumber) {
     event.stopPropagation();
     
-    if (document.querySelectorAll('.bill-tab').length === 2) { // 1 bill + add button
-        alert('You must have at least one bill!');
+    const allTabs = document.querySelectorAll('.bill-tab');
+    if (allTabs.length <= 1) {
+        showToast('Cannot close the last bill', 'error');
         return;
     }
     
-    if (confirm(`Are you sure you want to remove Bill #${billNum}?`)) {
-        document.querySelector(`[data-bill="${billNum}"]`).remove();
-        document.getElementById(`bill-${billNum}`).remove();
-        
-        // Activate first remaining bill
-        const firstTab = document.querySelector('.bill-tab:not(.add-bill-btn)');
+    // Remove tab
+    const tab = document.querySelector(`.bill-tab[data-bill="${billNumber}"]`);
+    if (tab) tab.remove();
+    
+    // Remove form
+    const form = document.querySelector(`.bill-content[data-bill="${billNumber}"]`);
+    if (form) form.remove();
+    
+    // Switch to first available bill if closed bill was active
+    if (activeBill === billNumber) {
+        const firstTab = document.querySelector('.bill-tab');
         if (firstTab) {
-            const firstBillNum = firstTab.getAttribute('data-bill');
-            switchBill(firstBillNum);
+            switchBill(parseInt(firstTab.getAttribute('data-bill')));
         }
     }
+    
+    updateSaveButton();
+    showToast(`Bill ${billNumber} removed`, 'success');
 }
 
-function addItem(button) {
-    const billContent = button.closest('.bill-content');
-    const itemsBody = billContent.querySelector('.items-body');
-    const newRow = itemsBody.querySelector('.item-row').cloneNode(true);
+// Fill client data from select
+function fillClientData(select, billNumber) {
+    const form = document.querySelector(`.bill-content[data-bill="${billNumber}"] .bill-form`);
+    if (!form) return;
     
-    // Clear values
-    newRow.querySelectorAll('input').forEach(input => input.value = '');
-    
-    itemsBody.appendChild(newRow);
-    
-    // Focus on quantity field for quick entry
-    setTimeout(() => {
-        newRow.querySelector('.item-quantity').focus();
-    }, 50);
-    
-    showToast('New item row added - enter product details');
-}
-
-function removeItem(button) {
-    const billContent = button.closest('.bill-content');
-    const itemsBody = button.closest('.items-body');
-    
-    if (itemsBody.querySelectorAll('.item-row').length === 1) {
-        alert('You must have at least one item!');
+    const selectedOption = select.options[select.selectedIndex];
+    if (!selectedOption.value) {
+        // Clear form if "New Client" selected
+        form.querySelector('.clientName').value = '';
+        form.querySelector('.phone').value = '';
+        form.querySelector('.email').value = '';
+        form.querySelector('.address').value = '';
+        form.querySelector('.city').value = '';
+        form.querySelector('.country').value = '';
         return;
     }
     
-    button.closest('.item-row').remove();
-    updateBillTotal(billContent);
+    form.querySelector('.clientName').value = selectedOption.getAttribute('data-name') || '';
+    form.querySelector('.phone').value = selectedOption.getAttribute('data-phone') || '';
+    form.querySelector('.email').value = selectedOption.getAttribute('data-email') || '';
+    form.querySelector('.address').value = selectedOption.getAttribute('data-address') || '';
+    form.querySelector('.city').value = selectedOption.getAttribute('data-city') || '';
+    form.querySelector('.country').value = selectedOption.getAttribute('data-country') || '';
 }
 
-function clearBill(button) {
-    const billContent = button.closest('.bill-content');
+// Add item row
+function addItem(billNumber) {
+    const form = document.querySelector(`.bill-content[data-bill="${billNumber}"]`);
+    const tbody = form.querySelector('.items-body');
+    const rows = tbody.querySelectorAll('.item-row');
+    const rowNumber = rows.length + 1;
     
-    if (confirm('Are you sure you want to clear this bill?')) {
-        billContent.querySelectorAll('input:not([readonly])').forEach(input => {
-            if (input.type === 'date') {
-                input.valueAsDate = new Date();
-            } else {
-                input.value = '';
-            }
-        });
-        
-        billContent.querySelector('.total-amount').textContent = '$0.00';
-        
-        // Keep only first item row
-        const itemsBody = billContent.querySelector('.items-body');
-        const rows = itemsBody.querySelectorAll('.item-row');
-        rows.forEach((row, index) => {
-            if (index > 0) row.remove();
-        });
+    const newRow = document.createElement('tr');
+    newRow.className = 'item-row';
+    newRow.innerHTML = `
+        <td>${rowNumber}</td>
+        <td><input type="text" class="item-title" placeholder="Item description" required></td>
+        <td><input type="number" class="item-price" placeholder="0.00" step="0.01" min="0" value="0" oninput="calculateRowTotal(this)"></td>
+        <td><input type="number" class="item-quantity" placeholder="1" min="1" value="1" oninput="calculateRowTotal(this)"></td>
+        <td><input type="number" class="item-amount" placeholder="0.00" readonly style="background: #f1f5f9; font-weight: 600;"></td>
+        <td>
+            <button type="button" class="remove-item-btn" onclick="removeItem(this, ${billNumber})">
+                <span class="material-icons-sharp" style="font-size: 16px;">delete</span>
+                Remove
+            </button>
+        </td>
+    `;
+    
+    tbody.appendChild(newRow);
+    updateBillSummary(billNumber);
+}
+
+// Remove item row
+function removeItem(button, billNumber) {
+    const form = document.querySelector(`.bill-content[data-bill="${billNumber}"]`);
+    const tbody = form.querySelector('.items-body');
+    const rows = tbody.querySelectorAll('.item-row');
+    
+    if (rows.length <= 1) {
+        showToast('At least one item is required', 'error');
+        return;
     }
+    
+    button.closest('tr').remove();
+    
+    // Renumber rows
+    tbody.querySelectorAll('.item-row').forEach((row, index) => {
+        row.querySelector('td:first-child').textContent = index + 1;
+    });
+    
+    updateBillSummary(billNumber);
 }
 
-async function saveAllBills() {
-    const billContents = document.querySelectorAll('.bill-content');
-    const progressIndicator = document.getElementById('progress-indicator');
-    const progressText = document.getElementById('progress-text');
+// Calculate row total
+function calculateRowTotal(input) {
+    const row = input.closest('tr');
+    const price = parseFloat(row.querySelector('.item-price').value) || 0;
+    const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
+    const amount = price * quantity;
     
-    // Validate all bills
+    row.querySelector('.item-amount').value = amount.toFixed(2);
+    
+    const billNumber = parseInt(input.closest('.bill-content').getAttribute('data-bill'));
+    updateBillSummary(billNumber);
+}
+
+// Update bill summary
+function updateBillSummary(billNumber) {
+    const form = document.querySelector(`.bill-content[data-bill="${billNumber}"]`);
+    const rows = form.querySelectorAll('.item-row');
+    
+    let totalItems = rows.length;
+    let totalQuantity = 0;
+    let totalAmount = 0;
+    
+    rows.forEach(row => {
+        const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
+        const amount = parseFloat(row.querySelector('.item-amount').value) || 0;
+        totalQuantity += quantity;
+        totalAmount += amount;
+    });
+    
+    form.querySelector('.total-items').textContent = totalItems;
+    form.querySelector('.total-quantity').textContent = totalQuantity;
+    form.querySelector('.total-amount').textContent = `$${totalAmount.toFixed(2)}`;
+}
+
+// Update save button text
+function updateSaveButton() {
+    const billCount = document.querySelectorAll('.bill-tab').length;
+    const saveBtn = document.querySelector('.save-all-btn');
+    saveBtn.innerHTML = `
+        <span class="material-icons-sharp">save</span>
+        Save All Bills (${billCount})
+    `;
+}
+
+// Save all bills
+async function saveAllBills() {
+    const billForms = document.querySelectorAll('.bill-form');
     const billsData = [];
-    for (let i = 0; i < billContents.length; i++) {
-        const bill = billContents[i];
-        const clientName = bill.querySelector('.client-name').value.trim();
-        const billDate = bill.querySelector('.bill-date').value;
+    
+    // Validate and collect all bills data
+    for (let form of billForms) {
+        const clientName = form.querySelector('.clientName').value.trim();
+        const billDate = form.querySelector('.billDate').value;
         
         if (!clientName) {
-            showToast(`Bill #${i + 1}: Client name is required!`);
-            bill.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            return;
-        }
-        
-        if (!billDate) {
-            showToast(`Bill #${i + 1}: Date is required!`);
-            bill.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            showToast('Please fill client name in all bills', 'error');
             return;
         }
         
         const items = [];
-        const itemRows = bill.querySelectorAll('.item-row');
+        const rows = form.querySelectorAll('.item-row');
         
-        for (const row of itemRows) {
-            const qty = parseFloat(row.querySelector('.item-quantity').value) || 0;
-            const desc = row.querySelector('.item-description').value.trim();
+        for (let row of rows) {
+            const title = row.querySelector('.item-title').value.trim();
             const price = parseFloat(row.querySelector('.item-price').value) || 0;
+            const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
             
-            if (qty > 0 && desc && price > 0) {
-                items.push({
-                    quantity: qty,
-                    description: desc,
-                    price: price
-                });
+            if (title && price >= 0 && quantity > 0) {
+                items.push({ title, price, quantity });
             }
         }
         
         if (items.length === 0) {
-            showToast(`Bill #${i + 1}: Please add at least one valid item!`);
-            bill.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            showToast('Each bill must have at least one item', 'error');
             return;
         }
         
         billsData.push({
-            clientName: clientName,
-            phone: bill.querySelector('.client-phone').value.trim(),
-            email: bill.querySelector('.client-email').value.trim(),
-            address: bill.querySelector('.client-address').value.trim(),
-            billDate: billDate,
-            items: items
+            clientName,
+            phone: form.querySelector('.phone').value.trim(),
+            email: form.querySelector('.email').value.trim(),
+            address: form.querySelector('.address').value.trim(),
+            city: form.querySelector('.city').value.trim(),
+            country: form.querySelector('.country').value.trim(),
+            billDate,
+            items
         });
     }
     
     // Show progress
+    const progressIndicator = document.getElementById('progressIndicator');
     progressIndicator.classList.add('active');
     
-    // Save bills one by one
+    // Save bills sequentially
     let successCount = 0;
     const failedBills = [];
     
     for (let i = 0; i < billsData.length; i++) {
-        progressText.textContent = `Processing bill ${i + 1} of ${billsData.length}`;
-        
         const formData = new FormData();
         formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
         formData.append('clientName', billsData[i].clientName);
         formData.append('phone', billsData[i].phone);
         formData.append('email', billsData[i].email);
         formData.append('address', billsData[i].address);
+        formData.append('city', billsData[i].city);
+        formData.append('country', billsData[i].country);
         formData.append('billDate', billsData[i].billDate);
         formData.append('items_json', JSON.stringify(billsData[i].items));
         
@@ -963,16 +1310,16 @@ async function saveAllBills() {
                 body: formData
             });
             
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-                failedBills.push({ num: i + 1, error: errorData.error || response.statusText });
-            } else {
+            if (response.ok) {
                 const data = await response.json();
                 if (data && data.success) {
                     successCount++;
                 } else {
                     failedBills.push({ num: i + 1, error: data.error || 'Unknown error' });
                 }
+            } else {
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                failedBills.push({ num: i + 1, error: errorData.error || response.statusText });
             }
         } catch (error) {
             console.error('Error saving bill:', error);
@@ -983,18 +1330,45 @@ async function saveAllBills() {
     progressIndicator.classList.remove('active');
     
     if (successCount === billsData.length) {
-        showToast(`✓ Successfully saved all ${successCount} bills!`);
-        setTimeout(() => { window.location.href = '{% url "core:dashboard" %}'; }, 800);
+        showToast(`Successfully saved all ${successCount} bills!`, 'success');
+        setTimeout(() => { window.location.reload(); }, 1500);
     } else if (successCount > 0) {
         const failedNums = failedBills.map(b => `#${b.num}`).join(', ');
-        showToast(`✓ Saved ${successCount}/${billsData.length} bills. Failed: ${failedNums}`);
+        showToast(`Saved ${successCount}/${billsData.length} bills. Failed: ${failedNums}`, 'error');
     } else {
-        showToast(`✗ All bills failed. Please check and try again.`);
+        showToast(`All bills failed to save. Please check and try again.`, 'error');
     }
 }
 
-// Add CSRF token to the page
+// Show toast notification
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    const icon = toast.querySelector('.material-icons-sharp');
+    const messageEl = toast.querySelector('.toast-message');
+    
+    toast.className = `toast ${type}`;
+    messageEl.textContent = message;
+    
+    if (type === 'success') {
+        icon.textContent = 'check_circle';
+    } else {
+        icon.textContent = 'error';
+    }
+    
+    toast.classList.add('show');
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 4000);
+}
+
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // Calculate initial totals
+    updateBillSummary(1);
+    updateSaveButton();
+    
+    // Add CSRF token if not present
     if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
         const csrfInput = document.createElement('input');
         csrfInput.type = 'hidden';

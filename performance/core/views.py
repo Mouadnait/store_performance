@@ -451,9 +451,29 @@ def create_bill(request):
     if request.method == 'GET':
         # Get all existing clients for the dropdown
         clients = Client.objects.filter(user=request.user).order_by('-id')[:50]
+        
+        # Get last 10 created bills with related data
+        recent_bills = Bill.objects.filter(
+            store_name=request.user
+        ).select_related('client').prefetch_related('items').order_by('-date', '-id')[:10]
+        
+        # Calculate statistics for dashboard
+        total_bills_today = Bill.objects.filter(
+            store_name=request.user,
+            date=timezone.now().date()
+        ).count()
+        
+        total_revenue_today = Bill.objects.filter(
+            store_name=request.user,
+            date=timezone.now().date()
+        ).aggregate(total=Sum('total_price'))['total'] or 0
+        
         return render(request, 'core/create-bill.html', {
             'user': request.user,
             'clients': clients,
+            'recent_bills': recent_bills,
+            'total_bills_today': total_bills_today,
+            'total_revenue_today': total_revenue_today,
         })
 
     # POST: Handle bill creation
