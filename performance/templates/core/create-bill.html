@@ -963,11 +963,11 @@
                         <span class="material-icons-sharp" style="font-size: 14px;">visibility</span>
                         View
                     </button>
-                    <button class="action-btn print" onclick="window.open('{% url 'core:print-bill' bill.id %}', '_blank')">
+                    <button class="action-btn print" onclick="window.open('{% url 'core:print_bill' bill.id %}', '_blank')">
                         <span class="material-icons-sharp" style="font-size: 14px;">print</span>
                         Print
                     </button>
-                    <button class="action-btn duplicate" onclick="window.location.href='{% url 'core:duplicate-bill' bill.id %}'">
+                    <button class="action-btn duplicate" onclick="window.location.href='{% url 'core:duplicate_bill' bill.id %}'">
                         <span class="material-icons-sharp" style="font-size: 14px;">content_copy</span>
                         Copy
                     </button>
