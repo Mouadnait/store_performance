@@ -3,7 +3,23 @@ Django settings for Store Performance Analytics.
 Loads environment-specific settings based on DJANGO_ENV.
 """
 import os
+import warnings
+import logging
 from dotenv import load_dotenv
+
+# Silence drf_yasg pkg_resources deprecation until upstream removes it
+warnings.filterwarnings(
+    "ignore",
+    message="pkg_resources is deprecated as an API.*",
+    module="drf_yasg"
+)
+
+# Suppress Django collectstatic duplicate file warnings (jazzmin vs django.contrib.admin)
+logging.captureWarnings(True)
+warnings.filterwarnings(
+    "ignore",
+    message="Found another file with the destination path.*"
+)
 
 load_dotenv()
 

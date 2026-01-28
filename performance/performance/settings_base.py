@@ -28,8 +28,8 @@ ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 
 # Application Definition
 DJANGO_APPS = [
-    'jazzmin',
     'django.contrib.admin',
+    'jazzmin',  # After admin to prevent duplicate static file warnings
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -60,12 +60,16 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + CUSTOM_APPS
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'core.middleware.SecurityHeadersMiddleware',  # Custom security headers
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.middleware.RateLimitMiddleware',  # Custom rate limiting
+    'core.middleware.RequestLoggingMiddleware',  # Request logging
+    'core.middleware.SecurityEventMiddleware',  # Security event tracking
 ]
 
 ROOT_URLCONF = 'performance.urls'
@@ -115,10 +119,28 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Security Settings
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
+X_FRAME_OPTIONS = 'DENY'
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# Session Security
+SESSION_COOKIE_AGE = 86400  # 24 hours
+SESSION_SAVE_EVERY_REQUEST = False
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# Rate Limiting
+ENABLE_RATE_LIMITING = True  # Enable by default (can be disabled in dev)
 
 # Default Field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -250,7 +272,23 @@ LOGGING = {
             'filename': os.path.join(BASE_DIR, 'logs', 'app.log'),
             'maxBytes': 1024 * 1024 * 10,  # 10 MB
             'backupCount': 10,
-            'formatter': 'json',
+            'formatter': 'verbose',
+        },
+        'security': {
+            'level': 'WARNING',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'security.log'),
+            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'backupCount': 10,
+            'formatter': 'verbose',
+        },
+        'error': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'error.log'),
+            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'backupCount': 10,
+            'formatter': 'verbose',
         },
     },
     'root': {
@@ -263,8 +301,18 @@ LOGGING = {
             'level': 'INFO',
             'propagate': False,
         },
+        'django.security': {
+            'handlers': ['security'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
         'celery': {
             'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'core.middleware': {
+            'handlers': ['security'],
             'level': 'INFO',
             'propagate': False,
         },
