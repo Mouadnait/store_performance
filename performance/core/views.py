@@ -131,32 +131,25 @@ def analytics(request):
 
 @login_required(login_url='/login/')
 def clients(request):
-    # Remove the filter to see all clients first (for debugging)
+    """Fetch clients for the current user only with proper security."""
     clients = Client.objects.filter(user=request.user).order_by('-id')
-    
-    # Add debug info
-    total_clients = Client.objects.count()
-    user_clients = clients.count()
-    
-    print(f"Total clients in database: {total_clients}")
-    print(f"Clients for user {request.user.username}: {user_clients}")
-    
-    # If no clients found, check if user field exists
-    if user_clients == 0 and total_clients > 0:
-        print("WARNING: Clients exist but none are associated with current user!")
-        # Optionally show all clients for debugging
-        clients = Client.objects.all().order_by('-id')
+    total_clients = clients.count()
 
     context = {
         'clients': clients,
         'total_clients': total_clients,
-        'user_clients': user_clients,
     }
     return render(request, 'core/clients.html', context)
 
 @login_required(login_url='/login/')
 def client_detail(request, lid):
-    client = Client.objects.get(lid=lid)
+    """Fetch client bills with ownership verification."""
+    try:
+        client = Client.objects.get(lid=lid, user=request.user)
+    except Client.DoesNotExist:
+        messages.error(request, "Client not found or access denied.")
+        return redirect('core:clients')
+    
     # Fetch bills related to the client
     bills = Bill.objects.filter(client=client).prefetch_related('items').order_by('-date', '-id')
     
@@ -186,11 +179,16 @@ def dashboard(request):
     timings = {}
     user = request.user
     
-    # Check cache first
+    # Check for special parameters
+    show_geo = request.GET.get("show_geo") == "1"
+    debug = request.GET.get("debug") == "1"
+    
+    # Check cache first (but skip cache if special parameters are present)
     cache_key = f"dashboard_{user.id}"
-    cached_data = cache.get(cache_key)
-    if cached_data:
-        return render(request, 'core/dashboard.html', cached_data)
+    if not show_geo and not debug:
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return render(request, 'core/dashboard.html', cached_data)
     
     # Filter data for current user
     bills = Bill.objects.filter(store_name=user)
@@ -324,7 +322,6 @@ def dashboard(request):
     # Optional geocoding with caching (only when requested)
     geo_data = None
     map_chart = None
-    show_geo = request.GET.get("show_geo") == "1"
     if show_geo:
         geo_cache_key = f"geo_data_{user.id}"
         geo_data = cache.get(geo_cache_key)
@@ -390,39 +387,53 @@ def dashboard(request):
         "top_products_chart": top_products_chart,
         "geo_data": geo_data,
         "show_geo": show_geo,
-        "debug": request.GET.get("debug") == "1",
+        "debug": debug,
         "timings": timings,
     }
     
-    # Cache for 3 minutes
-    cache.set(cache_key, context, 180)
+    # Cache for 3 minutes (but not when special parameters are present)
+    if not show_geo and not debug:
+        cache.set(cache_key, context, 180)
     return render(request, 'core/dashboard.html', context)
 
 @login_required(login_url='/login/')
 def products(request):
+    """Handle product listing and creation with proper validation."""
     if request.method == 'POST':
         form = ProductForm(request.POST, request.FILES)
         if form.is_valid():
-            # Check if a new category name is provided
-            new_category_name = request.POST.get('new_category', None)
-            product = form.save(commit=False)  # Save the form temporarily without committing to the database
-            product.user = request.user  # Assign the current user to the product's user field
+            try:
+                # Check if a new category name is provided
+                new_category_name = request.POST.get('new_category', '').strip()
+                if new_category_name and len(new_category_name) > 100:
+                    messages.error(request, 'Category name must be less than 100 characters.')
+                    form = ProductForm()
+                else:
+                    product = form.save(commit=False)  # Save the form temporarily without committing to the database
+                    product.user = request.user  # Assign the current user to the product's user field
 
-            if new_category_name:
-                # Create a new category or get the existing one with the provided name
-                category, created = Category.objects.get_or_create(title=new_category_name)
-                product.category = category  # Assign the new or existing category to the product
+                    if new_category_name:
+                        # Create a new category or get the existing one with the provided name
+                        category, created = Category.objects.get_or_create(title=new_category_name)
+                        product.category = category  # Assign the new or existing category to the product
 
-            product.save()  # Now save the product to the database
-            return redirect("core:products")  # Redirect to a new URL
+                    product.save()  # Now save the product to the database
+                    messages.success(request, 'Product saved successfully.')
+                    logger.info(f"Product created by user {request.user.id}: {product.title}")
+                    return redirect("core:products")  # Redirect to a new URL
+            except Exception as e:
+                logger.error(f"Error saving product: {str(e)}")
+                messages.error(request, 'An error occurred while saving the product.')
+        else:
+            messages.error(request, 'Please correct the errors below.')
     else:
         form = ProductForm()
 
-    products = Product.objects.filter(user=request.user).order_by('-date')
+    products = Product.objects.filter(user=request.user).order_by('-date')[:500]  # Limit to 500 recent products
     # Fetch distinct categories
-    categories = Category.objects.all()
+    categories = Category.objects.all()[:100]  # Limit categories to 100
     # Fetch all clients for the current user
-    clients = Client.objects.filter(user=request.user).order_by('full_name')
+    clients = Client.objects.filter(user=request.user).order_by('full_name')[:500]
 
     context = {
         'products': products,
@@ -451,8 +462,8 @@ def create_bill(request):
         bill_date = request.POST.get('billDate')
         
         # Validate client name is not empty
-        if not client_name:
-            messages.error(request, 'Client name is required.')
+        if not client_name or len(client_name) > 100:
+            messages.error(request, 'Client name is required and must be less than 100 characters.')
             return render(request, 'core/create-bill.html', {'user': request.user})
 
         # Parse bill items sent as JSON
@@ -461,15 +472,21 @@ def create_bill(request):
             items_data = json.loads(items_json) if items_json else []
         except json.JSONDecodeError:
             messages.error(request, 'Invalid items payload. Please try again.')
+            logger.warning(f"JSONDecodeError in bill creation for user {request.user.id}")
             return render(request, 'core/create-bill.html', {'user': request.user})
 
-        if not items_data:
+        if not items_data or len(items_data) == 0:
             messages.error(request, 'Please add at least one product to the bill.')
+            return render(request, 'core/create-bill.html', {'user': request.user})
+
+        # Limit number of items to prevent abuse
+        if len(items_data) > 1000:
+            messages.error(request, 'Maximum 1000 items per bill.')
             return render(request, 'core/create-bill.html', {'user': request.user})
 
         try:
             # Resolve or create client - now with more fields from multi-bill form
-            client_select = request.POST.get('clientSelect')
+            client_select = request.POST.get('clientSelect', '').strip()
             if client_select:
                 client = Client.objects.get(lid=client_select, user=request.user)
                 created = False
@@ -485,26 +502,39 @@ def create_bill(request):
                     client = existing_client
                     created = False
                     
-                    # Update fields if provided
-                    if request.POST.get('phone'):
-                        client.phone = request.POST.get('phone', '')
-                    if request.POST.get('email'):
-                        client.email = request.POST.get('email', '')
-                    if request.POST.get('address'):
-                        client.address = request.POST.get('address', '')
+                    # Safely update fields with validation
+                    phone = request.POST.get('phone', '').strip()[:20]
+                    email = request.POST.get('email', '').strip()[:100]
+                    address = request.POST.get('address', '').strip()[:100]
+                    city = request.POST.get('city', '').strip()[:100]
+                    country = request.POST.get('country', '').strip()[:100]
+                    postal_code = request.POST.get('postal_code', '').strip()[:10]
+                    
+                    if phone:
+                        client.phone = phone
+                    if email:
+                        client.email = email
+                    if address:
+                        client.address = address
+                    if city:
+                        client.city = city
+                    if country:
+                        client.country = country
+                    if postal_code:
+                        client.postal_code = postal_code
                     
                     client.save()
                 else:
-                    # Create new client
+                    # Create new client with validated data
                     client = Client.objects.create(
-                        full_name=client_name,
+                        full_name=client_name[:100],
                         user=request.user,
-                        address=request.POST.get('address', ''),
-                        phone=request.POST.get('phone', ''),
-                        email=request.POST.get('email', ''),
-                        city=request.POST.get('city', ''),
-                        country=request.POST.get('country', ''),
-                        postal_code=request.POST.get('postal_code', ''),
+                        address=request.POST.get('address', '').strip()[:100],
+                        phone=request.POST.get('phone', '').strip()[:20],
+                        email=request.POST.get('email', '').strip()[:100],
+                        city=request.POST.get('city', '').strip()[:100],
+                        country=request.POST.get('country', '').strip()[:100],
+                        postal_code=request.POST.get('postal_code', '').strip()[:10],
                     )
                     created = True
 
@@ -513,9 +543,19 @@ def create_bill(request):
             total_qty = Decimal('0')
 
             for item in items_data:
-                title = (item.get('title') or item.get('description') or '').strip()
-                price = Decimal(str(item.get('price', 0)))
-                qty = Decimal(str(item.get('quantity', 0)))
+                title = (item.get('title') or item.get('description') or '').strip()[:255]
+                try:
+                    price = Decimal(str(item.get('price', 0)))
+                    qty = Decimal(str(item.get('quantity', 0)))
+                except (InvalidOperation, ValueError):
+                    messages.error(request, 'Invalid price or quantity format.')
+                    return render(request, 'core/create-bill.html', {'user': request.user})
+                
+                # Validate positive values
+                if price < 0 or qty < 0:
+                    messages.error(request, 'Price and quantity must be positive.')
+                    return render(request, 'core/create-bill.html', {'user': request.user})
+                
                 amount = price * qty
                 total_price += amount
                 total_qty += qty
@@ -527,14 +567,14 @@ def create_bill(request):
                 })
 
             # Build a summary description for quick views/search
-            description_summary = ", ".join([p['description'] for p in parsed_items if p['description']])
+            description_summary = ", ".join([p['description'] for p in parsed_items if p['description']])[:255]
 
             bill = Bill.objects.create(
                 store_name=request.user,
                 client=client,
                 date=bill_date if bill_date else timezone.now().date(),
                 quantity=total_qty,
-                description=description_summary[:255],
+                description=description_summary,
                 price=parsed_items[0]['price'] if parsed_items else Decimal('0'),
                 amount=total_price,
                 total_price=total_price,
@@ -552,9 +592,11 @@ def create_bill(request):
 
             # Success message
             if created:
-                messages.success(request, f'New client "{client_name}" created and bill saved successfully!')
+                messages.success(request, f'Bill saved successfully!')
             else:
-                messages.success(request, f'Bill saved successfully for client "{client_name}"!')
+                messages.success(request, f'Bill saved successfully!')
+
+            logger.info(f"Bill created successfully for user {request.user.id} with {len(parsed_items)} items")
 
             # Return success response for AJAX
             # If it's an AJAX request, return JSON; otherwise redirect
@@ -570,21 +612,24 @@ def create_bill(request):
             
         except Client.DoesNotExist:
             from django.http import JsonResponse
+            logger.warning(f"Client not found for user {request.user.id}")
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'success': False, 'error': 'Selected client not found.'}, status=400)
             messages.error(request, 'Selected client not found.')
             return render(request, 'core/create-bill.html', {'user': request.user})
         except (ValueError, InvalidOperation) as ve:
             from django.http import JsonResponse
+            logger.error(f"Invalid operation in bill creation: {str(ve)}")
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                return JsonResponse({'success': False, 'error': f'Invalid number format: {str(ve)}'}, status=400)
-            messages.error(request, f'Invalid number format: {str(ve)}')
+                return JsonResponse({'success': False, 'error': 'Invalid data format.'}, status=400)
+            messages.error(request, 'Invalid data format.')
             return render(request, 'core/create-bill.html', {'user': request.user})
         except Exception as e:
             from django.http import JsonResponse
+            logger.error(f"Error creating bill: {str(e)}")
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                return JsonResponse({'success': False, 'error': f'Error creating bill: {str(e)}'}, status=500)
-            messages.error(request, f'Error creating bill: {str(e)}')
+                return JsonResponse({'success': False, 'error': 'An error occurred.'}, status=500)
+            messages.error(request, 'An error occurred while saving the bill.')
             return render(request, 'core/create-bill.html', {'user': request.user})
 
 @login_required(login_url='/login/')
