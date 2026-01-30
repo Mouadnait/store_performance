@@ -2,9 +2,985 @@
 {% load static %}
 
 {% block style-content %}
-<link rel="stylesheet" href="{% static 'css/create-bill-complete.css' %}">
-{% endblock style-content %}
+<link rel="stylesheet" href="{% static 'css/bills.css' %}">
+<link rel="stylesheet" href="{% static 'css/create-bill-enhanced.css' %}">
+    left: 0;
+    right: 0;
+    height: 400px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    z-index: 0;
+    border-radius: 0 0 50% 50% / 0 0 5% 5%;
+}
 
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    background: white;
+    padding: 30px 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 1;
+    backdrop-filter: blur(10px);
+}
+
+.page-title {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.page-title h1 {
+    font-size: 32px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+
+.page-title .material-icons-sharp {
+    font-size: 42px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.quick-stats {
+    display: flex;
+    gap: 25px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 15px 25px;
+    background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+    border-radius: 12px;
+    border: 2px solid #e0e7ff;
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: block;
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 11px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+    margin-top: 5px;
+}
+
+/* Multi-Bill Tabs */
+.bill-tabs-container {
+    background: white;
+    padding: 25px 30px;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    margin-bottom: 25px;
+    position: relative;
+    z-index: 1;
+    border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.bill-tabs {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.bill-tab {
+    padding: 14px 24px;
+    background: #f8f9ff;
+    border: 2px solid #e0e7ff;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    font-size: 14px;
+}
+
+.bill-tab.active {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    transform: translateY(-2px);
+}
+
+.bill-tab:hover:not(.active) {
+    border-color: #667eea;
+    background: #e0e7ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.bill-tab .tab-number {
+    font-size: 11px;
+    background: rgba(255, 255, 255, 0.25);
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+}
+
+.bill-tab .close-tab {
+    margin-left: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    opacity: 0.7;
+}
+
+.bill-tab .close-tab:hover {
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+.tab-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.add-bill-btn, .save-all-btn {
+    padding: 14px 28px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 14px;
+    letter-spacing: 0.3px;
+}
+
+.add-bill-btn {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.add-bill-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(16, 185, 129, 0.5);
+}
+
+.save-all-btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.save-all-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.5);
+}
+
+.save-all-btn .material-icons-sharp {
+    font-size: 20px;
+}
+
+/* Bill Content */
+.bill-content {
+    display: none;
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+    position: relative;
+    z-index: 1;
+    border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.bill-content.active {
+    display: block;
+    animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 10px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-group label .required {
+    color: #ef4444;
+    font-size: 16px;
+}
+
+.form-group input,
+.form-group select {
+    padding: 14px 18px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 14px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #f8fafc;
+    font-weight: 500;
+}
+
+.form-group input:hover,
+.form-group select:hover {
+    border-color: #cbd5e1;
+    background: white;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    background: white;
+    transform: translateY(-1px);
+}
+
+/* Items Section */
+.items-section {
+    margin-top: 30px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-header h3 {
+    font-size: 20px;
+    font-weight: 800;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: -0.3px;
+    margin: 0;
+}
+
+.add-item-btn {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.add-item-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.5);
+}
+
+.items-table-container {
+    overflow-x: auto;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e2e8f0;
+}
+
+.items-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.items-table thead {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.items-table th {
+    padding: 18px 20px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.items-table tbody tr {
+    border-bottom: 1px solid #e2e8f0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.items-table tbody tr:hover {
+    background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+    transform: scale(1.01);
+}
+
+.items-table td {
+    padding: 18px 20px;
+}
+
+.items-table input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: white;
+    font-weight: 500;
+}
+
+.items-table input:hover {
+    border-color: #cbd5e1;
+}
+
+.items-table input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    transform: scale(1.02);
+}
+
+.remove-item-btn {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 600;
+    font-size: 12px;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.remove-item-btn:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+/* Bill Summary */
+.bill-summary {
+    margin-top: 30px;
+    padding: 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    font-size: 16px;
+}
+
+.summary-row:last-child {
+    margin-bottom: 0;
+    padding-top: 18px;
+    border-top: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.summary-label {
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+    text-transform: uppercase;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+}
+
+.summary-value {
+    font-weight: 800;
+    color: white;
+    font-size: 20px;
+}
+
+.summary-row:last-child .summary-value {
+    font-size: 32px;
+    color: white;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Recent Bills Section */
+.recent-bills-section {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 1;
+    border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.section-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 3px solid #e2e8f0;
+}
+
+.section-title h2 {
+    font-size: 26px;
+    font-weight: 800;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    letter-spacing: -0.5px;
+    margin: 0;
+}
+
+.view-all-btn {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.view-all-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.5);
+}
+
+.bills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.bill-card {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 25px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.bill-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.bill-card:hover::before {
+    transform: scaleX(1);
+}
+
+.bill-card:hover {
+    border-color: #667eea;
+    box-shadow: 0 12px 35px rgba(102, 126, 234, 0.2);
+    transform: translateY(-6px);
+}
+
+.bill-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 15px;
+}
+
+.bill-id {
+    font-size: 13px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    background-color: #e0e7ff;
+    padding: 6px 14px;
+    border-radius: 8px;
+}
+
+.bill-date {
+    font-size: 12px;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.client-info {
+    margin-bottom: 15px;
+}
+
+.client-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.client-details {
+    font-size: 13px;
+    color: #64748b;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.bill-summary-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 15px;
+    border-top: 2px solid #e2e8f0;
+    margin-top: 15px;
+}
+
+.items-count {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    color: #64748b;
+}
+
+.bill-amount {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.bill-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.action-btn.view {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.action-btn.print {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+.action-btn.duplicate {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.action-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #64748b;
+}
+
+.empty-state .material-icons-sharp {
+    font-size: 80px;
+    color: #cbd5e1;
+    margin-bottom: 20px;
+}
+
+.empty-state h3 {
+    font-size: 20px;
+    margin-bottom: 10px;
+    color: #475569;
+}
+
+.empty-state p {
+    font-size: 14px;
+}
+
+/* Progress Indicator */
+.progress-indicator {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.progress-indicator.active {
+    display: flex;
+}
+
+.progress-content {
+    background: white;
+    padding: 40px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.spinner {
+    border: 4px solid #e2e8f0;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.progress-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* Toast Notification */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    padding: 15px 25px;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    display: none;
+    align-items: center;
+    gap: 12px;
+    z-index: 10000;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.toast.show {
+    display: flex;
+}
+
+.toast.success {
+    border-left: 4px solid #10b981;
+}
+
+.toast.error {
+    border-left: 4px solid #ef4444;
+}
+
+.toast .material-icons-sharp {
+    font-size: 24px;
+}
+
+.toast.success .material-icons-sharp {
+    color: #10b981;
+}
+
+.toast.error .material-icons-sharp {
+    color: #ef4444;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .bill-page-container {
+        padding: 15px;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .quick-stats {
+        width: 100%;
+        justify-content: space-around;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .bills-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .bill-tabs {
+        flex-direction: column;
+    }
+    
+    .tab-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .add-bill-btn, .save-all-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #64748b;
+}
+
+.empty-state .material-icons-sharp {
+    font-size: 80px;
+    color: #cbd5e1;
+    margin-bottom: 20px;
+}
+
+.empty-state h3 {
+    font-size: 20px;
+    margin-bottom: 10px;
+    color: #475569;
+}
+
+.empty-state p {
+    font-size: 14px;
+}
+
+/* Progress Indicator */
+.progress-indicator {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.progress-indicator.active {
+    display: flex;
+}
+
+.progress-content {
+    background: white;
+    padding: 40px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.spinner {
+    border: 4px solid #e2e8f0;
+    border-top: 4px solid #6366f1;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.progress-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* Toast Notification */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    padding: 15px 25px;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    display: none;
+    align-items: center;
+    gap: 12px;
+    z-index: 10000;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.toast.show {
+    display: flex;
+}
+
+.toast.success {
+    border-left: 4px solid #10b981;
+}
+
+.toast.error {
+    border-left: 4px solid #ef4444;
+}
+
+.toast .material-icons-sharp {
+    font-size: 24px;
+}
+
+.toast.success .material-icons-sharp {
+    color: #10b981;
+}
+
+.toast.error .material-icons-sharp {
+    color: #ef4444;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .bill-page-container {
+        padding: 15px;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .quick-stats {
+        width: 100%;
+        justify-content: space-around;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .bills-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .bill-tabs {
+        flex-direction: column;
+    }
+    
+    .tab-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .add-bill-btn, .save-all-btn {
+{% endblock style-content %}
 
 {% block content %}
 <div class="bill-page-container">
@@ -290,4 +1266,385 @@
 
 <script src="{% static 'javascript/create-bill-complete.js' %}"></script>
 
+<!-- REMOVED: Inline JavaScript moved to create-bill-complete.js -->
+<!-- 
+<script>
+'use strict';
+
+let billCounter = 1;
+let activeBill = 1;
+
+// XSS Prevention
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Add new bill tab
+function addNewBill() {
+    billCounter++;
+    const billTabs = document.getElementById('billTabs');
+    const formsContainer = document.getElementById('billFormsContainer');
+    
+    // Create new tab
+    const newTab = document.createElement('div');
+    newTab.className = 'bill-tab';
+    newTab.setAttribute('data-bill', billCounter);
+    newTab.onclick = () => switchBill(billCounter);
+    newTab.innerHTML = `
+        <span class="tab-number">#${billCounter}</span>
+        <span>Bill ${billCounter}</span>
+        <span class="close-tab" onclick="closeBill(event, ${billCounter})">×</span>
+    `;
+    billTabs.appendChild(newTab);
+    
+    // Clone first bill form
+    const firstForm = document.querySelector('.bill-content[data-bill="1"]');
+    const newForm = firstForm.cloneNode(true);
+    newForm.setAttribute('data-bill', billCounter);
+    newForm.classList.remove('active');
+    
+    // Reset form values
+    const inputs = newForm.querySelectorAll('input:not([type="date"]), select');
+    inputs.forEach(input => {
+        if (input.type !== 'date') {
+            input.value = '';
+        }
+    });
+    
+    // Keep only one item row
+    const tbody = newForm.querySelector('.items-body');
+    tbody.innerHTML = `
+        <tr class="item-row">
+            <td>1</td>
+            <td><input type="text" class="item-title" placeholder="Item description" required></td>
+            <td><input type="number" class="item-price" placeholder="0.00" step="0.01" min="0" value="0" oninput="calculateRowTotal(this)"></td>
+            <td><input type="number" class="item-quantity" placeholder="1" min="1" value="1" oninput="calculateRowTotal(this)"></td>
+            <td><input type="number" class="item-amount" placeholder="0.00" readonly style="background: #f1f5f9; font-weight: 600;"></td>
+            <td>
+                <button type="button" class="remove-item-btn" onclick="removeItem(this, ${billCounter})">
+                    <span class="material-icons-sharp" style="font-size: 16px;">delete</span>
+                    Remove
+                </button>
+            </td>
+        </tr>
+    `;
+    
+    newForm.querySelector('.bill-form').setAttribute('data-bill-number', billCounter);
+    formsContainer.appendChild(newForm);
+    
+    switchBill(billCounter);
+    updateSaveButton();
+    showToast(`Bill ${billCounter} added`, 'success');
+}
+
+// Switch between bills
+function switchBill(billNumber) {
+    activeBill = billNumber;
+    
+    // Update tabs
+    document.querySelectorAll('.bill-tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (parseInt(tab.getAttribute('data-bill')) === billNumber) {
+            tab.classList.add('active');
+        }
+    });
+    
+    // Update forms
+    document.querySelectorAll('.bill-content').forEach(content => {
+        content.classList.remove('active');
+        if (parseInt(content.getAttribute('data-bill')) === billNumber) {
+            content.classList.add('active');
+        }
+    });
+}
+
+// Close bill tab
+function closeBill(event, billNumber) {
+    event.stopPropagation();
+    
+    const allTabs = document.querySelectorAll('.bill-tab');
+    if (allTabs.length <= 1) {
+        showToast('Cannot close the last bill', 'error');
+        return;
+    }
+    
+    // Remove tab
+    const tab = document.querySelector(`.bill-tab[data-bill="${billNumber}"]`);
+    if (tab) tab.remove();
+    
+    // Remove form
+    const form = document.querySelector(`.bill-content[data-bill="${billNumber}"]`);
+    if (form) form.remove();
+    
+    // Switch to first available bill if closed bill was active
+    if (activeBill === billNumber) {
+        const firstTab = document.querySelector('.bill-tab');
+        if (firstTab) {
+            switchBill(parseInt(firstTab.getAttribute('data-bill')));
+        }
+    }
+    
+    updateSaveButton();
+    showToast(`Bill ${billNumber} removed`, 'success');
+}
+
+// Fill client data from select
+function fillClientData(select, billNumber) {
+    const form = document.querySelector(`.bill-content[data-bill="${billNumber}"] .bill-form`);
+    if (!form) return;
+    
+    const selectedOption = select.options[select.selectedIndex];
+    if (!selectedOption.value) {
+        // Clear form if "New Client" selected
+        form.querySelector('.clientName').value = '';
+        form.querySelector('.phone').value = '';
+        form.querySelector('.email').value = '';
+        form.querySelector('.address').value = '';
+        form.querySelector('.city').value = '';
+        form.querySelector('.country').value = '';
+        return;
+    }
+    
+    form.querySelector('.clientName').value = selectedOption.getAttribute('data-name') || '';
+    form.querySelector('.phone').value = selectedOption.getAttribute('data-phone') || '';
+    form.querySelector('.email').value = selectedOption.getAttribute('data-email') || '';
+    form.querySelector('.address').value = selectedOption.getAttribute('data-address') || '';
+    form.querySelector('.city').value = selectedOption.getAttribute('data-city') || '';
+    form.querySelector('.country').value = selectedOption.getAttribute('data-country') || '';
+}
+
+// Add item row
+function addItem(billNumber) {
+    const form = document.querySelector(`.bill-content[data-bill="${billNumber}"]`);
+    const tbody = form.querySelector('.items-body');
+    const rows = tbody.querySelectorAll('.item-row');
+    const rowNumber = rows.length + 1;
+    
+    const newRow = document.createElement('tr');
+    newRow.className = 'item-row';
+    newRow.innerHTML = `
+        <td>${rowNumber}</td>
+        <td><input type="text" class="item-title" placeholder="Item description" required></td>
+        <td><input type="number" class="item-price" placeholder="0.00" step="0.01" min="0" value="0" oninput="calculateRowTotal(this)"></td>
+        <td><input type="number" class="item-quantity" placeholder="1" min="1" value="1" oninput="calculateRowTotal(this)"></td>
+        <td><input type="number" class="item-amount" placeholder="0.00" readonly style="background: #f1f5f9; font-weight: 600;"></td>
+        <td>
+            <button type="button" class="remove-item-btn" onclick="removeItem(this, ${billNumber})">
+                <span class="material-icons-sharp" style="font-size: 16px;">delete</span>
+                Remove
+            </button>
+        </td>
+    `;
+    
+    tbody.appendChild(newRow);
+    updateBillSummary(billNumber);
+}
+
+// Remove item row
+function removeItem(button, billNumber) {
+    const form = document.querySelector(`.bill-content[data-bill="${billNumber}"]`);
+    const tbody = form.querySelector('.items-body');
+    const rows = tbody.querySelectorAll('.item-row');
+    
+    if (rows.length <= 1) {
+        showToast('At least one item is required', 'error');
+        return;
+    }
+    
+    button.closest('tr').remove();
+    
+    // Renumber rows
+    tbody.querySelectorAll('.item-row').forEach((row, index) => {
+        row.querySelector('td:first-child').textContent = index + 1;
+    });
+    
+    updateBillSummary(billNumber);
+}
+
+// Calculate row total
+function calculateRowTotal(input) {
+    const row = input.closest('tr');
+    const price = parseFloat(row.querySelector('.item-price').value) || 0;
+    const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
+    const amount = price * quantity;
+    
+    row.querySelector('.item-amount').value = amount.toFixed(2);
+    
+    const billNumber = parseInt(input.closest('.bill-content').getAttribute('data-bill'));
+    updateBillSummary(billNumber);
+}
+
+// Update bill summary
+function updateBillSummary(billNumber) {
+    const form = document.querySelector(`.bill-content[data-bill="${billNumber}"]`);
+    const rows = form.querySelectorAll('.item-row');
+    
+    let totalItems = rows.length;
+    let totalQuantity = 0;
+    let totalAmount = 0;
+    
+    rows.forEach(row => {
+        const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
+        const amount = parseFloat(row.querySelector('.item-amount').value) || 0;
+        totalQuantity += quantity;
+        totalAmount += amount;
+    });
+    
+    form.querySelector('.total-items').textContent = totalItems;
+    form.querySelector('.total-quantity').textContent = totalQuantity;
+    form.querySelector('.total-amount').textContent = `$${totalAmount.toFixed(2)}`;
+}
+
+// Update save button text
+function updateSaveButton() {
+    const billCount = document.querySelectorAll('.bill-tab').length;
+    const saveBtn = document.querySelector('.save-all-btn');
+    saveBtn.innerHTML = `
+        <span class="material-icons-sharp">save</span>
+        Save All Bills (${billCount})
+    `;
+}
+
+// Save all bills
+async function saveAllBills() {
+    const billForms = document.querySelectorAll('.bill-form');
+    const billsData = [];
+    
+    // Validate and collect all bills data
+    for (let form of billForms) {
+        const clientName = form.querySelector('.clientName').value.trim();
+        const billDate = form.querySelector('.billDate').value;
+        
+        if (!clientName) {
+            showToast('Please fill client name in all bills', 'error');
+            return;
+        }
+        
+        const items = [];
+        const rows = form.querySelectorAll('.item-row');
+        
+        for (let row of rows) {
+            const title = row.querySelector('.item-title').value.trim();
+            const price = parseFloat(row.querySelector('.item-price').value) || 0;
+            const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
+            
+            if (title && price >= 0 && quantity > 0) {
+                items.push({ title, price, quantity });
+            }
+        }
+        
+        if (items.length === 0) {
+            showToast('Each bill must have at least one item', 'error');
+            return;
+        }
+        
+        billsData.push({
+            clientName,
+            phone: form.querySelector('.phone').value.trim(),
+            email: form.querySelector('.email').value.trim(),
+            address: form.querySelector('.address').value.trim(),
+            city: form.querySelector('.city').value.trim(),
+            country: form.querySelector('.country').value.trim(),
+            billDate,
+            items
+        });
+    }
+    
+    // Show progress
+    const progressIndicator = document.getElementById('progressIndicator');
+    progressIndicator.classList.add('active');
+    
+    // Save bills sequentially
+    let successCount = 0;
+    const failedBills = [];
+    
+    for (let i = 0; i < billsData.length; i++) {
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        formData.append('clientName', billsData[i].clientName);
+        formData.append('phone', billsData[i].phone);
+        formData.append('email', billsData[i].email);
+        formData.append('address', billsData[i].address);
+        formData.append('city', billsData[i].city);
+        formData.append('country', billsData[i].country);
+        formData.append('billDate', billsData[i].billDate);
+        formData.append('items_json', JSON.stringify(billsData[i].items));
+        
+        try {
+            const response = await fetch('{% url "core:create-bill" %}', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: formData
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data && data.success) {
+                    successCount++;
+                } else {
+                    failedBills.push({ num: i + 1, error: data.error || 'Unknown error' });
+                }
+            } else {
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                failedBills.push({ num: i + 1, error: errorData.error || response.statusText });
+            }
+        } catch (error) {
+            console.error('Error saving bill:', error);
+            failedBills.push({ num: i + 1, error: error.message });
+        }
+    }
+    
+    progressIndicator.classList.remove('active');
+    
+    if (successCount === billsData.length) {
+        showToast(`Successfully saved all ${successCount} bills!`, 'success');
+        setTimeout(() => { window.location.reload(); }, 1500);
+    } else if (successCount > 0) {
+        const failedNums = failedBills.map(b => `#${b.num}`).join(', ');
+        showToast(`Saved ${successCount}/${billsData.length} bills. Failed: ${failedNums}`, 'error');
+    } else {
+        showToast(`All bills failed to save. Please check and try again.`, 'error');
+    }
+}
+
+// Show toast notification
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    const icon = toast.querySelector('.material-icons-sharp');
+    const messageEl = toast.querySelector('.toast-message');
+    
+    toast.className = `toast ${type}`;
+    messageEl.textContent = message;
+    
+    if (type === 'success') {
+        icon.textContent = 'check_circle';
+    } else {
+        icon.textContent = 'error';
+    }
+    
+    toast.classList.add('show');
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 4000);
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Calculate initial totals
+    updateBillSummary(1);
+    updateSaveButton();
+    
+    // Add CSRF token if not present
+    if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = '{{ csrf_token }}';
+        document.body.appendChild(csrfInput);
+    }
+});
+</script>
 {% endblock content %}

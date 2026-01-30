@@ -1,20 +1,24 @@
+/**
+ * ============================================================
+ * CREATE BILL - Multi-Bill Management
+ * ============================================================
+ * 
+ * Handles multiple bill creation with dynamic tabs and AJAX saving
+ */
+
 'use strict';
 
 let billCounter = 1;
 let activeBill = 1;
 
-/**
- * XSS Prevention: Escape HTML special characters
- */
+// XSS Prevention
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
-/**
- * Add new bill tab and form
- */
+// Add new bill tab
 function addNewBill() {
     billCounter++;
     const billTabs = document.getElementById('billTabs');
@@ -72,9 +76,7 @@ function addNewBill() {
     showToast(`Bill ${billCounter} added`, 'success');
 }
 
-/**
- * Switch active bill tab and form
- */
+// Switch between bills
 function switchBill(billNumber) {
     activeBill = billNumber;
     
@@ -95,9 +97,7 @@ function switchBill(billNumber) {
     });
 }
 
-/**
- * Close bill tab and remove form
- */
+// Close bill tab
 function closeBill(event, billNumber) {
     event.stopPropagation();
     
@@ -127,9 +127,7 @@ function closeBill(event, billNumber) {
     showToast(`Bill ${billNumber} removed`, 'success');
 }
 
-/**
- * Fill client form data from select dropdown
- */
+// Fill client data from select
 function fillClientData(select, billNumber) {
     const form = document.querySelector(`.bill-content[data-bill="${billNumber}"] .bill-form`);
     if (!form) return;
@@ -154,9 +152,7 @@ function fillClientData(select, billNumber) {
     form.querySelector('.country').value = selectedOption.getAttribute('data-country') || '';
 }
 
-/**
- * Add new item row to bill
- */
+// Add item row
 function addItem(billNumber) {
     const form = document.querySelector(`.bill-content[data-bill="${billNumber}"]`);
     const tbody = form.querySelector('.items-body');
@@ -183,9 +179,7 @@ function addItem(billNumber) {
     updateBillSummary(billNumber);
 }
 
-/**
- * Remove item row from bill
- */
+// Remove item row
 function removeItem(button, billNumber) {
     const form = document.querySelector(`.bill-content[data-bill="${billNumber}"]`);
     const tbody = form.querySelector('.items-body');
@@ -206,9 +200,7 @@ function removeItem(button, billNumber) {
     updateBillSummary(billNumber);
 }
 
-/**
- * Calculate total for a single item row
- */
+// Calculate row total
 function calculateRowTotal(input) {
     const row = input.closest('tr');
     const price = parseFloat(row.querySelector('.item-price').value) || 0;
@@ -221,9 +213,7 @@ function calculateRowTotal(input) {
     updateBillSummary(billNumber);
 }
 
-/**
- * Update bill summary totals
- */
+// Update bill summary
 function updateBillSummary(billNumber) {
     const form = document.querySelector(`.bill-content[data-bill="${billNumber}"]`);
     const rows = form.querySelectorAll('.item-row');
@@ -244,9 +234,7 @@ function updateBillSummary(billNumber) {
     form.querySelector('.total-amount').textContent = `$${totalAmount.toFixed(2)}`;
 }
 
-/**
- * Update save button with bill count
- */
+// Update save button text
 function updateSaveButton() {
     const billCount = document.querySelectorAll('.bill-tab').length;
     const saveBtn = document.querySelector('.save-all-btn');
@@ -256,9 +244,7 @@ function updateSaveButton() {
     `;
 }
 
-/**
- * Save all bills via AJAX
- */
+// Save all bills
 async function saveAllBills() {
     const billForms = document.querySelectorAll('.bill-form');
     const billsData = [];
@@ -303,7 +289,7 @@ async function saveAllBills() {
         });
     }
     
-    // Show progress indicator
+    // Show progress
     const progressIndicator = document.getElementById('progressIndicator');
     progressIndicator.classList.add('active');
     
@@ -313,7 +299,7 @@ async function saveAllBills() {
     
     for (let i = 0; i < billsData.length; i++) {
         const formData = new FormData();
-        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        formData.append('csrfmiddlewaretoken', window.CSRF_TOKEN);
         formData.append('clientName', billsData[i].clientName);
         formData.append('phone', billsData[i].phone);
         formData.append('email', billsData[i].email);
@@ -324,7 +310,7 @@ async function saveAllBills() {
         formData.append('items_json', JSON.stringify(billsData[i].items));
         
         try {
-            const response = await fetch('{% url "core:create-bill" %}', {
+            const response = await fetch(window.CREATE_BILL_URL, {
                 method: 'POST',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 body: formData
@@ -360,9 +346,7 @@ async function saveAllBills() {
     }
 }
 
-/**
- * Show toast notification
- */
+// Show toast notification
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
     const icon = toast.querySelector('.material-icons-sharp');
@@ -384,20 +368,9 @@ function showToast(message, type = 'success') {
     }, 4000);
 }
 
-/**
- * Initialize on DOM ready
- */
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     // Calculate initial totals
     updateBillSummary(1);
     updateSaveButton();
-    
-    // Add CSRF token if not present
-    if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = 'csrfmiddlewaretoken';
-        csrfInput.value = '{{ csrf_token }}';
-        document.body.appendChild(csrfInput);
-    }
 });

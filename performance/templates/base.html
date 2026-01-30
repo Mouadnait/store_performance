@@ -5,7 +5,7 @@
     <head>
         <meta charset="UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
         <!-- Favicon -->
         <link rel="icon" href="{% static 'images/store_performance.jpeg' %}" type="image/jpeg">
@@ -15,12 +15,188 @@
         <!----===== Boxicons CSS ===== -->
         <link href='https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css' rel='stylesheet'>
 
-        <!-- ======== CSS ======== -->
-        <link rel="stylesheet" href="{% static 'css/style.css' %}">
-        <link rel="stylesheet" href="{% static 'css/sidebar-professional.css' %}">
-        <link rel="stylesheet" href="{% static 'css/base.css' %}">
-        <link rel="stylesheet" href="{% static 'css/responsive.css' %}">
+        <!-- ======== SINGLE MASTER CSS FILE ======== -->
+        <link rel="stylesheet" href="{% static 'css/application.css' %}">
+        
+        <!-- ======== SIDEBAR ENHANCEMENTS CSS ======== -->
+        <link rel="stylesheet" href="{% static 'css/sidebar-enhancements.css' %}">
+        
+        <!-- Page-specific overrides (load LAST) -->
         {% block style-content %}{% endblock style-content %}
+
+        <!-- ===== Title ===== -->
+        <title>{% block title %}{% endblock title %}</title>
+        <!-- === End of Title === -->
+    </head>
+
+    <body>
+        <!-- Mobile Overlay -->
+        <div class="sidebar-overlay"></div>
+        
+        <!-- Mobile Header -->
+        <div class="mobile-header">
+            <button class="mobile-menu-toggle" aria-label="Toggle menu">
+                <i class='bx bx-menu'></i>
+            </button>
+            <div class="mobile-logo">
+                <span class="mobile-logo-text">Store Performance</span>
+            </div>
+            <div class="mobile-user-avatar">
+                {% if request.user.image %}
+                    <img src="{{ request.user.image.url }}" alt="User" loading="lazy">
+                {% else %}
+                    <span>{{ request.user.username|first|upper }}</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <nav class="sidebar">
+            <header>
+                <div class="profile-row">
+                    <div class="avatar-ring">
+                        {% if request.user.image %}
+                            <img src="{{ request.user.image.url }}" alt="User avatar" loading="lazy">
+                        {% else %}
+                            <div class="avatar-placeholder"></div>
+                        {% endif %}
+                        <span class="avatar-fallback {% if request.user.image %}hide{% endif %}">{{ request.user.username|first|upper }}</span>
+                    </div>
+                    <div class="text logo-text">
+                        <span class="logo-text-main">{{ request.user.username }}</span>
+                        <span class="logo-text-sub">Store Performance</span>
+                        <div class="chip-row">
+                            <span class="pill success">Team</span>
+                            {% if request.user.email %}<span class="pill muted">{{ request.user.email }}</span>{% endif %}
+                        </div>
+                    </div>
+                </div>
+                <i class='bx bx-chevron-right toggle' aria-label="Toggle sidebar"></i>
+            </header>
+
+            <div class="section-label">Quick Actions</div>
+            <div class="quick-actions">
+                <a class="quick-action" href="{% url 'core:create-bill' %}" data-tooltip="New Bill">
+                    <span class="qa-text">New Bill</span>
+                    <i class='bx bx-receipt icon'></i>
+                    <i class='bx bx-chevron-right arrow'></i>
+                </a>
+                <a class="quick-action" href="{% url 'core:clients' %}" data-tooltip="Add Client">
+                    <span class="qa-text">Add Client</span>
+                    <i class='bx bx-user-plus icon'></i>
+                    <i class='bx bx-chevron-right arrow'></i>
+                </a>
+                <a class="quick-action" href="{% url 'core:products' %}" data-tooltip="Add Product">
+                    <span class="qa-text">Add Product</span>
+                    <i class='bx bx-package icon'></i>
+                    <i class='bx bx-chevron-right arrow'></i>
+                </a>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div class="menu-bar">
+                <div class="menu">
+                    <div class="section-label">Overview</div>
+                    <ul class="menu-links" title="Dashboard">
+                        <li class="nav-link" data-tooltip="Dashboard">
+                            <a href="{% url 'core:dashboard' %}"
+                                class="{% if request.resolver_match.url_name == 'dashboard' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Dashboard</span>
+                                <i class='bx bx-home-alt icon'></i>
+                            </a>
+                        </li>
+                        <li class="nav-link" data-tooltip="Analytics">
+                            <a href="{% url 'core:analytics' %}"
+                                class="{% if request.resolver_match.url_name == 'analytics' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Analytics</span>
+                                <i class='bx bx-pie-chart-alt icon'></i>
+                            </a>
+                        </li>
+                        <li class="nav-link" data-tooltip="Reports">
+                            <a href="{% url 'core:reports' %}"
+                                class="{% if request.resolver_match.url_name == 'reports' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Reports</span>
+                                <i class='bx bx-file icon'></i>
+                            </a>
+                        </li>
+                    </ul>
+
+                    <div class="section-label">Operations</div>
+                    <ul class="menu-links grouped" title="Operations">
+                        <li class="nav-link" data-tooltip="Bills">
+                            <a href="{% url 'core:create-bill' %}"
+                                class="{% if request.resolver_match.url_name == 'create-bill' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Bills</span>
+                                <i class='bx bx-receipt icon'></i>
+                            </a>
+                        </li>
+                        <li class="nav-link" data-tooltip="Clients">
+                            <a href="{% url 'core:clients' %}"
+                                class="{% if request.resolver_match.url_name == 'clients' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Clients</span>
+                                <i class='bx bx-user icon'></i>
+                            </a>
+                        </li>
+                        <li class="nav-link" data-tooltip="Products">
+                            <a href="{% url 'core:products' %}"
+                                class="{% if request.resolver_match.url_name == 'products' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Products</span>
+                                <i class='bx bx-box icon'></i>
+                            </a>
+                        </li>
+                    </ul>
+
+                    <div class="section-divider"></div>
+                </div>
+
+                <div class="bottom-content">
+                    <div class="section-label">Account</div>
+                    <ul class="menu-links grouped" title="Account">
+                        <li class="nav-link" data-tooltip="Profile">
+                            <a href="{% url 'core:profile' %}"
+                                class="{% if request.resolver_match.url_name == 'profile' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Profile</span>
+                                <i class='bx bx-user-circle icon'></i>
+                            </a>
+                        </li>
+                        <li class="nav-link" data-tooltip="Settings">
+                            <a href="{% url 'core:settings' %}"
+                                class="{% if request.resolver_match.url_name == 'settings' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Settings</span>
+                                <i class='bx bx-cog icon'></i>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+        </nav>
+
+        <section class="home">
+            <!-- Messages Container -->
+            <div class="message-container">
+                {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{message.tags}}" role="alert">
+                    <div class="alert-content">
+                        <i class='bx bx-{% if message.tags == "success" %}check-circle{% elif message.tags == "error" %}error-circle{% elif message.tags == "warning" %}error{% else %}info-circle{% endif %} alert-icon'></i>
+                        <strong>{{ message }}</strong>
+                    </div>
+                    <button class="alert-close" onclick="this.parentElement.remove();" aria-label="Close">
+                        <i class='bx bx-x'></i>
+                    </button>
+                </div>
+                {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Content Wrapper -->
+            <div class="content-wrapper">
+                <!-- Header Title -->
+                <div class="text page-title">
+                    {% block content-title %}{% endblock content-title %}
+                </div>
+                <!-- End of Header Title -->
 
                 <!-- Block Content -->
                 <div class="page-content">
