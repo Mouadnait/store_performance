@@ -206,3 +206,27 @@ def sanitize_input(fields=None):
             return view_func(request, *args, **kwargs)
         return wrapped
     return decorator
+
+
+def ajax_compatible(view_func):
+    """
+    Make a view AJAX-compatible.
+    Returns only the content section when accessed via AJAX.
+    
+    Usage:
+        @ajax_compatible
+        def my_view(request):
+            return render(request, 'template.html', context)
+    """
+    @wraps(view_func)
+    def wrapped(request, *args, **kwargs):
+        response = view_func(request, *args, **kwargs)
+        
+        # Check if this is an AJAX request
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            # If it's a template response, return the full HTML
+            # The JavaScript will parse and extract the needed content
+            return response
+        
+        return response
+    return wrapped

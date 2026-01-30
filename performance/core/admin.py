@@ -1,5 +1,8 @@
 from django.contrib import admin
-from core.models import *
+from core.models import (
+    Store, Product, ProductImages, Category, Tags,
+    Client, ProductReview, Bill
+)
 
 class StoreAdmin(admin.ModelAdmin):
     list_display = ['name', 'owner', 'email', 'phone', 'city', 'country', 'status', 'created', 'sid']

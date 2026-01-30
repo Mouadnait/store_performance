@@ -1,7 +1,10 @@
 import json
 from decimal import Decimal, InvalidOperation
 import pandas as pd
-from core.models import *
+from core.models import (
+    Bill, BillItem, Product, Client, Category, Tags, 
+    ProductReview, Store, ProductImages
+)
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.figure_factory as ff
@@ -348,7 +351,8 @@ def dashboard(request):
                         if geo:
                             coords = (geo.latitude, geo.longitude)
                         cache.set(client_cache_key, coords, 86400)  # 1 day
-                    except Exception:
+                    except Exception as e:
+                        logger.warning(f"Geocoding failed for {location_str}: {str(e)}")
                         coords = None
 
                 if not coords:
