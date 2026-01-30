@@ -345,3 +345,7 @@ TWILIO_PHONE = os.environ.get('TWILIO_PHONE')
 
 # Audit Logging
 AUDIT_LOG_RETENTION_DAYS = int(os.environ.get('AUDIT_LOG_RETENTION_DAYS', '365'))
+
+# Crispy Forms Configuration
+CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
+CRISPY_TEMPLATE_PACK = 'bootstrap5'

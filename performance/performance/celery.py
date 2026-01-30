@@ -73,4 +73,4 @@ app.conf.update(
 @app.task(bind=True)
 def debug_task(self):
     """Debug task for testing Celery setup."""
-    print(f'Request: {self.request!r}')
+    logger.info(f'Request: {self.request!r}')
