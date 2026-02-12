@@ -1,0 +1,276 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block style-content %}
+<link rel="stylesheet" href="{% static 'css/account/settings.css' %}?v=1.2">
+{% endblock style-content %}
+
+{% block title %}Settings | Store Performance{% endblock title %}
+
+{% block page_title %}Settings{% endblock page_title %}
+
+{% block content %}
+<div class="settings-container">
+    <!-- Main Settings Grid -->
+    <div class="settings-grid">
+        
+        <!-- Left Column: Profile Card & Security -->
+        <div class="settings-column-left">
+            <!-- Profile Quick Card -->
+            <div class="settings-card profile-card">
+                <div class="profile-header">
+                    <h2>User Profile</h2>
+                    <span class="badge {% if is_admin %}badge-admin{% else %}badge-user{% endif %}">
+                        {% if is_admin %}Administrator{% else %}User{% endif %}
+                    </span>
+                </div>
+                
+                <div class="profile-content">
+                    <div class="profile-image-wrapper">
+                        <img src="{% if profile_image %}{{ profile_image }}{% else %}{% static 'images/default-profile.png' %}{% endif %}" 
+                             alt="Profile Image" class="profile-image">
+                    </div>
+                    
+                    <div class="profile-info">
+                        <div class="info-row">
+                            <label>Full Name:</label>
+                            <p>{{ user.first_name }} {{ user.last_name }}</p>
+                        </div>
+                        <div class="info-row">
+                            <label>Username:</label>
+                            <p>{{ user.username }}</p>
+                        </div>
+                        <div class="info-row">
+                            <label>Email:</label>
+                            <p>{{ user.email }}</p>
+                        </div>
+                        <div class="info-row">
+                            <label>Member Since:</label>
+                            <p>{{ user.date_joined|date:"F d, Y" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-actions">
+                        <a href="{% url 'core:profile' %}" class="btn btn-primary">
+                            <span class="material-icons-sharp">edit</span>
+                            Edit Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Security -->
+            <div class="settings-card security-card">
+                <div class="card-header">
+                    <h3><span class="material-icons-sharp">security</span> Account Security</h3>
+                </div>
+                <div class="card-body">
+                    <div class="security-item">
+                        <div class="security-info">
+                            <h4>Change Password</h4>
+                            <p>Update your password regularly</p>
+                        </div>
+                        <button class="btn btn-outline" disabled>
+                            <span class="material-icons-sharp">lock</span>
+                            Coming Soon
+                        </button>
+                    </div>
+                    <div class="security-item">
+                        <div class="security-info">
+                            <h4>Two-Factor Authentication</h4>
+                            <p>Add an extra layer of security</p>
+                        </div>
+                        <button class="btn btn-outline" disabled>Coming Soon</button>
+                    </div>
+                    <div class="security-item">
+                        <div class="security-info">
+                            <h4>Active Sessions</h4>
+                            <p>Manage your login sessions</p>
+                        </div>
+                        <button class="btn btn-outline" disabled>Coming Soon</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: App Settings -->
+        <div class="settings-column-right">
+            <!-- Business Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon products">
+                        <span class="material-icons-sharp">inventory_2</span>
+                    </div>
+                    <div class="stat-content">
+                        <h4>Products</h4>
+                        <p class="stat-number">{{ user_products }}</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon clients">
+                        <span class="material-icons-sharp">people</span>
+                    </div>
+                    <div class="stat-content">
+                        <h4>Clients</h4>
+                        <p class="stat-number">{{ user_clients }}</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon bills">
+                        <span class="material-icons-sharp">receipt</span>
+                    </div>
+                    <div class="stat-content">
+                        <h4>Bills</h4>
+                        <p class="stat-number">{{ user_bills }}</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon revenue">
+                        <span class="material-icons-sharp">trending_up</span>
+                    </div>
+                    <div class="stat-content">
+                        <h4>Total Revenue</h4>
+                        <p class="stat-number">${{ total_revenue|floatformat:2 }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- General Settings -->
+            <div class="settings-card">
+                <div class="card-header">
+                    <h3><span class="material-icons-sharp">settings</span> General Settings</h3>
+                </div>
+                <div class="card-body">
+                    <div class="settings-group">
+                        <label class="settings-label">
+                            <div class="label-text">
+                                <h4>Email Notifications</h4>
+                                <p>Receive email updates about your account</p>
+                            </div>
+                            <input type="checkbox" class="toggle-switch" checked>
+                        </label>
+                    </div>
+                    
+                    <div class="settings-group">
+                        <label class="settings-label">
+                            <div class="label-text">
+                                <h4>GPT-5 Features</h4>
+                                <p>Enable AI-powered features across your store</p>
+                            </div>
+                            <input type="checkbox" class="toggle-switch" checked>
+                        </label>
+                    </div>
+                    
+                    <div class="settings-group">
+                        <label class="settings-label">
+                            <div class="label-text">
+                                <h4>Dark Mode</h4>
+                                <p>Use dark theme for the dashboard</p>
+                            </div>
+                            <input type="checkbox" class="toggle-switch" id="darkModeToggle" onchange="toggleDarkMode()">
+                        </label>
+                    </div>
+                    
+                    <div class="settings-group">
+                        <label class="settings-label">
+                            <div class="label-text">
+                                <h4>Marketing Communications</h4>
+                                <p>Receive tips and updates about Store Performance</p>
+                            </div>
+                            <input type="checkbox" class="toggle-switch">
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications -->
+            <div class="settings-card">
+                <div class="card-header">
+                    <h3><span class="material-icons-sharp">notifications</span> Notifications</h3>
+                </div>
+                <div class="card-body">
+                    <div class="notification-item">
+                        <span class="material-icons-sharp">check_circle</span>
+                        <div>
+                            <h4>New Bill Created</h4>
+                            <p>Notify when a new bill is created</p>
+                        </div>
+                        <input type="checkbox" class="toggle-switch" checked>
+                    </div>
+                    
+                    <div class="notification-item">
+                        <span class="material-icons-sharp">person_add</span>
+                        <div>
+                            <h4>New Client Added</h4>
+                            <p>Notify when a new client joins</p>
+                        </div>
+                        <input type="checkbox" class="toggle-switch" checked>
+                    </div>
+                    
+                    <div class="notification-item">
+                        <span class="material-icons-sharp">trending_up</span>
+                        <div>
+                            <h4>Sales Alerts</h4>
+                            <p>Notify on significant sales milestones</p>
+                        </div>
+                        <input type="checkbox" class="toggle-switch">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Panel Link -->
+            {% if is_admin %}
+            <div class="settings-card admin-panel-card">
+                <div class="card-header">
+                    <h3><span class="material-icons-sharp">admin_panel_settings</span> Administrator</h3>
+                </div>
+                <div class="card-body">
+                    <p>You have administrator privileges on this store.</p>
+                    <a href="/admin/" class="btn btn-primary full-width">
+                        <span class="material-icons-sharp">dashboard</span>
+                        Go to Admin Panel
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Danger Zone -->
+            <div class="settings-card danger-card">
+                <div class="card-header danger-header">
+                    <h3><span class="material-icons-sharp">warning</span> Danger Zone</h3>
+                </div>
+                <div class="card-body">
+                    <div class="danger-action danger-action-primary">
+                        <div class="danger-action-content">
+                            <h4 class="danger-action-title">Logout from Your Account</h4>
+                            <p class="danger-action-text">Sign out from this device and end your current session securely</p>
+                        </div>
+                        <a href="{% url 'userauths:logout' %}" class="btn danger-action-link">
+                            <span class="material-icons-sharp">logout</span>
+                            Logout Now
+                        </a>
+                    </div>
+                    
+                    <div class="danger-action">
+                        <div>
+                            <h4>Delete Account</h4>
+                            <p>Permanently delete your account and all data</p>
+                        </div>
+                        <button class="btn btn-danger-outline" onclick="confirmDeleteAccount()" disabled>
+                            <span class="material-icons-sharp">delete</span>
+                            Delete Account
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block script %}
+<script src="{% static 'javascript/settings.js' %}"></script>
+{% endblock script %}

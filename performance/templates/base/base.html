@@ -1,0 +1,286 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Store Performance - Professional Analytics Platform">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="{% static 'images/store_performance.jpeg' %}" type="image/jpeg">
+    
+    <!-- Google Material Icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp">
+    
+    <!-- Boxicons -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <!-- Core CSS -->
+    <link rel="stylesheet" href="{% static 'css/base/application.css' %}?v=1.3">
+    <link rel="stylesheet" href="{% static 'css/base/sidebar.css' %}?v=1.3">
+    <link rel="stylesheet" href="{% static 'css/base/pages-modern.css' %}?v=1.2">
+    
+    <!-- Page Specific CSS -->
+    {% block style-content %}{% endblock style-content %}
+
+    <!-- UI Kit Overlay (applied after page CSS) -->
+    <link rel="stylesheet" href="{% static 'css/base/ui-kit.css' %}?v=1.0">
+    
+    <title>{% block title %}Store Performance{% endblock title %}</title>
+</head>
+
+    <body>
+        <!-- Mobile Overlay -->
+        <div class="sidebar-overlay"></div>
+        
+        <!-- Mobile Header -->
+        <div class="mobile-header">
+            <button class="mobile-menu-toggle" aria-label="Toggle menu">
+                <i class='bx bx-menu'></i>
+            </button>
+            <div class="mobile-logo">
+                <span class="mobile-logo-text">Store Performance</span>
+            </div>
+            <button class="header-icon-button theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode">
+                <i class='bx bx-moon'></i>
+            </button>
+            <div class="mobile-user-avatar">
+                {% if request.user.image %}
+                    <img src="{{ request.user.image.url }}" alt="User" loading="lazy">
+                {% else %}
+                    <span>{{ request.user.username|first|upper }}</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <nav class="sidebar">
+            <header>
+                <div class="profile-row">
+                    <div class="avatar-ring">
+                        {% if request.user.image %}
+                            <img src="{{ request.user.image.url }}" alt="User avatar" loading="lazy">
+                        {% else %}
+                            <div class="avatar-placeholder"></div>
+                        {% endif %}
+                        <span class="avatar-fallback {% if request.user.image %}hide{% endif %}">{{ request.user.username|first|upper }}</span>
+                    </div>
+                    <div class="text logo-text">
+                        <span class="logo-text-main">{{ request.user.username }}</span>
+                        <span class="logo-text-sub">Store Performance</span>
+                        <div class="chip-row">
+                            <span class="pill success">Team</span>
+                            {% if request.user.email %}<span class="pill muted">{{ request.user.email }}</span>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="menu-bar">
+                <div class="section-label">Quick Actions</div>
+                <div class="quick-actions">
+                    <a class="quick-action" href="{% url 'core:create-bill' %}" data-tooltip="New Bill">
+                        <span class="qa-text">New Bill</span>
+                        <i class='bx bx-receipt icon'></i>
+                        <i class='bx bx-chevron-right arrow'></i>
+                    </a>
+                    <a class="quick-action" href="{% url 'core:clients' %}" data-tooltip="Add Client">
+                        <span class="qa-text">Add Client</span>
+                        <i class='bx bx-user-plus icon'></i>
+                        <i class='bx bx-chevron-right arrow'></i>
+                    </a>
+                    <a class="quick-action" href="{% url 'core:products' %}" data-tooltip="Add Product">
+                        <span class="qa-text">Add Product</span>
+                        <i class='bx bx-package icon'></i>
+                        <i class='bx bx-chevron-right arrow'></i>
+                    </a>
+                </div>
+
+                <div class="section-divider"></div>
+
+                <div class="menu">
+                    <div class="section-label">Overview</div>
+                    <ul class="menu-links" title="Overview">
+                        <li class="nav-link" data-tooltip="Stores">
+                            <a href="{% url 'core:stores_overview' %}"
+                                class="{% if request.resolver_match.url_name == 'stores_overview' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Stores</span>
+                                <i class='bx bx-store-alt icon'></i>
+                            </a>
+                        </li>
+                        <li class="nav-link" data-tooltip="Dashboard">
+                            <a href="{% url 'core:dashboard' %}"
+                                class="{% if request.resolver_match.url_name == 'dashboard' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Dashboard</span>
+                                <i class='bx bx-home-alt icon'></i>
+                            </a>
+                        </li>
+                        <li class="nav-link" data-tooltip="Analytics">
+                            <a href="{% url 'core:analytics' %}"
+                                class="{% if request.resolver_match.url_name == 'analytics' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Analytics</span>
+                                <i class='bx bx-pie-chart-alt icon'></i>
+                            </a>
+                        </li>
+                        <li class="nav-link" data-tooltip="Reports">
+                            <a href="{% url 'core:reports' %}"
+                                class="{% if request.resolver_match.url_name == 'reports' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Reports</span>
+                                <i class='bx bx-file icon'></i>
+                            </a>
+                        </li>
+                    </ul>
+
+                    <div class="section-divider"></div>
+
+                    <div class="section-label">Operations</div>
+                    <ul class="menu-links grouped" title="Operations">
+                        <li class="nav-link" data-tooltip="Bills">
+                            <a href="{% url 'core:create-bill' %}"
+                                class="{% if request.resolver_match.url_name == 'create-bill' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Bills</span>
+                                <i class='bx bx-receipt icon'></i>
+                            </a>
+                        </li>
+                        <li class="nav-link" data-tooltip="Clients">
+                            <a href="{% url 'core:clients' %}"
+                                class="{% if request.resolver_match.url_name == 'clients' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Clients</span>
+                                <i class='bx bx-user icon'></i>
+                            </a>
+                        </li>
+                        <li class="nav-link" data-tooltip="Products">
+                            <a href="{% url 'core:products' %}"
+                                class="{% if request.resolver_match.url_name == 'products' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Products</span>
+                                <i class='bx bx-box icon'></i>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="section-divider"></div>
+
+                <div class="bottom-content">
+                    <div class="section-label">Account</div>
+                    <ul class="menu-links grouped" title="Account">
+                        <li class="nav-link" data-tooltip="Profile">
+                            <a href="{% url 'core:profile' %}"
+                                class="{% if request.resolver_match.url_name == 'profile' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Profile</span>
+                                <i class='bx bx-user-circle icon'></i>
+                            </a>
+                        </li>
+                        <li class="nav-link" data-tooltip="Settings">
+                            <a href="{% url 'core:settings' %}"
+                                class="{% if request.resolver_match.url_name == 'settings' %}active{% else %}none{% endif %}">
+                                <span class="text nav-text">Settings</span>
+                                <i class='bx bx-cog icon'></i>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+        </nav>
+
+    <section class="home">
+        <header class="home-header">
+            <div class="home-header-inner">
+                <div class="home-header-left">
+                    <i class='bx bx-chevron-right toggle' aria-hidden="true"></i>
+                    <div class="home-header-main">
+                        <h1 class="home-title">{% block page_title %}{% endblock page_title %}</h1>
+                        {% block page_subtitle %}{% endblock page_subtitle %}
+                    </div>
+                    <div class="home-header-actions">
+                        {% block header_actions %}{% endblock header_actions %}
+                    </div>
+                </div>
+                <div class="home-header-right">
+                    <div class="home-header-controls">
+                        {% if stores %}
+                        <div class="store-switcher" data-open="false">
+                            <label for="store-switcher-select" class="store-switcher-label">Store</label>
+                            <div class="store-switcher-control">
+                                <i class='bx bx-store-alt'></i>
+                                <select id="store-switcher-select" aria-label="Select store">
+                                    {% for s in stores %}
+                                        <option value="{{ s.slug|default:s.id }}" {% if current_store and current_store.id == s.id %}selected{% endif %}>{{ s.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <button class="header-icon-button theme-toggle" type="button" aria-pressed="false" aria-label="Toggle dark mode">
+                            <i class='bx bx-moon'></i>
+                            <span class="button-label">Dark</span>
+                        </button>
+                        <div class="language-switch" data-open="false">
+                            <button class="header-chip language-toggle" type="button" aria-haspopup="true" aria-expanded="false">
+                                <i class='bx bx-globe'></i>
+                                <span class="language-label">English</span>
+                                <i class='bx bx-chevron-down'></i>
+                            </button>
+                            <ul class="language-menu" role="menu">
+                                <li role="menuitem">
+                                    <button type="button" data-lang="en">English</button>
+                                </li>
+                                <li role="menuitem">
+                                    <button type="button" data-lang="fr">Français</button>
+                                </li>
+                                <li role="menuitem">
+                                    <button type="button" data-lang="es">Español</button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        {% if messages %}
+        <div class="message-container">
+            {% for message in messages %}
+            <div class="alert alert-{{message.tags}}" role="alert">
+                <div class="alert-content">
+                    <i class='bx bx-{% if message.tags == "success" %}check-circle{% elif message.tags == "error" %}error-circle{% elif message.tags == "warning" %}error{% else %}info-circle{% endif %}'></i>
+                    <strong>{{ message }}</strong>
+                </div>
+                <button class="alert-close" onclick="this.parentElement.remove();">
+                    <i class='bx bx-x'></i>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <main class="home-body">
+            <div class="content-wrapper">
+                <div class="page-content">
+                    {% block content %}{% endblock content %}
+                </div>
+            </div>
+        </main>
+    </section>
+    
+    <!-- Scripts -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="{% static 'javascript/base.js' %}?v=1.2"></script>
+    <script src="{% static 'javascript/create-bill.js' %}"></script>
+    <script src="{% static 'javascript/products.js' %}"></script>
+    <script>
+    (function() {
+        var selector = document.getElementById('store-switcher-select');
+        if (!selector) return;
+        selector.addEventListener('change', function() {
+            var params = new URLSearchParams(window.location.search);
+            params.set('store', this.value);
+            var newUrl = window.location.pathname + '?' + params.toString();
+            window.location = newUrl;
+        });
+    })();
+    </script>
+    {% block script %}{% endblock script %}
+</body>
+</html>

@@ -1,0 +1,451 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style-content %}
+    <link rel="stylesheet" href="{% static 'css/bills/bills.css' %}?v=2.0">
+    <script src="{% static 'javascript/client-bills.js' %}?v=3.0"></script>
+    <script src="{% static 'javascript/bill-editor.js' %}?v=1.0"></script>
+{% endblock style-content %}
+
+{% block title %}{{ client.full_name }}'s Bills | Store Performance{% endblock title %}
+
+{% block page_title %}Client Bills{% endblock page_title %}
+
+{% block content %}
+<div class="client-bills-page">
+    <div class="client-bills-container">
+        <!-- Hidden CSRF token for JavaScript forms -->
+        {% csrf_token %}
+
+        <!-- Client Header -->
+        <div class="client-header">
+            <div class="client-header-layout">
+                <div class="client-avatar-wrapper">
+                    <div class="client-avatar">
+                        {% if client.profile_image and client.profile_image.url %}
+                        <img src="{{ client.profile_image.url }}" alt="{{ client.full_name }}" class="client-avatar-image">
+                        {% else %}
+                        <div class="client-avatar-fallback">{{ client.full_name|slice:":1"|upper }}</div>
+                        {% endif %}
+                    </div>
+                    <button type="button" onclick="openUpdatePictureModal('{{ client.lid }}')" class="client-avatar-edit" title="Update picture">
+                        <span class="material-icons-sharp">edit</span>
+                    </button>
+                </div>
+                <div>
+                    <h1>{{ client.full_name }}</h1>
+                    <div class="client-info">
+                        {% if client.email %}
+                        <div class="info-box"><label>📧 Email</label><p>{{ client.email }}</p></div>
+                        {% endif %}
+                        {% if client.phone %}
+                        <div class="info-box"><label>📱 Phone</label><p>{{ client.phone }}</p></div>
+                        {% endif %}
+                        {% if client.address %}
+                        <div class="info-box"><label>📍 Address</label><p>{{ client.address }}</p></div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if bills %}
+        <div class="filters-panel">
+            <div class="controls-bar">
+                <div class="filter-field">
+                    <label for="searchBills">Search bills</label>
+                    <input type="text" id="searchBills" placeholder="Search description" autocomplete="off">
+                </div>
+                <div class="filter-field">
+                    <label for="startDate">Start date</label>
+                    <input type="date" id="startDate">
+                </div>
+                <div class="filter-field">
+                    <label for="endDate">End date</label>
+                    <input type="date" id="endDate">
+                </div>
+                <div class="filter-field">
+                    <label for="sortBills">Sort by</label>
+                    <select id="sortBills">
+                        <option value="newest">Date: Newest first</option>
+                        <option value="oldest">Date: Oldest first</option>
+                        <option value="total_high">Total: High to low</option>
+                        <option value="total_low">Total: Low to high</option>
+                    </select>
+                </div>
+                <div class="controls-actions">
+                    <button type="button" class="action-btn btn-secondary" id="clearFilters">Clear filters</button>
+                    <a class="action-btn btn-primary" href="{% url 'core:create-bill' %}">+ New bill</a>
+                </div>
+            </div>
+            <div class="results-meta">
+                <span id="resultsCount">Showing {{ bills|length }} bills</span>
+                <span class="pill" id="filterState">No filters</span>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">Total Bills</div>
+                <div class="stat-value">{{ bills|length }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Total Revenue</div>
+                <div class="stat-value text-success">${{ total_revenue|floatformat:2 }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Total Quantity</div>
+                <div class="stat-value">{{ total_quantity|default_if_none:0|stringformat:"0.2f" }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Average Bill</div>
+                <div class="stat-value text-primary">${{ avg_bill|floatformat:2 }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if bills %}
+        <div class="bills-container">
+            {% for bill in bills %}
+            <div class="bill-card" data-description="{{ bill.description|lower|escape }}" data-date="{{ bill.date|date:'Y-m-d' }}" data-total="{{ bill.total_price }}">
+                <div class="bill-header-gradient">
+                    <h3 class="bill-header-title"><span class="material-icons-sharp icon-lg">receipt</span>Bill #{{ bill.id }}</h3>
+                    <div class="bill-date-badge">{{ bill.date|date:"M d, Y" }}</div>
+                </div>
+                <div class="bill-content-body">
+                    <div class="bill-items">
+                        {% if bill.items.all %}
+                        <table class="bill-items-table">
+                            <thead>
+                                <tr class="table-header-row">
+                                    <th class="table-header-cell">Item</th>
+                                    <th class="table-header-cell text-right">Qty</th>
+                                    <th class="table-header-cell text-right">Unit Price</th>
+                                    <th class="table-header-cell text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in bill.items.all %}
+                                <tr class="table-body-row">
+                                    <td class="table-body-cell" title="{{ item.description }}">{{ item.description }}</td>
+                                    <td class="table-body-cell text-right">{{ item.quantity|stringformat:"0.2f" }}</td>
+                                    <td class="table-body-cell text-right">${{ item.price|floatformat:2 }}</td>
+                                    <td class="table-body-cell text-right text-strong">${{ item.amount|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <div class="legacy-bill-grid">
+                            <div class="item-field">
+                                <label>Product/Service</label>
+                                <p class="legacy-value">{% if bill.description %}{{ bill.description }}{% else %}<em class="empty-text">Not specified</em>{% endif %}</p>
+                            </div>
+                            <div class="item-field">
+                                <label>Quantity</label>
+                                <p class="legacy-value">{% if bill.quantity %}{{ bill.quantity|stringformat:"0.2f" }} units{% else %}<em class="empty-text">0 units</em>{% endif %}</p>
+                            </div>
+                            <div class="item-field">
+                                <label>Unit Price</label>
+                                <p class="legacy-value">{% if bill.price %}${{ bill.price|floatformat:2 }}{% else %}<em class="empty-text">$0.00</em>{% endif %}</p>
+                            </div>
+                            <div class="item-field">
+                                <label>Subtotal</label>
+                                <p class="legacy-value">{% if bill.amount %}${{ bill.amount|floatformat:2 }}{% else %}<em class="empty-text">$0.00</em>{% endif %}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="bill-total-section">
+                        <div class="bill-total-left">
+                            <div class="bill-total-label">GRAND TOTAL</div>
+                            <div class="bill-total-amount">${{ bill.total_price|floatformat:2 }}</div>
+                            {% if bill.items.all %}
+                            <div class="bill-total-units">{{ bill.total_quantity|default_if_none:0|stringformat:"0.2f" }} units total</div>
+                            {% endif %}
+                        </div>
+                        <div class="bill-total-right">
+                            <div class="bill-store-info"><span class="material-icons-sharp icon-sm">store</span>{{ bill.store_name.username }}</div>
+                            <div class="bill-store-date"><span class="material-icons-sharp icon-sm">calendar_today</span>{{ bill.date|date:"M d, Y" }}</div>
+                        </div>
+                    </div>
+                    <div class="bill-actions-row">
+                        <button class="action-btn btn-primary" onclick="openBillEditor({{ bill.id }})">
+                            <span class="material-icons-sharp icon-md">edit</span>Edit Bill
+                        </button>
+                        <button class="action-btn btn-success" onclick="printBill({{ bill.id }})">
+                            <span class="material-icons-sharp icon-md">print</span>Print
+                        </button>
+                        <button class="action-btn btn-warning" onclick="duplicateBill({{ bill.id }})">
+                            <span class="material-icons-sharp icon-md">content_copy</span>Copy
+                        </button>
+                        <button class="action-btn btn-danger" onclick="deleteBill({{ bill.id }})">
+                            <span class="material-icons-sharp icon-md">delete</span>Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div id="filteredEmpty" class="inline-empty hidden">No bills match these filters.</div>
+        {% else %}
+        <div class="empty-state">
+            <h3>📋 No Bills Yet</h3>
+            <p>Create your first bill for this client</p>
+            <a href="{% url 'core:products' %}" class="action-btn btn-primary">
+                <span class="material-icons-sharp">add_circle</span>
+                Create Bill
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Edit Bill Modal -->
+<div id="editModal" class="modal modal-large">
+    <div class="modal-content">
+        <div class="modal-header-gradient">
+            <div class="modal-header-content">
+                <h2 class="modal-header-title"><span class="material-icons-sharp icon-lg">edit_note</span>Edit Bill</h2>
+                <p class="modal-header-subtitle">Manage items, add products, and update bill details</p>
+            </div>
+            <button type="button" class="modal-close" onclick="closeEditModal()">&times;</button>
+        </div>
+        
+        <div class="modal-body">
+            <!-- Bill Info -->
+            <div class="modal-bill-info">
+                <div class="modal-info-item">
+                    <div class="modal-info-label">BILL ID</div>
+                    <div class="modal-info-value" id="editBillId">#0</div>
+                </div>
+                <div class="modal-info-item">
+                    <div class="modal-info-label">CLIENT</div>
+                    <div class="modal-info-value" id="editClientName">-</div>
+                </div>
+                <div class="modal-info-item">
+                    <div class="modal-info-label">DATE</div>
+                    <div class="modal-info-value" id="editBillDate">-</div>
+                </div>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="modal-tabs">
+                <button class="tab-btn active" onclick="switchTab('items')" data-tab="items">
+                    <span class="material-icons-sharp icon-sm">list</span>Current Items
+                </button>
+                <button class="tab-btn" onclick="switchTab('add')" data-tab="add">
+                    <span class="material-icons-sharp icon-sm">add_shopping_cart</span>Add Products
+                </button>
+            </div>
+
+            <!-- Current Items Tab -->
+            <div id="itemsTab" class="tab-content">
+                <div class="modal-items-table-wrapper">
+                    <table class="modal-items-table" id="editItemsTable">
+                        <thead>
+                            <tr class="table-header-row">
+                                <th class="table-header-cell">Item</th>
+                                <th class="table-header-cell" style="width:120px;">Quantity</th>
+                                <th class="table-header-cell" style="width:140px;">Unit Price</th>
+                                <th class="table-header-cell" style="width:140px;">Amount</th>
+                                <th class="table-header-cell" style="width:80px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="editItemsBody">
+                            <!-- Items will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Total Display -->
+                <div class="modal-total-display">
+                    <div class="modal-total-label">TOTAL:</div>
+                    <div class="modal-total-amount" id="editTotalDisplay">$0.00</div>
+                </div>
+            </div>
+
+            <!-- Add Products Tab -->
+            <div id="addTab" class="tab-content">
+                <div class="modal-search-wrapper">
+                    <input type="text" id="productSearch" placeholder="Search products by name..." class="modal-search-input" oninput="filterAvailableProducts()">
+                </div>
+                
+                <div id="availableProductsList" class="modal-products-grid">
+                    <!-- Products will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+            <button type="button" onclick="closeEditModal()" class="btn btn-secondary">Cancel</button>
+            <button type="button" onclick="saveBillChanges()" class="btn btn-primary">
+                <span class="material-icons-sharp icon-sm">save</span>Save Changes
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- Update Client Picture Modal -->
+<div id="updatePictureModal" class="modal modal-small">
+    <div class="modal-content modal-compact">
+        <div class="modal-header-compact">
+            <h2 class="modal-compact-title">Update Client Picture</h2>
+            <button type="button" onclick="closeUpdatePictureModal()" class="modal-close-icon">&times;</button>
+        </div>
+        
+        <form id="updatePictureForm" enctype="multipart/form-data" class="modal-form">
+            {% csrf_token %}
+            <input type="hidden" id="clientLidInput" name="client_lid" value="">
+            
+            <div class="upload-area" onclick="document.getElementById('profileImageInput').click();">
+                <div id="imagePreview" class="image-preview">
+                    <img id="previewImg" src="" alt="Preview">
+                </div>
+                <span class="material-icons-sharp icon-lg upload-icon">cloud_upload</span>
+                <p class="upload-text">Click to upload or drag a file</p>
+                <p class="upload-hint">PNG, JPG up to 5MB</p>
+            </div>
+            
+            <input type="file" id="profileImageInput" name="profile_image" accept="image/*" style="display:none;" onchange="previewImage(event)">
+            
+            <div class="modal-actions">
+                <button type="button" onclick="closeUpdatePictureModal()" class="btn btn-secondary">Cancel</button>
+                <button type="button" onclick="submitUpdatePicture()" class="btn btn-primary">Update Picture</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock content %}
+
+{% block script %}
+<script>
+(function() {
+    const modal = document.getElementById('updatePictureModal');
+    const form = document.getElementById('updatePictureForm');
+    const fileInput = document.getElementById('profileImageInput');
+    const clientLidInput = document.getElementById('clientLidInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    const clientAvatarContainer = document.querySelector('.client-avatar');
+
+    const updateUrl = "{% url 'core:update_client_picture' %}";
+
+    function resetPreview() {
+        if (previewImg) {
+            previewImg.src = '';
+        }
+        if (imagePreview) {
+            imagePreview.style.display = 'none';
+        }
+        if (fileInput) {
+            fileInput.value = '';
+        }
+    }
+
+    window.openUpdatePictureModal = function(clientLid) {
+        if (clientLidInput) {
+            clientLidInput.value = clientLid;
+        }
+        if (modal) {
+            modal.style.display = 'block';
+        }
+    };
+
+    window.closeUpdatePictureModal = function() {
+        if (modal) {
+            modal.style.display = 'none';
+        }
+        resetPreview();
+        if (clientLidInput) {
+            clientLidInput.value = '';
+        }
+    };
+
+    window.previewImage = function(event) {
+        const file = event && event.target && event.target.files && event.target.files[0];
+        if (!file) {
+            resetPreview();
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(loadEvent) {
+            if (previewImg) {
+                previewImg.src = loadEvent.target.result;
+            }
+            if (imagePreview) {
+                imagePreview.style.display = 'block';
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
+    window.submitUpdatePicture = async function() {
+        if (!form) {
+            return;
+        }
+
+        const csrfElement = form.querySelector('[name=csrfmiddlewaretoken]');
+        const csrfToken = csrfElement ? csrfElement.value : null;
+        const selectedFile = fileInput && fileInput.files ? fileInput.files[0] : null;
+
+        if (!clientLidInput || !clientLidInput.value) {
+            alert('Client reference is missing. Please reload the page and try again.');
+            return;
+        }
+
+        if (!selectedFile) {
+            alert('Please choose an image before updating.');
+            return;
+        }
+
+        const formData = new FormData(form);
+
+        try {
+            const requestOptions = {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            };
+
+            if (csrfToken) {
+                requestOptions.headers = { 'X-CSRFToken': csrfToken };
+            }
+
+            const response = await fetch(updateUrl, requestOptions);
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Failed to update picture');
+            }
+
+            if (data.image_url && clientAvatarContainer) {
+                let avatarImg = clientAvatarContainer.querySelector('.client-avatar-image');
+
+                if (!avatarImg) {
+                    clientAvatarContainer.innerHTML = '';
+                    avatarImg = document.createElement('img');
+                    avatarImg.className = 'client-avatar-image';
+                    const clientNameHeading = document.querySelector('.client-header h1');
+                    const clientName = clientNameHeading && clientNameHeading.textContent ? clientNameHeading.textContent.trim() : 'Client';
+                    avatarImg.alt = clientName;
+                    clientAvatarContainer.appendChild(avatarImg);
+                }
+
+                avatarImg.src = data.image_url;
+            }
+
+            closeUpdatePictureModal();
+        } catch (error) {
+            console.error('Error updating picture:', error);
+            alert(error.message || 'Error updating picture');
+        }
+    };
+})();
+</script>
+{% endblock script %}

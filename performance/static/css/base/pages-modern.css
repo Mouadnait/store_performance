@@ -1,0 +1,281 @@
+/*
+ * Pages Modern Overlay
+ * Unified styling for dashboard, analytics, billing, products, and clients
+ * Layered after theme-modern.css to harmonize cards, grids, tables, filters, and forms.
+ */
+
+:root {
+  --pm-card-radius: 18px;
+  --pm-card-shadow: 0 14px 36px rgba(15, 23, 42, 0.12);
+  --pm-border: 1px solid rgba(15, 23, 42, 0.08);
+  --pm-border-strong: 1px solid rgba(15, 23, 42, 0.12);
+  --pm-surface: #ffffff;
+  --pm-surface-muted: #f8fafc;
+  --pm-text: #0f172a;
+  --pm-text-muted: #475569;
+  --pm-text-soft: #94a3b8;
+  --pm-primary: #2563eb;
+  --pm-primary-2: #1d4ed8;
+  --pm-primary-soft: #e0e7ff;
+  --pm-accent: #0ea5e9;
+}
+
+/* ---------- Page shell spacing ---------- */
+.page-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.section-block,
+.kpi-card,
+.chart-card,
+.table-card,
+.form-card,
+.settings-panel,
+.profile-card {
+  background: var(--pm-surface);
+  border: var(--pm-border);
+  border-radius: var(--pm-card-radius);
+  box-shadow: var(--pm-card-shadow);
+}
+
+/* ---------- KPI grid ---------- */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.kpi-card {
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-card .label {
+  font-size: 0.9rem;
+  color: var(--pm-text-soft);
+  margin-bottom: 8px;
+}
+
+.kpi-card .value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--pm-text);
+}
+
+.kpi-card .trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+  margin-top: 10px;
+}
+
+.kpi-card .badge,
+.kpi-card .trend {
+  align-self: flex-start;
+}
+
+/* ---------- Filters / toolbar ---------- */
+.filters-bar,
+.toolbar,
+.actions-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--pm-surface);
+  border: var(--pm-border);
+  border-radius: var(--pm-card-radius);
+  box-shadow: var(--pm-card-shadow);
+}
+
+.filters-bar label {
+  font-weight: 600;
+  color: var(--pm-text-muted);
+}
+
+.filters-bar select,
+.filters-bar input,
+.toolbar select,
+.toolbar input {
+  min-height: 40px;
+  border-radius: 10px;
+  border: var(--pm-border-strong);
+  padding: 8px 12px;
+}
+
+/* ---------- Charts ---------- */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
+}
+
+.chart-card {
+  padding: 18px;
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border-bottom: var(--pm-border-strong);
+  border-radius: var(--pm-card-radius) var(--pm-card-radius) 0 0;
+  background: var(--pm-surface-muted);
+}
+
+.chart-title { margin: 0; color: var(--pm-text); font-size: 1.05rem; }
+.chart-subtitle { color: var(--pm-text-soft); font-size: 0.9rem; }
+
+/* ---------- Tables ---------- */
+.table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.table-card .card-header,
+.table-card .table-header {
+  padding: 14px 16px;
+  border-bottom: var(--pm-border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.table-card .card-header h3,
+.chart-header h3 { margin: 0; font-size: 1rem; color: var(--pm-text); }
+.table-card .card-header .subtitle,
+.chart-header .chart-subtitle,
+.chart-header .chart-meta { color: var(--pm-text-soft); font-size: 0.9rem; }
+
+.table-wrapper { overflow-x: auto; }
+
+.table-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--pm-surface);
+  border-radius: var(--pm-card-radius);
+  overflow: hidden;
+}
+
+table th,
+table td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: var(--pm-border);
+}
+
+table th {
+  background: var(--pm-surface-muted);
+  font-size: 0.9rem;
+  color: var(--pm-text-muted);
+  font-weight: 700;
+}
+
+table tr:hover td { background: rgba(37, 99, 235, 0.04); }
+
+.badge,
+.status-pill,
+.pill-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.badge.info { background: rgba(37, 99, 235, 0.12); color: #1d4ed8; }
+.badge.success { background: rgba(34, 197, 94, 0.12); color: #15803d; }
+.badge.danger { background: rgba(239, 68, 68, 0.12); color: #b91c1c; }
+.badge.warning { background: rgba(234, 179, 8, 0.14); color: #854d0e; }
+
+/* ---------- Forms & cards ---------- */
+.form-card,
+.settings-panel,
+.profile-card {
+  padding: 20px;
+}
+
+.form-card h3,
+.settings-panel h3,
+.profile-card h3 { margin-top: 0; margin-bottom: 12px; }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px 16px;
+}
+
+.form-grid label {
+  display: block;
+  font-weight: 600;
+  color: var(--pm-text-muted);
+  margin-bottom: 6px;
+}
+
+.form-grid input,
+.form-grid select,
+.form-grid textarea {
+  width: 100%;
+  border-radius: 10px;
+  border: var(--pm-border-strong);
+  padding: 10px 12px;
+  background: #fff;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* ---------- Cards for products/clients lists ---------- */
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.tile-card {
+  background: var(--pm-surface);
+  border: var(--pm-border);
+  border-radius: var(--pm-card-radius);
+  box-shadow: var(--pm-card-shadow);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tile-card .title { font-weight: 700; color: var(--pm-text); }
+.tile-card .meta { color: var(--pm-text-soft); font-size: 0.9rem; }
+.tile-card .actions { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---------- Utility ---------- */
+.card-ghost {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px dashed rgba(37, 99, 235, 0.35);
+  color: var(--pm-text-soft);
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .chart-grid { grid-template-columns: 1fr; }
+  .filters-bar, .toolbar, .actions-bar { gap: 10px; }
+  .table-card .card-header { align-items: flex-start; flex-direction: column; }
+}

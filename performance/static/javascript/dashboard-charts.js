@@ -71,13 +71,14 @@ if (typeof window.topProductsChart !== 'undefined') {
         const data = window.topProductsChart;
         const ctx = document.getElementById('topProductsChart');
         if (ctx && data.labels && data.quantity) {
+            const quantityData = data.quantity.map(value => parseFloat(value));
             new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: data.labels,
                     datasets: [{
                         label: 'Quantity Sold',
-                        data: data.quantity,
+                        data: quantityData,
                         backgroundColor: 'rgba(16, 185, 129, 0.8)',
                         borderColor: 'rgba(16, 185, 129, 1)',
                         borderWidth: 1
@@ -158,13 +159,14 @@ if (typeof window.barChart !== 'undefined') {
         const data = window.barChart;
         const ctx = document.getElementById('todaySalesChart');
         if (ctx && data.labels && data.quantity) {
+            const quantityData = data.quantity.map(value => parseFloat(value));
             new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: data.labels,
                     datasets: [{
                         label: 'Quantity',
-                        data: data.quantity,
+                        data: quantityData,
                         backgroundColor: 'rgba(245, 158, 11, 0.8)',
                         borderColor: 'rgba(245, 158, 11, 1)',
                         borderWidth: 1
@@ -196,12 +198,13 @@ if (typeof window.pieChart !== 'undefined') {
         const data = window.pieChart;
         const ctx = document.getElementById('productShareChart');
         if (ctx && data.labels && data.values) {
+            const valuesData = data.values.map(value => parseFloat(value));
             new Chart(ctx, {
                 type: 'pie',
                 data: {
                     labels: data.labels,
                     datasets: [{
-                        data: data.values,
+                        data: valuesData,
                         backgroundColor: [
                             'rgba(99, 102, 241, 0.8)',
                             'rgba(16, 185, 129, 0.8)',

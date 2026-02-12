@@ -1,5 +1,6 @@
 import json
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from datetime import timedelta
 import pandas as pd
 from core.models import (
     Bill, BillItem, Product, Client, Category, Tags, 
@@ -9,22 +10,70 @@ import plotly.express as px
 import plotly.graph_objects as go
 import plotly.figure_factory as ff
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse, HttpResponseForbidden
 from django.urls import reverse
-from .forms import ProductForm
+from .forms import ProductForm, ClientForm
 from django.utils import timezone
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderInsufficientPrivileges
 from django.db import transaction
 from django.contrib import messages
-from django.db.models import Sum, Count, Avg
-from django.db.models.functions import ExtractYear, ExtractMonth
+from django.db.models import Sum, Count, Avg, Max, Value, IntegerField, DecimalField
+from django.db.models.functions import ExtractYear, ExtractMonth, Coalesce
 import time
 import logging
+
+
+logger = logging.getLogger(__name__)
+
+
+def format_decimal_value(value, quantize_pattern='0.01'):
+    """Return a string representation of a Decimal value quantized to two places."""
+    if value is None:
+        decimal_value = Decimal('0')
+    elif isinstance(value, Decimal):
+        decimal_value = value
+    else:
+        decimal_value = Decimal(str(value))
+    quantize_decimal = Decimal(quantize_pattern)
+    return format(decimal_value.quantize(quantize_decimal, rounding=ROUND_HALF_UP), 'f')
+
+
+def parse_truthy(value, default=False):
+    """Parse truthy string flags from request data."""
+    if value is None:
+        return default
+    return str(value).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def get_current_store(request):
+    """Resolve the active store for the current user, preferring ?store= then session, then first store."""
+    # Staff can view all stores; regular users see only their own stores.
+    store_qs = Store.objects.all() if (request.user.is_staff or request.user.is_superuser) else Store.objects.filter(owner=request.user)
+    store_key = request.GET.get('store') or request.session.get('current_store_key')
+    store = None
+
+    if store_key:
+        # Support both numeric IDs and slugs as selectors
+        if str(store_key).isdigit():
+            store = store_qs.filter(id=store_key).first()
+        else:
+            store = store_qs.filter(slug=store_key).first()
+
+    if store is None:
+        store = store_qs.order_by('id').first()
+
+    if store:
+        # Persist a stable key (slug preferred) in the session
+        request.session['current_store_key'] = store.slug or str(store.id)
+
+    return store, store_qs
 
 @login_required(login_url='/login/')
 def analytics(request):
     from django.db.models import Sum, Count, Avg, F, Q
+    from django.http import JsonResponse
     from django.db.models.functions import ExtractYear, ExtractMonth
     from datetime import datetime, timedelta
     from django.views.decorators.cache import cache_page
@@ -33,18 +82,25 @@ def analytics(request):
     
     user = request.user
     
+    # Resolve store context
+    store, store_qs = get_current_store(request)
+
     # Date range filter
     days = int(request.GET.get('days', 30))
     start_date = datetime.now() - timedelta(days=days)
+    from datetime import timedelta
+    from django.db.models import Max
     
     # Check cache first
-    cache_key = f"analytics_{user.id}_{days}"
+    cache_key = f"analytics_{user.id}_{store.id if store else 'all'}_{days}"
     cached_data = cache.get(cache_key)
     if cached_data:
-        return render(request, 'core/analytics.html', cached_data)
+        return render(request, 'core/statistics/analytics.html', cached_data)
     
     # Base bill queryset with all filters
     all_bills = Bill.objects.filter(store_name=user)
+    if store:
+        all_bills = all_bills.filter(store=store)
     recent_bills_qs = all_bills.filter(date__gte=start_date)
     prev_bills_qs = all_bills.filter(date__gte=start_date - timedelta(days=days*2), date__lt=start_date)
     
@@ -82,7 +138,10 @@ def analytics(request):
     # Use .only() to reduce data transfer for products and clients
     top_products = Product.objects.filter(
         user=user, status=True, product_status='published'
-    ).only('title', 'price', 'category_id').order_by('-price')[:5]
+    ).only('title', 'price', 'category_id').order_by('-price')
+    if store:
+        top_products = top_products.filter(store=store)
+    top_products = top_products[:5]
     
     # Optimize client query with annotations
     top_clients = Client.objects.filter(user=user).annotate(
@@ -90,7 +149,10 @@ def analytics(request):
         bill_count=Count('bill', distinct=True)
     ).filter(revenue__isnull=False).only(
         'full_name', 'email', 'phone'
-    ).order_by('-revenue')[:5]
+    ).order_by('-revenue')
+    if store:
+        top_clients = top_clients.filter(store=store)
+    top_clients = top_clients[:5]
     
     # Revenue trend - batch all in one query
     bills_for_trend = recent_bills_qs.values('date').annotate(
@@ -108,8 +170,13 @@ def analytics(request):
     ).order_by('-date')[:10]
     
     # Count queries separately (these are cheap)
-    total_products = Product.objects.filter(user=user).count()
-    total_clients = Client.objects.filter(user=user).count()
+    product_qs = Product.objects.filter(user=user)
+    client_qs = Client.objects.filter(user=user)
+    if store:
+        product_qs = product_qs.filter(store=store)
+        client_qs = client_qs.filter(store=store)
+    total_products = product_qs.count()
+    total_clients = client_qs.count()
     
     context = {
         'total_revenue': total_revenue,
@@ -126,49 +193,139 @@ def analytics(request):
         'revenue_trend': revenue_trend,
         'recent_transactions': recent_transactions,
         'days': days,
+        'current_store': store,
+        'stores': store_qs,
     }
     
     # Cache for 5 minutes
     cache.set(cache_key, context, 300)
-    return render(request, 'core/analytics.html', context)
+    return render(request, 'core/statistics/analytics.html', context)
 
 @login_required(login_url='/login/')
 def clients(request):
-    """Fetch clients for the current user only with proper security."""
-    clients = Client.objects.filter(user=request.user).order_by('-id')
-    total_clients = clients.count()
+    """Client portfolio overview for the authenticated merchant."""
+    store, store_qs = get_current_store(request)
+
+    client_base = Client.objects.filter(user=request.user)
+    if store:
+        client_base = client_base.filter(store=store)
+
+    annotated_clients = client_base.annotate(
+        bill_count=Count('bill', distinct=True),
+        total_spend=Sum('bill__total_price'),
+        last_bill_date=Max('bill__date')
+    ).order_by('-total_spend', '-bill_count', 'full_name')
+
+    client_records = []
+    total_revenue = Decimal('0')
+    high_value_threshold = Decimal('1000')
+    high_value_clients = 0
+
+    for client in annotated_clients:
+        spend = client.total_spend or Decimal('0')
+        total_revenue += spend
+        if spend >= high_value_threshold:
+            high_value_clients += 1
+        client_records.append(client)
+
+    total_clients = len(client_records)
+    active_clients = sum(1 for client in client_records if client.bill_count)
+    inactive_clients = total_clients - active_clients
+    repeat_buyers = sum(1 for client in client_records if client.bill_count and client.bill_count >= 3)
+    average_revenue = (total_revenue / total_clients) if total_clients else Decimal('0')
+
+    recent_activity = sorted(
+        [client for client in client_records if client.last_bill_date],
+        key=lambda item: item.last_bill_date,
+        reverse=True
+    )[:5]
 
     context = {
-        'clients': clients,
-        'total_clients': total_clients,
+        'clients': client_records,
+        'overview': {
+            'total_clients': total_clients,
+            'active_clients': active_clients,
+            'inactive_clients': inactive_clients,
+            'high_value_clients': high_value_clients,
+            'repeat_buyers': repeat_buyers,
+            'average_revenue': average_revenue,
+            'total_revenue': total_revenue,
+        },
+        'segments': [
+            {'label': 'Active', 'count': active_clients},
+            {'label': 'Inactive', 'count': max(inactive_clients, 0)},
+            {'label': 'High Value', 'count': high_value_clients},
+            {'label': 'Repeat Buyers', 'count': repeat_buyers},
+        ],
+        'recent_activity': recent_activity,
+        'highlight_clients': client_records[:5],
+        'client_form': ClientForm(),
+        'high_value_threshold': high_value_threshold,
+        'current_store': store,
+        'stores': store_qs,
     }
-    return render(request, 'core/clients.html', context)
+    return render(request, 'core/clients/clients.html', context)
 
 @login_required(login_url='/login/')
 def client_detail(request, lid):
     """Fetch client bills with ownership verification."""
-    try:
-        client = Client.objects.get(lid=lid, user=request.user)
-    except Client.DoesNotExist:
-        messages.error(request, "Client not found or access denied.")
-        return redirect('core:clients')
-    
-    # Fetch bills related to the client
+    store, store_qs = get_current_store(request)
+
+    client_filters = {'lid': lid, 'user': request.user}
+    if store:
+        client_filters['store'] = store
+    client = get_object_or_404(Client, **client_filters)
+
     bills = Bill.objects.filter(client=client).prefetch_related('items').order_by('-date', '-id')
-    
-    # Calculate statistics
-    total_revenue = bills.aggregate(total=Sum("total_price"))["total"] or 0
-    total_quantity = bills.aggregate(total=Sum("quantity"))["total"] or 0
-    avg_bill = (total_revenue / bills.count()) if bills.count() > 0 else 0
+    bill_count = bills.count()
+
+    aggregates = bills.aggregate(
+        total_revenue=Sum('total_price'),
+        total_quantity=Sum('quantity'),
+        average_ticket=Avg('total_price')
+    )
+
+    total_revenue = aggregates['total_revenue'] or Decimal('0')
+    total_quantity = aggregates['total_quantity'] or Decimal('0')
+    avg_bill = aggregates['average_ticket'] or Decimal('0')
+
+    last_bill = bills.first()
+    last_bill_date = last_bill.date if last_bill else None
+
+    today = timezone.now().date()
+    spend_last_30 = bills.filter(date__gte=today - timedelta(days=30)).aggregate(total=Sum('total_price'))['total'] or Decimal('0')
+    spend_last_365 = bills.filter(date__gte=today - timedelta(days=365)).aggregate(total=Sum('total_price'))['total'] or Decimal('0')
+
+    top_items = list(
+        BillItem.objects.filter(bill__client=client)
+        .values('description')
+        .annotate(total_quantity=Sum('quantity'), total_amount=Sum('amount'))
+        .order_by('-total_amount')[:5]
+    )
+
+    recent_bills = list(bills[:6])
+    revenue_trend = list(
+        bills.values('date').annotate(total=Sum('total_price')).order_by('date')
+    )
 
     context = {
         'client': client,
         'bills': bills,
+        'bill_count': bill_count,
         'total_revenue': total_revenue,
         'total_quantity': total_quantity,
         'avg_bill': avg_bill,
+        'last_bill_date': last_bill_date,
+        'spend_last_30': spend_last_30,
+        'spend_last_365': spend_last_365,
+        'top_items': top_items,
+        'recent_bills': recent_bills,
+        'revenue_trend': revenue_trend,
+        'client_form': ClientForm(instance=client),
+        'current_store': store,
+        'stores': store_qs,
     }
-    return render(request, 'core/client-bills.html', context)
+    return render(request, 'core/clients/client-bills.html', context)
 
 @login_required(login_url='/login/')
 def dashboard(request):
@@ -186,17 +343,23 @@ def dashboard(request):
     show_geo = request.GET.get("show_geo") == "1"
     debug = request.GET.get("debug") == "1"
     
+    store, store_qs = get_current_store(request)
+
     # Check cache first (but skip cache if special parameters are present)
-    cache_key = f"dashboard_{user.id}"
+    cache_key = f"dashboard_{user.id}_{store.id if store else 'all'}"
     if not show_geo and not debug:
         cached_data = cache.get(cache_key)
         if cached_data:
-            return render(request, 'core/dashboard.html', cached_data)
+            return render(request, 'core/statistics/dashboard.html', cached_data)
     
     # Filter data for current user
     bills = Bill.objects.filter(store_name=user)
     products = Product.objects.filter(user=user)
     clients = Client.objects.filter(user=user)
+    if store:
+        bills = bills.filter(store=store)
+        products = products.filter(store=store)
+        clients = clients.filter(store=store)
     timings["query_load"] = round((time.perf_counter() - t_start) * 1000)
     
     today = timezone.now().date()
@@ -265,7 +428,7 @@ def dashboard(request):
     top_products_data = list(top_products_qs)
     top_products_chart = json.dumps({
         'labels': [p['description'][:30] for p in top_products_data],
-        'quantity': [float(p['qty'] or 0) for p in top_products_data]
+        'quantity': [format_decimal_value(p['qty']) for p in top_products_data]
     })
     timings["top_products_chart"] = round((time.perf_counter() - t_start) * 1000)
 
@@ -290,7 +453,7 @@ def dashboard(request):
         today_data = list(today_bills.values('description', 'quantity')[:10])
         bar_chart = json.dumps({
             'labels': [item['description'][:30] for item in today_data],
-            'quantity': [float(item['quantity'] or 0) for item in today_data]
+            'quantity': [format_decimal_value(item['quantity']) for item in today_data]
         })
     timings["bar_chart"] = round((time.perf_counter() - t_start) * 1000)
 
@@ -303,7 +466,7 @@ def dashboard(request):
             'date': bill.date.strftime('%Y-%m-%d'),
             'client': bill.client.full_name if bill.client else 'Unknown',
             'total': float(bill.total_price or 0),
-            'items': int(bill.quantity or 0)
+            'items': format_decimal_value(bill.quantity)
         }
         for bill in recent
     ])
@@ -316,7 +479,7 @@ def dashboard(request):
     
     pie_chart = json.dumps({
         'labels': [item['description'][:30] for item in pie_data],
-        'values': [float(item['qty'] or 0) for item in pie_data]
+        'values': [format_decimal_value(item['qty']) for item in pie_data]
     })
     timings["pie_chart"] = round((time.perf_counter() - t_start) * 1000)
 
@@ -331,7 +494,10 @@ def dashboard(request):
         if not geo_data:
             geolocator = Nominatim(user_agent="store_performance_dashboard")
             locations = []
-            client_list = Client.objects.filter(user=user).only(
+            client_list = Client.objects.filter(user=user)
+            if store:
+                client_list = client_list.filter(store=store)
+            client_list = client_list.only(
                 "full_name", "address", "city", "country", "profile_image", "phone", "lid"
             )
             for client in client_list:
@@ -393,16 +559,20 @@ def dashboard(request):
         "show_geo": show_geo,
         "debug": debug,
         "timings": timings,
+        "current_store": store,
+        "stores": store_qs,
     }
     
     # Cache for 3 minutes (but not when special parameters are present)
     if not show_geo and not debug:
         cache.set(cache_key, context, 180)
-    return render(request, 'core/dashboard.html', context)
+    # Use the statistics dashboard template under templates/core/statistics/
+    return render(request, 'core/statistics/dashboard.html', context)
 
 @login_required(login_url='/login/')
 def products(request):
     """Handle product listing and creation with proper validation."""
+    store, store_qs = get_current_store(request)
     if request.method == 'POST':
         form = ProductForm(request.POST, request.FILES)
         if form.is_valid():
@@ -421,6 +591,8 @@ def products(request):
                         category, created = Category.objects.get_or_create(title=new_category_name)
                         product.category = category  # Assign the new or existing category to the product
 
+                    if store:
+                        product.store = store
                     product.save()  # Now save the product to the database
                     messages.success(request, 'Product saved successfully.')
                     logger.info(f"Product created by user {request.user.id}: {product.title}")
@@ -433,62 +605,110 @@ def products(request):
     else:
         form = ProductForm()
 
-    products = Product.objects.filter(user=request.user).order_by('-date')[:500]  # Limit to 500 recent products
-    # Fetch distinct categories
-    categories = Category.objects.all()[:100]  # Limit categories to 100
-    # Fetch all clients for the current user
-    clients = Client.objects.filter(user=request.user).order_by('full_name')[:500]
+    products_qs = Product.objects.filter(user=request.user)
+    if store:
+        products_qs = products_qs.filter(store=store)
+    product_count = products_qs.count()
+    products = products_qs.order_by('-date')[:500]  # Limit to 500 recent products
+
+    categories_qs = Category.objects.filter(product__user=request.user)
+    if store:
+        categories_qs = categories_qs.filter(product__store=store)
+    categories_qs = categories_qs.distinct().order_by('title')
+    category_count = categories_qs.count()
+    categories = categories_qs[:100]  # Limit categories to 100
+
+    clients_qs = Client.objects.filter(user=request.user)
+    if store:
+        clients_qs = clients_qs.filter(store=store)
+    client_count = clients_qs.count()
+    clients = clients_qs.order_by('full_name')[:500]
 
     context = {
         'products': products,
         'categories': categories,
         'clients': clients,
         'form': form,
+        'product_count': product_count,
+        'client_count': client_count,
+        'category_count': category_count,
+        'current_store': store,
+        'stores': store_qs,
     }
 
-    return render(request, 'core/products.html', context)
+    return render(request, 'core/products/products.html', context)
 
 @login_required(login_url='/login/')
 @transaction.atomic
 def create_bill(request):
     # For GET requests, render the multi-bill creation page
+    store, store_qs = get_current_store(request)
+
     if request.method == 'GET':
         # Get all existing clients for the dropdown
-        clients = Client.objects.filter(user=request.user).order_by('-id')[:50]
+        client_qs = Client.objects.filter(user=request.user)
+        if store:
+            client_qs = client_qs.filter(store=store)
+        clients = list(client_qs.order_by('-id')[:50])
+        client_total = client_qs.count()
         
         # Get last 10 created bills with related data
-        recent_bills = Bill.objects.filter(
-            store_name=request.user
-        ).select_related('client').prefetch_related('items').order_by('-date', '-id')[:10]
+        bills_qs = Bill.objects.filter(store_name=request.user)
+        if store:
+            bills_qs = bills_qs.filter(store=store)
+        recent_bills = bills_qs.select_related('client').prefetch_related('items').order_by('-date', '-id')[:10]
+
+        products_qs_base = Product.objects.filter(user=request.user)
+        if store:
+            products_qs_base = products_qs_base.filter(store=store)
+        products_qs = list(products_qs_base.select_related('category').order_by('title')[:300])
+        product_total = products_qs_base.count()
+        product_options = [
+            {
+                "id": product.id,
+                "title": product.title,
+                "price": format_decimal_value(product.price),
+                "description": product.description or "",
+                "category": product.category.title if product.category else "",
+                "sku": product.sku,
+            }
+            for product in products_qs
+        ]
         
         # Calculate statistics for dashboard
-        total_bills_today = Bill.objects.filter(
+        bills_today_qs = Bill.objects.filter(
             store_name=request.user,
             date=timezone.now().date()
-        ).count()
+        )
+        if store:
+            bills_today_qs = bills_today_qs.filter(store=store)
+        total_bills_today = bills_today_qs.count()
         
-        total_revenue_today = Bill.objects.filter(
-            store_name=request.user,
-            date=timezone.now().date()
-        ).aggregate(total=Sum('total_price'))['total'] or 0
+        total_revenue_today = bills_today_qs.aggregate(total=Sum('total_price'))['total'] or 0
         
-        return render(request, 'core/create-bill.html', {
+        return render(request, 'core/clients/create-bill.html', {
             'user': request.user,
             'clients': clients,
             'recent_bills': recent_bills,
             'total_bills_today': total_bills_today,
             'total_revenue_today': total_revenue_today,
+            'product_options': product_options,
+            'product_count': product_total,
+            'client_count': client_total,
+            'current_store': store,
+            'stores': store_qs,
         })
 
     # POST: Handle bill creation
     if request.method == 'POST':
+        error_context = {'user': request.user, 'current_store': store, 'stores': store_qs}
         client_name = request.POST.get('clientName', '').strip()
         bill_date = request.POST.get('billDate')
         
         # Validate client name is not empty
         if not client_name or len(client_name) > 100:
             messages.error(request, 'Client name is required and must be less than 100 characters.')
-            return render(request, 'core/create-bill.html', {'user': request.user})
+            return render(request, 'core/clients/create-bill.html', error_context)
 
         # Parse bill items sent as JSON
         items_json = request.POST.get('items_json', '')
@@ -497,29 +717,32 @@ def create_bill(request):
         except json.JSONDecodeError:
             messages.error(request, 'Invalid items payload. Please try again.')
             logger.warning(f"JSONDecodeError in bill creation for user {request.user.id}")
-            return render(request, 'core/create-bill.html', {'user': request.user})
+            return render(request, 'core/clients/create-bill.html', error_context)
 
         if not items_data or len(items_data) == 0:
             messages.error(request, 'Please add at least one product to the bill.')
-            return render(request, 'core/create-bill.html', {'user': request.user})
+            return render(request, 'core/clients/create-bill.html', error_context)
 
         # Limit number of items to prevent abuse
         if len(items_data) > 1000:
             messages.error(request, 'Maximum 1000 items per bill.')
-            return render(request, 'core/create-bill.html', {'user': request.user})
+            return render(request, 'core/clients/create-bill.html', error_context)
 
         try:
             # Resolve or create client - now with more fields from multi-bill form
             client_select = request.POST.get('clientSelect', '').strip()
             if client_select:
-                client = Client.objects.get(lid=client_select, user=request.user)
+                client_filters = {'lid': client_select, 'user': request.user}
+                if store:
+                    client_filters['store'] = store
+                client = Client.objects.get(**client_filters)
                 created = False
             else:
                 # Check if client exists by name first
-                existing_client = Client.objects.filter(
-                    full_name=client_name,
-                    user=request.user
-                ).first()
+                existing_filters = {'full_name': client_name, 'user': request.user}
+                if store:
+                    existing_filters['store'] = store
+                existing_client = Client.objects.filter(**existing_filters).first()
                 
                 if existing_client:
                     # Update existing client with new info if provided
@@ -553,6 +776,7 @@ def create_bill(request):
                     client = Client.objects.create(
                         full_name=client_name[:100],
                         user=request.user,
+                        store=store,
                         address=request.POST.get('address', '').strip()[:100],
                         phone=request.POST.get('phone', '').strip()[:20],
                         email=request.POST.get('email', '').strip()[:100],
@@ -573,12 +797,12 @@ def create_bill(request):
                     qty = Decimal(str(item.get('quantity', 0)))
                 except (InvalidOperation, ValueError):
                     messages.error(request, 'Invalid price or quantity format.')
-                    return render(request, 'core/create-bill.html', {'user': request.user})
+                    return render(request, 'core/clients/create-bill.html', error_context)
                 
                 # Validate positive values
                 if price < 0 or qty < 0:
                     messages.error(request, 'Price and quantity must be positive.')
-                    return render(request, 'core/create-bill.html', {'user': request.user})
+                    return render(request, 'core/clients/create-bill.html', error_context)
                 
                 amount = price * qty
                 total_price += amount
@@ -595,6 +819,7 @@ def create_bill(request):
 
             bill = Bill.objects.create(
                 store_name=request.user,
+                store=store,
                 client=client,
                 date=bill_date if bill_date else timezone.now().date(),
                 quantity=total_qty,
@@ -640,21 +865,21 @@ def create_bill(request):
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'success': False, 'error': 'Selected client not found.'}, status=400)
             messages.error(request, 'Selected client not found.')
-            return render(request, 'core/create-bill.html', {'user': request.user})
+            return render(request, 'core/clients/create-bill.html', error_context)
         except (ValueError, InvalidOperation) as ve:
             from django.http import JsonResponse
             logger.error(f"Invalid operation in bill creation: {str(ve)}")
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'success': False, 'error': 'Invalid data format.'}, status=400)
             messages.error(request, 'Invalid data format.')
-            return render(request, 'core/create-bill.html', {'user': request.user})
+            return render(request, 'core/clients/create-bill.html', error_context)
         except Exception as e:
             from django.http import JsonResponse
             logger.error(f"Error creating bill: {str(e)}")
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'success': False, 'error': 'An error occurred.'}, status=500)
             messages.error(request, 'An error occurred while saving the bill.')
-            return render(request, 'core/create-bill.html', {'user': request.user})
+            return render(request, 'core/clients/create-bill.html', error_context)
 
 @login_required(login_url='/login/')
 def reports(request):
@@ -681,14 +906,18 @@ def reports(request):
         end_date = datetime.now()
         start_date = end_date - timedelta(days=90)
     
+    store, store_qs = get_current_store(request)
+
     # Check cache
-    cache_key = f"reports_{user.id}_{report_type}_{period}_{start_date.date()}_{end_date.date()}"
+    cache_key = f"reports_{user.id}_{store.id if store else 'all'}_{report_type}_{period}_{start_date.date()}_{end_date.date()}"
     cached_data = cache.get(cache_key)
     if cached_data:
-        return render(request, 'core/reports.html', cached_data)
+        return render(request, 'core/statistics/reports.html', cached_data)
     
     # Base queryset - filtered once, reused multiple times
     bills = Bill.objects.filter(store_name=user, date__gte=start_date, date__lte=end_date)
+    if store:
+        bills = bills.filter(store=store)
     
     # Aggregate all summary stats in single query
     summary_metrics = bills.aggregate(
@@ -743,19 +972,26 @@ def reports(request):
     # Product performance - use only() to reduce data
     product_performance = Product.objects.filter(
         user=user, status=True, product_status='published'
-    ).only('title', 'price', 'stock', 'product_status', 'category_id').order_by('-price')[:10]
+    ).only('title', 'price', 'stock', 'product_status', 'category_id')
+    if store:
+        product_performance = product_performance.filter(store=store)
+    product_performance = product_performance.order_by('-price')[:10]
     
     # Client analysis - optimized with only()
     client_analysis = Client.objects.filter(user=user).annotate(
         total_spent=Sum('bill__total_price'),
         visit_count=Count('bill', distinct=True),
         avg_purchase=Avg('bill__total_price')
-    ).only('full_name', 'email', 'phone').order_by('-total_spent')[:10]
+    ).only('full_name', 'email', 'phone')
+    if store:
+        client_analysis = client_analysis.filter(store=store)
+    client_analysis = client_analysis.order_by('-total_spent')[:10]
     
     # Category breakdown - optimized
-    category_breakdown = Category.objects.filter(
-        product__user=user
-    ).annotate(
+    category_breakdown = Category.objects.filter(product__user=user)
+    if store:
+        category_breakdown = category_breakdown.filter(product__store=store)
+    category_breakdown = category_breakdown.annotate(
         product_count=Count('product', distinct=True),
         avg_price=Avg('product__price')
     ).filter(product_count__gt=0).order_by('-product_count').distinct()
@@ -770,11 +1006,13 @@ def reports(request):
         'product_performance': product_performance,
         'client_analysis': client_analysis,
         'category_breakdown': category_breakdown,
+        'current_store': store,
+        'stores': store_qs,
     }
     
     # Cache for 5 minutes
     cache.set(cache_key, context, 300)
-    return render(request, 'core/reports.html', context)
+    return render(request, 'core/statistics/reports.html', context)
     
     context = {
         'report_type': report_type,
@@ -787,16 +1025,24 @@ def reports(request):
         'client_analysis': client_analysis,
         'category_breakdown': category_breakdown,
     }
-    return render(request, 'core/reports.html', context)
+    return render(request, 'core/statistics/reports.html', context)
 
 @login_required(login_url='/login/')
 def settings(request):
     # Get user data and statistics
     user = request.user
-    user_products = Product.objects.filter(user=user).count()
-    user_clients = Client.objects.filter(user=user).count()
-    user_bills = Bill.objects.filter(store_name=user).count()
-    total_revenue = Bill.objects.filter(store_name=user).aggregate(Sum('total_price'))['total_price__sum'] or 0
+    store, store_qs = get_current_store(request)
+    product_qs = Product.objects.filter(user=user)
+    client_qs = Client.objects.filter(user=user)
+    bills_qs = Bill.objects.filter(store_name=user)
+    if store:
+        product_qs = product_qs.filter(store=store)
+        client_qs = client_qs.filter(store=store)
+        bills_qs = bills_qs.filter(store=store)
+    user_products = product_qs.count()
+    user_clients = client_qs.count()
+    user_bills = bills_qs.count()
+    total_revenue = bills_qs.aggregate(Sum('total_price'))['total_price__sum'] or 0
     
     context = {
         'user': user,
@@ -806,14 +1052,17 @@ def settings(request):
         'total_revenue': total_revenue,
         'profile_image': user.image.url if user.image else None,
         'is_admin': user.is_staff or user.is_superuser,
+        'current_store': store,
+        'stores': store_qs,
     }
-    return render(request, 'core/settings.html', context)
+    return render(request, 'core/account/settings.html', context)
 
 @login_required(login_url='/login/')
 def profile(request):
     """View and edit user profile information"""
     user = request.user
     is_admin = user.is_staff or user.is_superuser
+    store, store_qs = get_current_store(request)
     
     if request.method == 'POST':
         try:
@@ -840,8 +1089,85 @@ def profile(request):
         'user': user,
         'profile_image': user.image.url if user.image else None,
         'is_admin': is_admin,
+        'current_store': store,
+        'stores': store_qs,
     }
-    return render(request, 'core/profile.html', context)
+    return render(request, 'core/account/profile.html', context)
+
+
+@login_required(login_url='/login/')
+def stores_overview(request):
+    """Summary dashboard. Staff see all stores; non-staff see only their store."""
+    can_manage = request.user.is_staff or request.user.is_superuser
+
+    base_qs = Store.objects.select_related('owner').annotate(
+        total_revenue=Coalesce(
+            Sum('bills__total_price', output_field=DecimalField()),
+            Value(0, output_field=DecimalField())
+        ),
+        orders=Coalesce(
+            Count('bills', distinct=True, output_field=IntegerField()),
+            Value(0, output_field=IntegerField())
+        ),
+        last_activity=Max('bills__date'),
+    )
+
+    if can_manage:
+        stores = base_qs.order_by('-total_revenue', 'name')
+    else:
+        stores = base_qs.filter(owner=request.user)
+
+    store_cards = []
+    for store in stores:
+        orders = store.orders or 0
+        revenue = store.total_revenue or Decimal('0')
+        avg_order = revenue / orders if orders else Decimal('0')
+        dashboard_url = f"{reverse('core:dashboard')}?store={store.slug}"
+        card = {
+            'id': store.id,
+            'name': store.name,
+            'status': store.status,
+            'owner': store.owner,
+            'slug': store.slug,
+            'revenue': revenue,
+            'orders': orders,
+            'avg_order': avg_order,
+            'last_activity': store.last_activity,
+            'dashboard_url': dashboard_url,
+        }
+        if can_manage:
+            card['admin_url'] = reverse('admin:core_store_change', args=[store.id])
+        store_cards.append(card)
+
+    total_revenue = sum(card['revenue'] for card in store_cards)
+    total_orders = sum(card['orders'] for card in store_cards)
+    avg_order_overall = (total_revenue / total_orders) if total_orders else Decimal('0')
+    last_activity = max(
+        (card['last_activity'] for card in store_cards if card['last_activity']),
+        default=None
+    )
+
+    context = {
+        'stores': store_cards,
+        'create_store_url': reverse('admin:core_store_add') if can_manage else None,
+        'can_manage': can_manage,
+        'summary': {
+            'count': len(store_cards),
+            'revenue': total_revenue,
+            'orders': total_orders,
+            'avg_order': avg_order_overall,
+            'last_activity': last_activity,
+        },
+    }
+    # Use the newer template location under core/store/
+    return render(request, 'core/store/stores_overview.html', context)
+
+
+@login_required(login_url='/login/')
+def store_create_redirect(request):
+    if not (request.user.is_staff or request.user.is_superuser):
+        return HttpResponseForbidden("You do not have permission to create stores.")
+    return redirect('/admin/core/store/add/')
 
 
 # Bill Actions
@@ -849,7 +1175,11 @@ def profile(request):
 def edit_bill(request, bill_id):
     """Edit bill details"""
     try:
-        bill = Bill.objects.get(id=bill_id)
+        store, _ = get_current_store(request)
+        bill_filters = {'id': bill_id, 'store_name': request.user}
+        if store:
+            bill_filters['store'] = store
+        bill = Bill.objects.get(**bill_filters)
         
         if request.method == 'POST':
             # Update bill fields
@@ -889,7 +1219,11 @@ def edit_bill(request, bill_id):
 def delete_bill(request, bill_id):
     """Delete a bill"""
     try:
-        bill = Bill.objects.get(id=bill_id)
+        store, _ = get_current_store(request)
+        bill_filters = {'id': bill_id, 'store_name': request.user}
+        if store:
+            bill_filters['store'] = store
+        bill = Bill.objects.get(**bill_filters)
         client_lid = bill.client.lid
         
         if request.method == 'POST':
@@ -912,7 +1246,11 @@ def delete_bill(request, bill_id):
 def print_bill(request, bill_id):
     """Print/view bill in a printable format"""
     try:
-        bill = Bill.objects.get(id=bill_id)
+        store, _ = get_current_store(request)
+        bill_filters = {'id': bill_id, 'store_name': request.user}
+        if store:
+            bill_filters['store'] = store
+        bill = Bill.objects.get(**bill_filters)
         context = {
             'bill': bill,
             'client': bill.client,
@@ -930,7 +1268,11 @@ def print_bill(request, bill_id):
 def duplicate_bill(request, bill_id):
     """Duplicate a bill"""
     try:
-        original_bill = Bill.objects.get(id=bill_id)
+        store, _ = get_current_store(request)
+        bill_filters = {'id': bill_id, 'store_name': request.user}
+        if store:
+            bill_filters['store'] = store
+        original_bill = Bill.objects.get(**bill_filters)
         client_lid = original_bill.client.lid
         
         # Create a new bill with the same details but new ID
@@ -972,8 +1314,12 @@ def get_bill_data(request, bill_id):
     """API endpoint to get bill data for editing"""
     try:
         from django.http import JsonResponse
-        
-        bill = Bill.objects.get(id=bill_id)
+
+        store, _ = get_current_store(request)
+        bill_filters = {'id': bill_id, 'store_name': request.user}
+        if store:
+            bill_filters['store'] = store
+        bill = Bill.objects.get(**bill_filters)
         
         # Get bill items or create from legacy data
         items = []
@@ -982,7 +1328,7 @@ def get_bill_data(request, bill_id):
                 {
                     'id': item.id,
                     'description': item.description,
-                    'quantity': float(item.quantity),
+                    'quantity': format_decimal_value(item.quantity),
                     'price': float(item.price),
                     'amount': float(item.amount)
                 }
@@ -993,7 +1339,7 @@ def get_bill_data(request, bill_id):
             items = [{
                 'id': None,
                 'description': bill.description,
-                'quantity': float(bill.quantity),
+                'quantity': format_decimal_value(bill.quantity),
                 'price': float(bill.price),
                 'amount': float(bill.amount)
             }]
@@ -1024,7 +1370,11 @@ def update_bill_items(request, bill_id):
     try:
         from django.http import JsonResponse
         
-        bill = Bill.objects.get(id=bill_id)
+        store, _ = get_current_store(request)
+        bill_filters = {'id': bill_id, 'store_name': request.user}
+        if store:
+            bill_filters['store'] = store
+        bill = Bill.objects.get(**bill_filters)
         data = json.loads(request.body)
         items_data = data.get('items', [])
         
@@ -1081,8 +1431,12 @@ def products_api(request):
     """API endpoint to get products for bill editor"""
     try:
         from django.http import JsonResponse
-        
-        products = Product.objects.filter(user=request.user).order_by('-date')[:100]
+
+        store, _ = get_current_store(request)
+        products = Product.objects.filter(user=request.user)
+        if store:
+            products = products.filter(store=store)
+        products = products.order_by('-date')[:100]
         
         products_data = [
             {
@@ -1100,6 +1454,84 @@ def products_api(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+
+@login_required(login_url='/login/')
+def create_client(request):
+    """AJAX endpoint to add a new client to the portfolio."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+
+    store, _ = get_current_store(request)
+    form = ClientForm(request.POST)
+    if form.is_valid():
+        client = form.save(commit=False)
+        client.user = request.user
+        if store:
+            client.store = store
+        client.gpt5_enabled = parse_truthy(request.POST.get('gpt5_enabled'), default=True)
+        client.save()
+
+        response_data = {
+            'lid': client.lid,
+            'full_name': client.full_name,
+            'email': client.email,
+            'phone': client.phone,
+            'city': client.city,
+            'country': client.country,
+            'gpt5_enabled': client.gpt5_enabled,
+            'detail_url': reverse('core:client_detail', args=[client.lid]),
+            'total_spend': format_decimal_value(0),
+            'bill_count': 0,
+        }
+        return JsonResponse({'success': True, 'client': response_data})
+
+    return JsonResponse({'success': False, 'errors': form.errors.get_json_data()}, status=400)
+
+
+@login_required(login_url='/login/')
+def update_client_info(request, lid):
+    """Persist client profile updates via AJAX."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+
+    store, _ = get_current_store(request)
+    client_filters = {'lid': lid, 'user': request.user}
+    if store:
+        client_filters['store'] = store
+    client = get_object_or_404(Client, **client_filters)
+    form = ClientForm(request.POST, instance=client)
+
+    if form.is_valid():
+        updated_client = form.save(commit=False)
+        updated_client.gpt5_enabled = parse_truthy(request.POST.get('gpt5_enabled'), default=client.gpt5_enabled)
+        updated_client.save()
+
+        totals = Bill.objects.filter(client=updated_client).aggregate(
+            total_spend=Sum('total_price'),
+            bill_count=Count('id'),
+            last_bill_date=Max('date')
+        )
+
+        response_data = {
+            'lid': updated_client.lid,
+            'full_name': updated_client.full_name,
+            'email': updated_client.email,
+            'phone': updated_client.phone,
+            'address': updated_client.address,
+            'city': updated_client.city,
+            'country': updated_client.country,
+            'postal_code': updated_client.postal_code,
+            'gpt5_enabled': updated_client.gpt5_enabled,
+            'total_spend': format_decimal_value(totals['total_spend'] or Decimal('0')),
+            'bill_count': totals['bill_count'] or 0,
+            'last_bill_date': totals['last_bill_date'],
+        }
+
+        return JsonResponse({'success': True, 'client': response_data})
+
+    return JsonResponse({'success': False, 'errors': form.errors.get_json_data()}, status=400)
+
+
 @login_required(login_url='/login/')
 def update_client_picture(request):
     """Update client's profile picture"""
@@ -1107,7 +1539,11 @@ def update_client_picture(request):
         client_lid = request.POST.get('client_lid')
         
         try:
-            client = Client.objects.get(lid=client_lid, user=request.user)
+            store, _ = get_current_store(request)
+            client_filters = {'lid': client_lid, 'user': request.user}
+            if store:
+                client_filters['store'] = store
+            client = Client.objects.get(**client_filters)
             
             if 'profile_image' in request.FILES:
                 client.profile_image = request.FILES['profile_image']

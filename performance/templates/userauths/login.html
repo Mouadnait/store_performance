@@ -1,20 +1,70 @@
 {% extends "auth.html" %}
-{% block title %}Sign in{% endblock title %}
+{% block title %}Sign In{% endblock title %}
 {% block content %}
-<div class="shadow-wrap">
-    <div class="form-wrap">
-        <h3>Login</h3>
-        <form method="POST" onsubmit="submitForm(event)">
+<div class="auth-wrapper">
+    <div class="auth-box">
+        <div class="auth-header">
+            <div class="logo">
+                <i class='bx bx-bar-chart-alt-2'></i>
+                <h1>Store Performance</h1>
+            </div>
+            <h2>Welcome Back</h2>
+            <p>Sign in to access your dashboard</p>
+        </div>
+        
+        <form method="POST" class="auth-form">
             {% csrf_token %}
-            <div style="margin: 15px 0;">
-                <input type="text" required name="email" placeholder="Username or Email *">
+            
+            <div class="form-group">
+                <label><i class='bx bx-user'></i> Username or Email</label>
+                <div class="input-field">
+                    <span class="input-icon"><i class='bx bx-user'></i></span>
+                    <input class="form-control" type="text" name="email" placeholder="Enter your username or email" required>
+                </div>
             </div>
-            <div>
-                <input required type="password" name="password" placeholder="Your Password *">
+            
+            <div class="form-group">
+                <label><i class='bx bx-lock-alt'></i> Password</label>
+                <div class="password-wrapper">
+                    <span class="input-icon"><i class='bx bx-lock-alt'></i></span>
+                    <input class="form-control" type="password" name="password" id="password" placeholder="Enter your password" required>
+                    <button type="button" class="toggle-btn" onclick="togglePassword()">
+                        <i class='bx bx-show' id="toggleIcon"></i>
+                    </button>
+                </div>
             </div>
-            <button type="submit">Log in</button>
+            
+            <div class="form-options">
+                <label class="checkbox">
+                    <input type="checkbox" name="remember">
+                    <span>Remember me</span>
+                </label>
+                <a href="#" class="link">Forgot password?</a>
+            </div>
+            
+            <button type="submit" class="btn-primary">
+                Sign In
+                <i class='bx bx-right-arrow-alt'></i>
+            </button>
         </form>
-        <a class="signup-link" href='{% url "userauths:signup" %}'>Signup</a>
+        
+        <div class="auth-footer">
+            <p>Don't have an account? <a href='{% url "userauths:signup" %}'>Sign Up</a></p>
+        </div>
     </div>
 </div>
+
+<script>
+function togglePassword() {
+    const pwd = document.getElementById('password');
+    const icon = document.getElementById('toggleIcon');
+    if (pwd.type === 'password') {
+        pwd.type = 'text';
+        icon.classList.replace('bx-show', 'bx-hide');
+    } else {
+        pwd.type = 'password';
+        icon.classList.replace('bx-hide', 'bx-show');
+    }
+}
+</script>
 {% endblock content %}

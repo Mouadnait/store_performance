@@ -10,6 +10,7 @@ from django.conf import settings
 from django.utils.deprecation import MiddlewareMixin
 from django.contrib.auth.signals import user_logged_in, user_logged_out, user_login_failed
 from django.dispatch import receiver
+from django.shortcuts import redirect
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,33 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
             del response['X-Powered-By']
             
         return response
+
+
+class AdminAccessMiddleware(MiddlewareMixin):
+    """Restrict Django admin to a small allowlist of accounts."""
+
+    def process_request(self, request):
+        if not request.path.startswith('/admin'):
+            return None
+
+        allowed_emails = {e.lower() for e in getattr(settings, 'ALLOWED_ADMIN_EMAILS', []) if e}
+
+        if not request.user.is_authenticated:
+            # Redirect unauthenticated users to the admin login
+            if request.path != '/admin/login/':
+                return redirect(f"/admin/login/?next={request.path}")
+            return None
+
+        if request.user.is_superuser:
+            return None
+
+        user_email = (request.user.email or '').lower()
+
+        if user_email in allowed_emails:
+            return None
+
+        logger.warning("Blocked admin access for user %s", request.user)
+        return HttpResponseForbidden("Admin access restricted to authorized accounts.")
 
 
 class RateLimitMiddleware(MiddlewareMixin):
@@ -126,9 +154,13 @@ class SecurityEventMiddleware(MiddlewareMixin):
     Track and log security-related events.
     """
     def process_request(self, request):
+        # Allow Django admin without triggering suspicious-path tracking
+        if request.path.startswith('/admin'):
+            return None
+
         # Track suspicious patterns
         suspicious_paths = [
-            'admin', 'phpmyadmin', 'wp-admin', '.env', 
+            'phpmyadmin', 'wp-admin', '.env',
             'config', 'backup', '.git', 'sql'
         ]
         

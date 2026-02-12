@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Store Performance - Store Overview">
+  <link rel="icon" href="{% static 'images/store_performance.jpeg' %}" type="image/jpeg">
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+  <link rel="stylesheet" href="{% static 'css/base/application.css' %}?v=1.1">
+  {% block style-content %}{% endblock %}
+  <title>{% block title %}Store Overview{% endblock %}</title>
+</head>
+<body class="store-overview-page">
+  <main class="store-overview-container">
+    {% if messages %}
+    <div class="message-container">
+      {% for message in messages %}
+      <div class="alert alert-{{message.tags}}" role="alert">
+        <div class="alert-content">
+          <i class='bx bx-{% if message.tags == "success" %}check-circle{% elif message.tags == "error" %}error-circle{% elif message.tags == "warning" %}error{% else %}info-circle{% endif %}'></i>
+          <strong>{{ message }}</strong>
+        </div>
+        <button class="alert-close" onclick="this.parentElement.remove();">
+          <i class='bx bx-x'></i>
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+  {% block script %}{% endblock %}
+</body>
+</html>

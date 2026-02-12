@@ -1,0 +1,102 @@
+{% extends "email_base.html" %}
+
+{% block email_title %}New Bill Created{% endblock %}
+
+{% block content %}
+<p style="margin: 0 0 20px; color: #374151; font-size: 16px; line-height: 1.6;">
+    Hello <strong>{{ client_name }}</strong>,
+</p>
+
+<p style="margin: 0 0 20px; color: #374151; font-size: 16px; line-height: 1.6;">
+    A new bill has been created for you. Here are the details:
+</p>
+
+<!-- Bill Details Box -->
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin: 30px 0; background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+    <tr>
+        <td style="padding: 24px;">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                    <td style="padding-bottom: 12px;">
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                                <td style="color: #6b7280; font-size: 14px; padding-bottom: 4px;">Bill Number</td>
+                                <td align="right" style="color: #1f2937; font-size: 16px; font-weight: 600;">{{ bill_number }}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding-bottom: 12px;">
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                                <td style="color: #6b7280; font-size: 14px; padding-bottom: 4px;">Bill Date</td>
+                                <td align="right" style="color: #1f2937; font-size: 16px; font-weight: 600;">{{ bill_date }}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding-bottom: 12px;">
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                                <td style="color: #6b7280; font-size: 14px; padding-bottom: 4px;">Total Amount</td>
+                                <td align="right" style="color: #10b981; font-size: 24px; font-weight: 700;">${{ total_amount }}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+<!-- Items List -->
+{% if items %}
+<h3 style="margin: 30px 0 16px; color: #1f2937; font-size: 18px; font-weight: 600;">Bill Items</h3>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+    <thead>
+        <tr style="background-color: #f9fafb;">
+            <th style="padding: 12px; text-align: left; color: #6b7280; font-size: 13px; font-weight: 600; text-transform: uppercase; border-bottom: 1px solid #e5e7eb;">Description</th>
+            <th style="padding: 12px; text-align: center; color: #6b7280; font-size: 13px; font-weight: 600; text-transform: uppercase; border-bottom: 1px solid #e5e7eb;">Qty</th>
+            <th style="padding: 12px; text-align: right; color: #6b7280; font-size: 13px; font-weight: 600; text-transform: uppercase; border-bottom: 1px solid #e5e7eb;">Price</th>
+            <th style="padding: 12px; text-align: right; color: #6b7280; font-size: 13px; font-weight: 600; text-transform: uppercase; border-bottom: 1px solid #e5e7eb;">Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        <tr style="border-bottom: 1px solid #f3f4f6;">
+            <td style="padding: 12px; color: #374151; font-size: 14px;">{{ item.description }}</td>
+            <td style="padding: 12px; text-align: center; color: #6b7280; font-size: 14px;">{{ item.quantity }}</td>
+            <td style="padding: 12px; text-align: right; color: #6b7280; font-size: 14px;">${{ item.price }}</td>
+            <td style="padding: 12px; text-align: right; color: #1f2937; font-size: 14px; font-weight: 600;">${{ item.total }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}
+
+{% block button_text %}View Bill Details{% endblock %}
+
+{% block additional_content %}
+<p style="margin: 30px 0 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+    If you have any questions about this bill, please don't hesitate to contact us.
+</p>
+{% endblock %}
+
+{% block info_box %}
+<tr>
+    <td style="padding: 0 40px 40px;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 6px;">
+            <tr>
+                <td style="padding: 16px 20px;">
+                    <p style="margin: 0; color: #1e40af; font-size: 14px; line-height: 1.5;">
+                        <strong>💡 Tip:</strong> You can download a PDF copy of this bill from your dashboard.
+                    </p>
+                </td>
+            </tr>
+        </table>
+    </td>
+</tr>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block style-content %}
+<link rel="stylesheet" href="{% static 'css/account/profile.css' %}?v=1.2">
+{% endblock style-content %}
+
+{% block title %}My Profile | Store Performance{% endblock title %}
+{% block page_title %}My Profile{% endblock page_title %}
+
+{% block content %}
+<div class="profile-container">
+<div class="profile-grid">
+<div class="profile-card-sidebar">
+<div class="profile-cover"></div>
+<div class="profile-avatar-section">
+<img src="{% if profile_image %}{{profile_image}}{% else %}{% static 'images/default-profile.png' %}{% endif %}" alt="Profile" class="avatar-img">
+<div class="profile-name">{{user.first_name}} {{user.last_name}}</div>
+<div class="profile-email">{{user.email}}</div>
+<div class="profile-badge">{% if is_admin %}Administrator{% else %}Store Owner{% endif %}</div>
+<div class="profile-stats">
+<div class="stat-item"><span class="stat-value">{{user_products|default:"0"}}</span><div class="stat-label">Products</div></div>
+<div class="stat-item"><span class="stat-value">{{user_clients|default:"0"}}</span><div class="stat-label">Clients</div></div>
+<div class="stat-item"><span class="stat-value">{{user_bills|default:"0"}}</span><div class="stat-label">Bills</div></div>
+<div class="stat-item"><span class="stat-value">${{total_revenue|default:"0"|floatformat:0}}</span><div class="stat-label">Revenue</div></div>
+</div>
+<div class="profile-meta">
+<div class="meta-item"><span class="meta-label">Member Since</span><span class="meta-value">{{user.date_joined|date:"M Y"}}</span></div>
+<div class="meta-item"><span class="meta-label">Last Login</span><span class="meta-value">{% if user.last_login %}{{user.last_login|date:"M d"}}{% else %}Never{% endif %}</span></div>
+<div class="meta-item"><span class="meta-label">Status</span><span class="meta-value meta-status">Active</span></div>
+</div>
+</div>
+</div>
+<div>
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{message.tags}}"><span class="material-icons-sharp">{% if message.tags == 'success' %}check_circle{% else %}error{% endif %}</span>{{message}}</div>
+{% endfor %}
+{% endif %}
+<div class="profile-section">
+<div class="section-header"><span class="material-icons-sharp">person</span><h2>Personal Information</h2></div>
+<div class="section-body">
+<form method="POST" enctype="multipart/form-data">
+{% csrf_token %}
+<div class="form-grid">
+<div class="form-field"><label>Username *</label><input type="text" name="username" value="{{user.username}}" required></div>
+<div class="form-field"><label>Email Address *</label><input type="email" name="email" value="{{user.email}}" required></div>
+</div>
+<div class="form-grid">
+<div class="form-field"><label>First Name</label><input type="text" name="first_name" value="{{user.first_name|default:''}}"></div>
+<div class="form-field"><label>Last Name</label><input type="text" name="last_name" value="{{user.last_name|default:''}}"></div>
+</div>
+<div class="form-grid single">
+<div class="form-field"><label>Phone Number</label><input type="tel" name="phone" value="{{user.phone|default:''}}" placeholder="+1 (555) 123-4567"><span class="hint">Include country code</span></div>
+</div>
+<div class="form-grid single">
+<div class="form-field"><label>Bio</label><textarea name="bio" maxlength="500" placeholder="Tell us about yourself...">{{user.bio|default:''}}</textarea><span class="hint">Maximum 500 characters</span></div>
+</div>
+<div class="form-grid single">
+<div class="form-field"><label>Profile Photo</label><input type="file" name="image" accept="image/*"><span class="hint">Max 5MB, recommended 400x400px</span></div>
+</div>
+<div class="form-actions">
+<button type="submit" class="btn btn-primary"><span class="material-icons-sharp">save</span>Save Changes</button>
+<a href="{% url 'core:dashboard' %}" class="btn btn-secondary"><span class="material-icons-sharp">close</span>Cancel</a>
+</div>
+</form>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% endblock content %}

@@ -38,7 +38,7 @@ def user_directory_path(instance, filename):
 
 class Store(models.Model):
     sid = ShortUUIDField(unique=True, length=10, max_length=20, prefix="store", alphabet="abcdefgh12345")
-    owner = models.OneToOneField(User, on_delete=models.CASCADE, related_name='store')
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='stores')
     
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, max_length=200)
@@ -68,6 +68,7 @@ class Store(models.Model):
 class Client(models.Model):
     lid = ShortUUIDField(unique=True, length=10, max_length=20, prefix="cli", alphabet="abcdefgh12345")
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='clients')
+    store = models.ForeignKey('Store', on_delete=models.CASCADE, related_name='clients', null=True, blank=True)
 
     profile_image = models.ImageField(upload_to=user_directory_path, default="client.png")
     full_name = models.CharField(max_length=100)
@@ -118,6 +119,7 @@ class Product(models.Model):
     pid = ShortUUIDField(unique=True, length=10, max_length=20, alphabet="abcdefgh12345")
 
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='products', null=True, blank=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, blank=True, null=True)
 
     title = models.CharField(max_length=255, default="Product Title")
@@ -219,6 +221,7 @@ class ProductReview(models.Model):
 
 class Bill(models.Model):
     store_name = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bill')
+    store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='bills', null=True, blank=True)
     client = models.ForeignKey(Client, on_delete=models.CASCADE)
     # Allow user-selected bill dates; default to today
     date = models.DateField(default=timezone.now)

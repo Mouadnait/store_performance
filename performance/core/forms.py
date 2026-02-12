@@ -1,11 +1,18 @@
 from django import forms
 from django.core.validators import FileExtensionValidator, EmailValidator
 from django.core.exceptions import ValidationError
-from .models import Product, Bill, Client
+from .models import Product, Bill, Client, Tags
 import re
 
 class ProductForm(forms.ModelForm):
     """Form for creating and editing products with comprehensive validation."""
+    tags = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'tag1, tag2, tag3',
+        })
+    )
     new_category = forms.CharField(
         required=False, 
         max_length=100,
@@ -16,6 +23,16 @@ class ProductForm(forms.ModelForm):
         }),
         help_text="Add a new category if yours isn't listed."
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Allow submissions without an image; a default image will be used instead.
+        if 'image' in self.fields:
+            self.fields['image'].required = False
+        # Old price is optional; leave empty to mean "no discount".
+        if 'old_price' in self.fields:
+            self.fields['old_price'].required = False
+            self.fields['old_price'].initial = None
     
     class Meta:
         model = Product
@@ -55,10 +72,6 @@ class ProductForm(forms.ModelForm):
                 'placeholder': 'Enter product specifications',
                 'maxlength': '2000',
             }),
-            'tags': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'tag1, tag2, tag3',
-            }),
             'sku': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'SKU-123456',
@@ -84,7 +97,7 @@ class ProductForm(forms.ModelForm):
                 'class': 'form-check-input',
             }),
         }
-    
+
     def clean_title(self):
         """Validate product title."""
         title = self.cleaned_data.get('title', '').strip()
@@ -102,6 +115,20 @@ class ProductForm(forms.ModelForm):
         if price is not None and price > 999999999.99:
             raise ValidationError('Price is too large.')
         return price
+
+    def clean_tags(self):
+        """Normalize tag input and return a Tags instance."""
+        raw = (self.cleaned_data.get('tags') or '').strip()
+        if not raw:
+            return None
+        tag_names = [name.strip() for name in raw.split(',') if name.strip()]
+        if not tag_names:
+            return None
+        tag_name = tag_names[0]
+        if len(tag_name) > 100:
+            raise ValidationError('Tag name must be 100 characters or fewer.')
+        tag, _ = Tags.objects.get_or_create(name=tag_name)
+        return tag
     
     def clean(self):
         """Validate form data."""
@@ -109,10 +136,31 @@ class ProductForm(forms.ModelForm):
         price = cleaned_data.get('price')
         old_price = cleaned_data.get('old_price')
         
-        if price and old_price and old_price <= price:
+        # If no old price was provided, treat it as no discount.
+        if old_price in (None, ''):
+            cleaned_data['old_price'] = None
+        elif price and old_price <= price:
             self.add_error('old_price', 'Old price must be greater than the current price for a valid discount.')
         
         return cleaned_data
+
+    def save(self, commit=True):
+        """Set a default image when none is uploaded for new products."""
+        instance = super().save(commit=False)
+
+        # Apply default image when missing on create
+        if not self.cleaned_data.get('image') and not instance.pk:
+            default_image = instance._meta.get_field('image').default
+            instance.image = default_image
+
+        # If no old price was provided or it failed validation, set it equal to price (no discount)
+        if not self.cleaned_data.get('old_price'):
+            instance.old_price = instance.price
+
+        if commit:
+            instance.save()
+            self.save_m2m()
+        return instance
 
 class BillForm(forms.ModelForm):
     """Form for creating bills with validation."""

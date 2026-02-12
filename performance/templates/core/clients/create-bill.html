@@ -1,0 +1,300 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block style-content %}
+<link rel="stylesheet" href="{% static 'css/bills/bills.css' %}?v=1.2">
+<link rel="stylesheet" href="{% static 'css/bills/create-bill.css' %}?v=1.2">
+{% endblock style-content %}
+
+{% block title %}Bill Builder | Store Performance{% endblock title %}
+{% block page_title %}Bill Builder{% endblock page_title %}
+{% block page_subtitle %}{% endblock page_subtitle %}
+{% block header_actions %}{% endblock header_actions %}
+
+{% block content %}
+<div class="bill-page-container">
+
+    <section class="bill-hero section-block">
+        <div class="bill-hero-copy">
+            <h2>Build polished bills in seconds</h2>
+            <p>Manage multiple drafts side by side, reuse saved clients, and pour catalog products directly into each bill.</p>
+        </div>
+        <div class="bill-hero-metrics">
+            <div class="bill-header-chip">
+                <span class="bill-chip-label">Bills Today</span>
+                <span class="bill-chip-value">{{ total_bills_today }}</span>
+            </div>
+            <div class="bill-header-chip">
+                <span class="bill-chip-label">Revenue Today</span>
+                <span class="bill-chip-value">${{ total_revenue_today|floatformat:2 }}</span>
+            </div>
+            <div class="bill-header-chip">
+                <span class="bill-chip-label">Catalog Size</span>
+                <span class="bill-chip-value">{{ product_count }}</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="bill-tabs-container section-block">
+        <div class="bill-tabs" id="billTabs"></div>
+        <div class="tab-actions actions-bar">
+            <button class="add-bill-btn" type="button" onclick="addNewBill()">
+                <span class="material-icons-sharp">add</span>
+                Add Bill
+            </button>
+            <button class="save-all-btn" type="button" onclick="saveAllBills()">
+                <span class="material-icons-sharp">save</span>
+                Save All Bills (0)
+            </button>
+        </div>
+    </section>
+
+    <div class="bill-workspace">
+        <div class="bill-forms-panel" id="billFormsContainer"></div>
+
+        <aside class="bill-side-panel">
+            <div class="side-card table-card">
+                <h3 class="side-card-title">
+                    <span class="material-icons-sharp">history</span>
+                    Recent Bills
+                </h3>
+                {% if recent_bills %}
+                <div class="side-card-list">
+                    {% for bill in recent_bills %}
+                    <a class="bill-side-item" href="{% url 'core:client_detail' bill.client.lid %}">
+                        <header class="bill-side-header">
+                            <span class="bill-side-id">#{{ bill.id }}</span>
+                            <time datetime="{{ bill.date|date:'Y-m-d' }}">
+                                <span class="material-icons-sharp icon-xs">event</span>
+                                {{ bill.date|date:"M d, Y" }}
+                            </time>
+                        </header>
+                        <div class="bill-side-client">
+                            <span class="material-icons-sharp icon-sm">person</span>
+                            <div>
+                                <strong>{{ bill.client.full_name }}</strong>
+                                <div class="bill-side-contact">
+                                    {% if bill.client.phone %}
+                                    <span><span class="material-icons-sharp icon-xs">call</span>{{ bill.client.phone }}</span>
+                                    {% endif %}
+                                    {% if bill.client.email %}
+                                    <span><span class="material-icons-sharp icon-xs">mail</span>{{ bill.client.email }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <footer class="bill-side-footer">
+                            <span class="bill-side-meta">
+                                <span class="material-icons-sharp icon-xs">inventory_2</span>
+                                {{ bill.items.count }} item{{ bill.items.count|pluralize }}
+                            </span>
+                            <span class="bill-side-total">${{ bill.total_price|floatformat:2 }}</span>
+                        </footer>
+                    </a>
+                    {% endfor %}
+                </div>
+                <a class="side-card-link" href="{% url 'core:dashboard' %}">
+                    View analytics
+                    <span class="material-icons-sharp icon-xs">arrow_forward</span>
+                </a>
+                {% else %}
+                <div class="empty-state">
+                    <span class="material-icons-sharp">receipt_long</span>
+                    <h3>No bills yet</h3>
+                    <p>Start crafting your first bill with the builder.</p>
+                </div>
+                {% endif %}
+            </div>
+        </aside>
+    </div>
+</div>
+
+<template id="billFormTemplate">
+    <div class="bill-content form-card" data-bill="0">
+        <form class="bill-form" data-bill-number="0">
+            {% csrf_token %}
+            <header class="bill-card-header">
+                <div>
+                    <h3>
+                        <span class="material-icons-sharp">receipt_long</span>
+                        Bill <span class="bill-form-number">#0</span>
+                    </h3>
+                    <p class="bill-card-subtitle">Keep client details in sync and track totals as you go.</p>
+                </div>
+                <div class="bill-card-tags">
+                    <span class="bill-tag">Draft</span>
+                </div>
+            </header>
+
+            <section class="form-grid">
+                <div class="form-group">
+                    <label>
+                        <span class="material-icons-sharp icon-sm">person_search</span>
+                        Select Client
+                    </label>
+                    <select class="clientSelect" name="clientSelect">
+                        <option value="">-- New Client --</option>
+                        {% for client in clients %}
+                        <option value="{{ client.lid }}"
+                                data-name="{{ client.full_name }}"
+                                data-phone="{{ client.phone }}"
+                                data-email="{{ client.email }}"
+                                data-address="{{ client.address }}"
+                                data-city="{{ client.city }}"
+                                data-country="{{ client.country }}"
+                                data-postal="{{ client.postal_code }}">
+                            {{ client.full_name }} · {{ client.phone|default:"No phone" }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Client Name <span class="required">*</span></label>
+                    <input type="text" class="clientName" name="clientName" placeholder="Enter client name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <span class="material-icons-sharp icon-sm">call</span>
+                        Phone
+                    </label>
+                    <input type="tel" class="phone" name="phone" placeholder="+1 234 567 8900">
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <span class="material-icons-sharp icon-sm">mail</span>
+                        Email
+                    </label>
+                    <input type="email" class="email" name="email" placeholder="client@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <span class="material-icons-sharp icon-sm">home</span>
+                        Address
+                    </label>
+                    <input type="text" class="address" name="address" placeholder="Street, number">
+                </div>
+
+                <div class="form-group">
+                    <label>City</label>
+                    <input type="text" class="city" name="city" placeholder="City">
+                </div>
+
+                <div class="form-group">
+                    <label>Country</label>
+                    <input type="text" class="country" name="country" placeholder="Country">
+                </div>
+
+                <div class="form-group">
+                    <label>Postal Code</label>
+                    <input type="text" class="postal" name="postal_code" placeholder="Postal code">
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <span class="material-icons-sharp icon-sm">calendar_month</span>
+                        Bill Date <span class="required">*</span>
+                    </label>
+                    <input type="date" class="billDate" name="billDate" required value="{% now 'Y-m-d' %}">
+                </div>
+            </section>
+
+            <section class="items-section table-card">
+                <div class="section-header">
+                    <h3>
+                        <span class="material-icons-sharp">view_list</span>
+                        Bill Items
+                    </h3>
+                    <button class="add-item-btn" type="button">
+                        <span class="material-icons-sharp">add_circle</span>
+                        Add Item
+                    </button>
+                </div>
+
+                <div class="items-table-container">
+                    <table class="items-table">
+                        <thead>
+                            <tr>
+                                <th class="col-id">#</th>
+                                <th class="col-description">Description</th>
+                                <th class="col-price">Price</th>
+                                <th class="col-quantity">Quantity</th>
+                                <th class="col-amount">Amount</th>
+                                <th class="col-action">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="items-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="bill-summary">
+                <div class="summary-row">
+                    <span class="summary-label">Total Items:</span>
+                    <span class="summary-value total-items">0</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Total Quantity:</span>
+                    <span class="summary-value total-quantity">0</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Total Amount:</span>
+                    <span class="summary-value total-amount">$0.00</span>
+                </div>
+            </section>
+        </form>
+    </div>
+</template>
+
+{{ product_options|json_script:"product-options-data" }}
+
+<!-- Product Picker Modal -->
+<div id="productPickerModal" class="product-picker" aria-hidden="true">
+    <div class="product-picker-backdrop" onclick="closeProductPicker()"></div>
+    <div class="product-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="productPickerTitle">
+        <div class="product-picker-header">
+            <div>
+                <h2 id="productPickerTitle">Add Product</h2>
+                <p class="product-picker-subtitle">Browse your catalog and drop items directly into the bill.</p>
+            </div>
+            <button type="button" class="product-picker-close" aria-label="Close" onclick="closeProductPicker()">
+                <span class="material-icons-sharp">close</span>
+            </button>
+        </div>
+        <div class="product-picker-search">
+            <span class="material-icons-sharp">search</span>
+            <input type="text" id="productPickerSearch" placeholder="Search by name, SKU, or category" autocomplete="off">
+        </div>
+        <div class="product-picker-body" id="productPickerResults" data-empty-message="No products match this search.">
+            <!-- Results populated via JavaScript -->
+        </div>
+        <div class="product-picker-footer">
+            <button type="button" class="picker-action secondary" onclick="addManualItem()">
+                <span class="material-icons-sharp">edit</span>
+                Manual Item
+            </button>
+            <button type="button" class="picker-action ghost" onclick="closeProductPicker()">
+                <span class="material-icons-sharp">close</span>
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Indicator -->
+<div class="progress-indicator" id="progressIndicator">
+    <div class="progress-content">
+        <div class="spinner"></div>
+        <div class="progress-text">Saving bills...</div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast" id="toast">
+    <span class="material-icons-sharp">check_circle</span>
+    <span class="toast-message"></span>
+</div>
+{% endblock content %}

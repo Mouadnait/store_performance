@@ -11,7 +11,6 @@ build/
 
 # Virtual environments
 .store/
-store/
 venv/
 env/
 ENV/
@@ -54,3 +53,30 @@ htmlcov/
 .DS_Store
 .AppleDouble
 .LSOverride
+
+# Password files
+*.pem
+*.key
+*.crt
+*.csr
+*.pfx
+*.p12
+*.jks
+*.p7b
+*.p7c
+*.der
+*.cer
+*.csr
+*.ovpn
+*.conf
+*.cfg
+*.ini
+*.env
+*.yaml
+*.yml
+*.json
+*.xml
+*.log
+*.bak
+*.backup
+*.password

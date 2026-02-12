@@ -30,7 +30,7 @@ def register(request):
                 # Check if authentication was successful
                 if new_user is not None:
                     login(request, new_user)
-                    return redirect("core:dashboard")
+                    return redirect("core:stores_overview")
                 else:
                     # Redirect to login instead of showing error
                     return redirect("userauths:login")
@@ -49,7 +49,7 @@ def register(request):
 def login_view(request):
     """User login with security validation and rate limiting ready."""
     if request.user.is_authenticated:
-        return redirect("core:dashboard")
+        return redirect("core:stores_overview")
 
     if request.method == "POST":
         email = request.POST.get("email", "").strip()
@@ -68,7 +68,7 @@ def login_view(request):
                 login(request, user)
                 messages.success(request, "Logged in successfully.")
                 logger.info(f"User logged in: {user.username}")
-                return redirect("core:dashboard")
+                return redirect("core:stores_overview")
             else:
                 # Generic message to prevent user enumeration
                 messages.error(request, "Invalid credentials. Please try again.")

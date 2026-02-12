@@ -1,0 +1,277 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Client Portfolio | Store Performance{% endblock title %}
+
+{% block style-content %}
+<link rel="stylesheet" href="{% static 'css/clients/client-hub.css' %}?v=1.1">
+{% endblock style-content %}
+
+{% block page_title %}Client Portfolio{% endblock page_title %}
+
+{% block content %}
+<div class="client-hub" data-create-url="{% url 'core:create_client' %}" data-update-url-template="{% url 'core:update_client_info' lid='__placeholder__' %}">
+    <div class="hub-header">
+        <div class="hub-title">
+            <h1>Customer Intelligence Center</h1>
+            <p>Track relationships, revenue, and engagement for every client in one place.</p>
+        </div>
+        <div class="hub-actions">
+            <button type="button" class="btn btn-secondary" id="exportClientsBtn">
+                <span class="material-icons-sharp">file_download</span> Export CSV
+            </button>
+            <button type="button" class="btn btn-primary" id="newClientBtn">
+                <span class="material-icons-sharp">person_add_alt</span> New Client
+            </button>
+        </div>
+    </div>
+
+    <section class="insight-grid kpi-grid">
+        <article class="insight-card primary kpi-card">
+            <div class="insight-header">
+                <span class="icon material-icons-sharp">group</span>
+                <span>Total Clients</span>
+            </div>
+            <div class="insight-value">{{ overview.total_clients }}</div>
+            <p class="insight-sub">{{ overview.active_clients }} active · {{ overview.inactive_clients }} inactive</p>
+        </article>
+        <article class="insight-card kpi-card">
+            <div class="insight-header">
+                <span class="icon material-icons-sharp">trending_up</span>
+                <span>Portfolio Revenue</span>
+            </div>
+            <div class="insight-value">${{ overview.total_revenue|floatformat:2 }}</div>
+            <p class="insight-sub">Average per client ${{ overview.average_revenue|floatformat:2 }}</p>
+        </article>
+        <article class="insight-card kpi-card">
+            <div class="insight-header">
+                <span class="icon material-icons-sharp">verified</span>
+                <span>Loyal Buyers</span>
+            </div>
+            <div class="insight-value">{{ overview.repeat_buyers }}</div>
+            <p class="insight-sub">{{ overview.high_value_clients }} high value (&ge;${{ high_value_threshold }})</p>
+        </article>
+        <article class="insight-card kpi-card">
+            <div class="insight-header">
+                <span class="icon material-icons-sharp">schedule</span>
+                <span>Engagement Health</span>
+            </div>
+            <div class="insight-meter">
+                {% with active=overview.active_clients total=overview.total_clients %}
+                {% if total > 0 %}
+                {% widthratio active total 100 as active_pct %}
+                <div class="meter-fill" style="width: {{ active_pct }}%"></div>
+                <span class="meter-label">{{ active_pct }}% active</span>
+                {% else %}
+                <div class="meter-fill" style="width: 0%"></div>
+                <span class="meter-label">No data</span>
+                {% endif %}
+                {% endwith %}
+            </div>
+        </article>
+    </section>
+
+    <section class="segments-panel chart-grid">
+        <div class="segment-chart table-card">
+            <h2>Client Segments</h2>
+            <ul>
+                {% for segment in segments %}
+                <li>
+                    <span>{{ segment.label }}</span>
+                    <strong>{{ segment.count }}</strong>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="segment-activity table-card">
+            <h2>Recent Engagement</h2>
+            {% if recent_activity %}
+            <ul>
+                {% for client in recent_activity %}
+                <li>
+                    <div class="activity-avatar">
+                        {% if client.profile_image and client.profile_image.url %}
+                        <img src="{{ client.profile_image.url }}" alt="{{ client.full_name }}">
+                        {% else %}
+                        <span>{{ client.full_name|slice:":1"|upper }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="activity-meta">
+                        <p class="name">{{ client.full_name }}</p>
+                        <p class="detail">Last purchase on {{ client.last_bill_date|date:"M d, Y" }}</p>
+                    </div>
+                    <a href="{% url 'core:client_detail' client.lid %}" class="activity-link">View</a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="empty-state">No transactions recorded yet.</p>
+            {% endif %}
+        </div>
+        <div class="segment-highlights table-card">
+            <h2>Top Relationships</h2>
+            {% if highlight_clients %}
+            <ol>
+                {% for client in highlight_clients %}
+                <li>
+                    <span class="rank">#{{ forloop.counter }}</span>
+                    <div>
+                        <p class="name">{{ client.full_name }}</p>
+                        <p class="detail">${{ client.total_spend|default:0|floatformat:2 }} lifetime • {{ client.bill_count }} bills</p>
+                    </div>
+                    <a href="{% url 'core:client_detail' client.lid %}" class="activity-link">Open</a>
+                </li>
+                {% endfor %}
+            </ol>
+            {% else %}
+            <p class="empty-state">High value clients will appear here.</p>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="table-card">
+        <div class="table-toolbar">
+            <div class="search-box">
+                <span class="material-icons-sharp">search</span>
+                <input type="search" id="clientSearch" placeholder="Search by name, email, or phone">
+            </div>
+            <div class="table-filters">
+                <button type="button" class="chip" data-filter="all" aria-pressed="true">All</button>
+                <button type="button" class="chip" data-filter="active">Active</button>
+                <button type="button" class="chip" data-filter="high-value">High value</button>
+                <button type="button" class="chip" data-filter="new">New</button>
+            </div>
+        </div>
+
+        <div class="responsive-table">
+            <table id="clientsTable">
+                <thead>
+                    <tr>
+                        <th>Client</th>
+                        <th>Contact</th>
+                        <th>Location</th>
+                        <th class="numeric">Lifetime Value</th>
+                        <th class="numeric">Bills</th>
+                        <th>Last Activity</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if clients %}
+                    {% for client in clients %}
+                    <tr class="client-row" data-client-lid="{{ client.lid }}" data-client-name="{{ client.full_name }}" data-client-email="{{ client.email|default_if_none:'' }}" data-client-phone="{{ client.phone|default_if_none:'' }}" data-client-address="{{ client.address|default_if_none:'' }}" data-client-city="{{ client.city|default_if_none:'' }}" data-client-country="{{ client.country|default_if_none:'' }}" data-client-postal="{{ client.postal_code|default_if_none:'' }}" data-client-bills="{{ client.bill_count|default:0 }}" data-client-spend="{{ client.total_spend|default:0 }}" data-client-last="{% if client.last_bill_date %}{{ client.last_bill_date|date:'Y-m-d' }}{% endif %}" data-client-gpt="{% if client.gpt5_enabled %}true{% else %}false{% endif %}">
+                        <td>
+                            <div class="cell-client">
+                                <div class="avatar">
+                                    {% if client.profile_image and client.profile_image.url %}
+                                    <img src="{{ client.profile_image.url }}" alt="{{ client.full_name }}">
+                                    {% else %}
+                                    <span>{{ client.full_name|slice:":1"|upper }}</span>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <p class="client-name">{{ client.full_name }}</p>
+                                    <p class="client-id">{{ client.lid }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <p>{{ client.email|default:"—" }}</p>
+                            <p class="muted">{{ client.phone|default:"—" }}</p>
+                        </td>
+                        <td>
+                            {% if client.city or client.country %}
+                            <p>{{ client.city|default:"" }}{% if client.city and client.country %}, {% endif %}{{ client.country|default:"" }}</p>
+                            {% else %}
+                            <p>—</p>
+                            {% endif %}
+                        </td>
+                        <td class="numeric">${{ client.total_spend|default:0|floatformat:2 }}</td>
+                        <td class="numeric">{{ client.bill_count|default:0 }}</td>
+                        <td>{% if client.last_bill_date %}{{ client.last_bill_date|date:"M d, Y" }}{% else %}No activity{% endif %}</td>
+                        <td class="table-actions">
+                            <a href="{% url 'core:client_detail' client.lid %}" class="icon-btn" title="Open detail">
+                                <span class="material-icons-sharp">launch</span>
+                            </a>
+                            <button type="button" class="icon-btn edit-client" title="Edit client">
+                                <span class="material-icons-sharp">edit</span>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="empty-row">
+                            <div>
+                                <span class="material-icons-sharp">person_search</span>
+                                <p>Add your first client to start tracking performance.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<div class="client-modal" id="clientModal" aria-hidden="true" role="dialog">
+    <div class="client-modal__dialog" role="document">
+        <header class="client-modal__header">
+            <h2 id="clientModalTitle">New Client</h2>
+            <button type="button" class="icon-btn" id="closeClientModal" aria-label="Close">
+                <span class="material-icons-sharp">close</span>
+            </button>
+        </header>
+        <form id="clientForm" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="client_lid" id="clientLidField">
+            <div class="form-grid">
+                <label>Full name
+                    <input type="text" name="full_name" id="clientNameField" maxlength="100" required>
+                </label>
+                <label>Email
+                    <input type="email" name="email" id="clientEmailField" maxlength="100">
+                </label>
+                <label>Phone
+                    <input type="text" name="phone" id="clientPhoneField" maxlength="20">
+                </label>
+                <label>Address
+                    <input type="text" name="address" id="clientAddressField" maxlength="100">
+                </label>
+                <label>City
+                    <input type="text" name="city" id="clientCityField" maxlength="100">
+                </label>
+                <label>Country
+                    <input type="text" name="country" id="clientCountryField" maxlength="100">
+                </label>
+                <label>Postal code
+                    <input type="text" name="postal_code" id="clientPostalField" maxlength="10">
+                </label>
+                <label class="switch-field">AI client assistant
+                    <span class="switch">
+                        <input type="checkbox" name="gpt5_enabled" id="clientGptField" checked>
+                        <span class="slider"></span>
+                    </span>
+                </label>
+            </div>
+            <div class="form-footer">
+                <div class="form-status" id="clientFormStatus" role="status" aria-live="polite"></div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelClientBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="saveClientBtn">
+                        <span class="material-icons-sharp">save</span>
+                        <span id="clientSubmitLabel">Save Client</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{ segments|json_script:"client-segment-data" }}
+{% endblock content %}
+
+{% block script %}
+<script src="{% static 'javascript/clients-hub.js' %}?v=1.0"></script>
+{% endblock script %}

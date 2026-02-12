@@ -1,0 +1,33 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{% static 'images/store_performance.jpeg' %}" type="image/jpeg">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="{% static 'css/auth/auth.css' %}?v=1.1">
+    <title>{% block title %}Authentication{% endblock title %} - Store Performance</title>
+</head>
+<body class="auth-page">
+    {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            <i class='bx bx-{% if message.tags == "success" %}check-circle{% elif message.tags == "error" %}error-circle{% else %}info-circle{% endif %}'></i>
+            <span>{{ message }}</span>
+            <button onclick="this.parentElement.remove()"><i class='bx bx-x'></i></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% block content %}{% endblock content %}
+    
+    <script>
+        document.querySelectorAll('.alert').forEach(el => {
+            setTimeout(() => el.remove(), 5000);
+        });
+    </script>
+</body>
+</html>

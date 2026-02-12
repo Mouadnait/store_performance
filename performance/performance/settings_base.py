@@ -29,7 +29,6 @@ ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 # Application Definition
 DJANGO_APPS = [
     'django.contrib.admin',
-    'jazzmin',  # After admin to prevent duplicate static file warnings
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -55,7 +54,7 @@ CUSTOM_APPS = [
     'analytics',
 ]
 
-INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + CUSTOM_APPS
+INSTALLED_APPS = ['jazzmin'] + DJANGO_APPS + THIRD_PARTY_APPS + CUSTOM_APPS
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -63,14 +62,19 @@ MIDDLEWARE = [
     'core.middleware.SecurityHeadersMiddleware',  # Custom security headers
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'performance.middleware.NoCacheMiddleware',  # Disable HTML caching in dev
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'core.middleware.AdminAccessMiddleware',  # Restrict admin access
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'core.middleware.RateLimitMiddleware',  # Custom rate limiting
     'core.middleware.RequestLoggingMiddleware',  # Request logging
     'core.middleware.SecurityEventMiddleware',  # Security event tracking
 ]
+
+# Admin allowlist
+ALLOWED_ADMIN_EMAILS = ['admin@storeperformance.local']
 
 ROOT_URLCONF = 'performance.urls'
 
@@ -147,7 +151,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Auth & Login
 AUTH_USER_MODEL = 'userauths.User'
-LOGIN_REDIRECT_URL = 'core:dashboard'
+LOGIN_REDIRECT_URL = '/stores/overview/'
 LOGOUT_REDIRECT_URL = 'userauths:login'
 LOGIN_URL = 'userauths:login'
 
@@ -224,13 +228,74 @@ CELERY_BEAT_SCHEDULE = {
 
 # Jazzmin Admin Customization
 JAZZMIN_SETTINGS = {
+    'site_title': 'Store Performance Admin',
     'site_header': 'Store Performance',
     'site_brand': 'Analytics Dashboard',
     'site_logo': 'images/store_performance.jpeg',
     'welcome_sign': 'Welcome to Store Performance Analytics',
+    'theme': 'lux',  # Professional, clean Bootswatch theme
+    'dark_mode_theme': 'slate',
     'copyright': '© 2026 Store Performance. All rights reserved.',
     'search_model': ['auth.User', 'core.Product', 'core.Client'],
     'user_avatar': lambda user: user.image.url if user.image else '/static/images/default-avatar.png',
+    'navigation_expanded': True,
+    'topmenu_links': [
+        {'name': 'Dashboard', 'url': 'admin:index', 'permissions': ['auth.view_user']},
+        {'app': 'core'},
+        {'app': 'analytics'},
+        {'app': 'userauths', 'permissions': ['auth.view_user']},
+    ],
+    'usermenu_links': [
+        {'name': 'Profile', 'model': 'userauths.User', 'icon': 'fas fa-user-shield'},
+        {'name': 'Support', 'url': '/support/', 'icon': 'fas fa-life-ring', 'new_window': True},
+    ],
+    'related_modal_active': True,
+    'changeform_format': 'horizontal_tabs',
+    'icons': {
+        # Apps
+        'auth': 'fas fa-users-cog',
+        'core': 'fas fa-store',
+        'analytics': 'fas fa-chart-line',
+        'notifications': 'fas fa-bell',
+        'api': 'fas fa-plug',
+        'userauths': 'fas fa-user-shield',
+
+        # Auth models
+        'auth.group': 'fas fa-user-lock',
+        'auth.user': 'fas fa-user-shield',
+
+        # Core models
+        'core.store': 'fas fa-store-alt',
+        'core.client': 'fas fa-address-book',
+        'core.category': 'fas fa-layer-group',
+        'core.tags': 'fas fa-tags',
+        'core.product': 'fas fa-box-open',
+        'core.productimages': 'fas fa-images',
+        'core.productreview': 'fas fa-star-half-alt',
+        'core.bill': 'fas fa-file-invoice-dollar',
+        'core.billitem': 'fas fa-list-ul',
+        'core.auditlog': 'fas fa-clipboard-list',
+        'core.dailymetric': 'fas fa-chart-area',
+        'core.forecast': 'fas fa-chart-pie',
+        'core.anomaly': 'fas fa-exclamation-triangle',
+        'core.client': 'fas fa-address-book',
+        'core.store': 'fas fa-store-alt',
+
+        # User models
+        'userauths.user': 'fas fa-user-circle',
+    },
+    'default_icon_parent': 'fas fa-angle-right',
+    'default_icon_children': 'fas fa-circle',
+    'custom_css': 'css/jazzmin-overrides.css',
+}
+
+# Jazzmin UI Tweaks for a tighter, professional layout
+JAZZMIN_UI_TWEAKS = {
+    'navbar': 'navbar-dark',
+    'navbar_fixed': True,
+    'sidebar_fixed': True,
+    'actions_sticky_top': True,
+    'footer_fixed': False,
 }
 
 # Email Configuration (SendGrid by default, override in settings)

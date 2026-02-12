@@ -1,0 +1,275 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block style-content %}
+<link rel="stylesheet" href="{% static 'css/products/products-hub.css' %}?v=1.2">
+{% endblock style-content %}
+
+{% block title %}Products | Store Performance{% endblock %}
+{% block page_title %}Products{% endblock %}
+
+{% block content %}
+<div class="products-hub">
+    <div class="hub-header">
+        <div class="hub-title">
+            <p class="eyebrow">Catalog</p>
+            <h1>Product Hub</h1>
+            <p class="lede">Manage your catalog, spotlight featured items, and add products to bills without leaving this page.</p>
+        </div>
+        <div class="hub-actions">
+            <button type="button" class="btn primary" id="openProductModal">
+                <span class="material-icons-sharp">add_circle</span>
+                Add Product
+            </button>
+            <a href="{% url 'core:create-bill' %}" class="btn ghost">
+                <span class="material-icons-sharp">receipt_long</span>
+                Bill Builder
+            </a>
+        </div>
+    </div>
+
+    <div class="insights kpi-grid">
+        <div class="insight-card kpi-card">
+            <div class="insight-top">
+                <span class="icon material-icons-sharp">inventory_2</span>
+                <span>Total Products</span>
+            </div>
+            <p class="insight-value">{{ product_count }}</p>
+            <p class="insight-sub">Currently active in your catalog</p>
+        </div>
+        <div class="insight-card kpi-card">
+            <div class="insight-top">
+                <span class="icon material-icons-sharp">group</span>
+                <span>Clients</span>
+            </div>
+            <p class="insight-value">{{ client_count }}</p>
+            <p class="insight-sub">Ready to attach to bills</p>
+        </div>
+        <div class="insight-card kpi-card">
+            <div class="insight-top">
+                <span class="icon material-icons-sharp">shopping_bag</span>
+                <span>Categories</span>
+            </div>
+            <p class="insight-value">{{ category_count }}</p>
+            <p class="insight-sub">Groupings available for filtering</p>
+        </div>
+    </div>
+
+    <div class="filters filters-bar">
+        <div class="search-box">
+            <span class="material-icons-sharp">search</span>
+            <input id="productSearch" type="text" placeholder="Search by title, SKU, or description">
+        </div>
+        <div class="filter-row">
+            <div class="chip-group" id="categoryChips">
+                <button type="button" class="chip" aria-pressed="true" data-category="">All categories</button>
+                {% for category in categories %}
+                <button type="button" class="chip" aria-pressed="false" data-category="{{ category.title }}">{{ category.title }}</button>
+                {% endfor %}
+            </div>
+            <div class="chip-group" id="statusChips">
+                <button type="button" class="chip" aria-pressed="true" data-flag="all">All</button>
+                <button type="button" class="chip" aria-pressed="false" data-flag="featured">Featured</button>
+                <button type="button" class="chip" aria-pressed="false" data-flag="digital">Digital</button>
+                <button type="button" class="chip" aria-pressed="false" data-flag="discount">Discounts</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="product-layout">
+        <div class="grid-card table-card">
+            <div class="grid-head">
+                <div>
+                    <h3 style="margin:0;">Grid view</h3>
+                    <p class="muted">Visual cards with key badges</p>
+                </div>
+            </div>
+            <div class="product-grid" id="productsGrid">
+                {% for product in products %}
+                {% with has_discount=product.get_percentage %}
+                <div class="product-card"
+                    data-title="{{ product.title }}"
+                    data-sku="{{ product.sku }}"
+                    data-desc="{{ product.description }}"
+                    data-category="{{ product.category.title|default_if_none:'' }}"
+                    data-featured="{{ product.featured|yesno:'true,false' }}"
+                    data-digital="{{ product.digital|yesno:'true,false' }}"
+                    data-discount="{% if has_discount %}true{% else %}false{% endif %}">
+                    {% if has_discount %}<span class="badge">-{{ product.get_percentage|floatformat:0 }}%</span>{% endif %}
+                    <div class="card-media"><img src="{{ product.image.url }}" alt="{{ product.title }}"></div>
+                    <div class="card-body">
+                        <div class="card-meta">
+                            {% if product.featured %}<span class="pill warning">Featured</span>{% endif %}
+                            {% if product.digital %}<span class="pill muted">Digital</span>{% endif %}
+                            {% if product.category %}<span class="pill outline">{{ product.category.title }}</span>{% endif %}
+                        </div>
+                        <h3>{{ product.title }}</h3>
+                        <p class="desc">{{ product.description|truncatechars:120 }}</p>
+                        <div class="pricing">
+                            <span class="price">${{ product.price }}</span>
+                            {% if has_discount %}<span class="old-price">${{ product.old_price }}</span>{% endif %}
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <span class="pill info">SKU {{ product.sku }}</span>
+                        <button type="button" class="btn ghost add-to-bill" data-title="{{ product.title }}" data-price="{{ product.price }}">
+                            <span class="material-icons-sharp">add_shopping_cart</span>
+                            Add to bill
+                        </button>
+                    </div>
+                </div>
+                {% endwith %}
+                {% empty %}
+                <p class="muted">No products to show yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="table-card">
+            <div class="table-head">
+                <div>
+                    <h3 style="margin:0;">Table view</h3>
+                    <p class="muted">Search and filter the entire catalog</p>
+                </div>
+            </div>
+            <div class="responsive-table">
+                <table id="productsTable">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th class="numeric">Price</th>
+                            <th class="numeric">Stock</th>
+                            <th>Status</th>
+                            <th class="numeric">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        {% with has_discount=product.get_percentage %}
+                        <tr class="product-row"
+                            data-title="{{ product.title }}"
+                            data-sku="{{ product.sku }}"
+                            data-desc="{{ product.description }}"
+                            data-category="{{ product.category.title|default_if_none:'' }}"
+                            data-featured="{{ product.featured|yesno:'true,false' }}"
+                            data-digital="{{ product.digital|yesno:'true,false' }}"
+                            data-discount="{% if has_discount %}true{% else %}false{% endif %}">
+                            <td>
+                                <div class="product-cell">
+                                    <div class="thumb">
+                                        <img src="{{ product.image.url }}" alt="{{ product.title }}">
+                                    </div>
+                                    <div>
+                                        <p class="title">{{ product.title }}</p>
+                                        <p class="subtitle">SKU • {{ product.sku }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ product.category.title|default:'Uncategorized' }}</td>
+                            <td class="numeric">
+                                <div class="pricing">
+                                    <span class="price">${{ product.price }}</span>
+                                    {% if has_discount %}<span class="old-price">${{ product.old_price }}</span>{% endif %}
+                                </div>
+                            </td>
+                            <td class="numeric">{% if product.stock %}{{ product.stock }}{% else %}—{% endif %}</td>
+                            <td>
+                                <div class="pill-row">
+                                    <span class="pill info">{{ product.get_product_status_display }}</span>
+                                    {% if product.in_stock %}<span class="pill success">In Stock</span>{% else %}<span class="pill danger">Out</span>{% endif %}
+                                    {% if product.featured %}<span class="pill warning">Featured</span>{% endif %}
+                                    {% if product.digital %}<span class="pill muted">Digital</span>{% endif %}
+                                    {% if has_discount %}<span class="pill info">-{{ product.get_percentage|floatformat:0 }}%</span>{% endif %}
+                                </div>
+                            </td>
+                            <td class="numeric">
+                                <div class="table-actions">
+                                    <button type="button" class="icon-btn add-to-bill" data-title="{{ product.title }}" data-price="{{ product.price }}" title="Add to bill">
+                                        <span class="material-icons-sharp">add</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endwith %}
+                        {% empty %}
+                        <tr class="empty-row">
+                            <td colspan="6">No products yet. Click "Add Product" to create your first one.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="productModal" aria-hidden="{% if form.errors %}false{% else %}true{% endif %}" data-has-errors="{% if form.errors %}true{% else %}false{% endif %}">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <div>
+                <p class="eyebrow">Create Product</p>
+                <h2 id="productModalTitle" style="margin:0;">New Product</h2>
+            </div>
+            <button type="button" class="icon-btn ghost" id="closeProductModal" aria-label="Close product modal">
+                <span class="material-icons-sharp">close</span>
+            </button>
+        </div>
+        <form method="post" enctype="multipart/form-data" id="productFormModal-form">
+            {% csrf_token %}
+            {% if form.errors %}
+            <div class="form-alert error" role="alert">
+                <p>Please correct the errors below.</p>
+                {{ form.non_field_errors }}
+                <ul>
+                    {% for field in form %}
+                    {% for error in field.errors %}
+                    <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            <div class="form-grid">
+                <label>Title {{ form.title }}</label>
+                <label>Category {{ form.category }}</label>
+                <label>New category (optional)
+                    <input type="text" name="new_category" id="newCategoryInput" placeholder="Enter a new category name">
+                </label>
+                <label>SKU {{ form.sku }}</label>
+                <label>Price {{ form.price }}</label>
+                <label>Old price (discount) {{ form.old_price }}</label>
+                <label>Status {{ form.status }}</label>
+                <label>Tags {{ form.tags }}</label>
+                <label>Description {{ form.description }}</label>
+                <label>Specifications {{ form.specifications }}</label>
+                <label>Image {{ form.image }}</label>
+                <label>Product Status {{ form.product_status }}</label>
+                <label class="switch-field">In Stock
+                    <span class="switch">{{ form.in_stock }}<span class="slider"></span></span>
+                </label>
+                <label class="switch-field">Featured
+                    <span class="switch">{{ form.featured }}<span class="slider"></span></span>
+                </label>
+                <label class="switch-field">Digital
+                    <span class="switch">{{ form.digital }}<span class="slider"></span></span>
+                </label>
+            </div>
+            <div class="modal-footer">
+                <div class="form-status" id="productFormStatus" role="status" aria-live="polite"></div>
+                <div class="form-actions">
+                    <button type="button" class="btn ghost" id="cancelProductModal">Cancel</button>
+                    <button type="submit" class="btn primary">
+                        <span class="material-icons-sharp">save</span>
+                        Save Product
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock content %}
+
+{% block script %}
+<script src="{% static 'javascript/products-hub.js' %}?v=1.0"></script>
+{% endblock script %}

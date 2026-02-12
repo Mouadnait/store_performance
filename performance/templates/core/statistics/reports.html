@@ -1,0 +1,213 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block style-content %}
+    <link rel="stylesheet" href="{% static 'css/statistics/reports.css' %}?v=1.2">
+{% endblock style-content %}
+
+{% block title %}Reports | Store Performance{% endblock title %}
+
+{% block page_title %}Reports{% endblock page_title %}
+
+{% block content %}
+<div class="reports-page">
+    <!-- Header -->
+    <div class="reports-header">
+        <h1>📈 Business Reports</h1>
+        <p class="reports-subtitle">Generate and analyze detailed business performance reports</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-card">
+        <form method="get" action="{% url 'core:reports' %}">
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label class="filter-label">Report Type</label>
+                    <select name="type" class="filter-select">
+                        <option value="summary" {% if report_type == 'summary' %}selected{% endif %}>Summary</option>
+                        <option value="detailed" {% if report_type == 'detailed' %}selected{% endif %}>Detailed</option>
+                        <option value="products" {% if report_type == 'products' %}selected{% endif %}>Products</option>
+                        <option value="clients" {% if report_type == 'clients' %}selected{% endif %}>Clients</option>
+                        <option value="categories" {% if report_type == 'categories' %}selected{% endif %}>Categories</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Period</label>
+                    <select name="period" class="filter-select">
+                        <option value="daily" {% if period == 'daily' %}selected{% endif %}>Daily</option>
+                        <option value="weekly" {% if period == 'weekly' %}selected{% endif %}>Weekly</option>
+                        <option value="monthly" {% if period == 'monthly' %}selected{% endif %}>Monthly</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Start Date</label>
+                    <input type="date" name="start_date" class="filter-input" value="{{ start_date|date:'Y-m-d' }}">
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">End Date</label>
+                    <input type="date" name="end_date" class="filter-input" value="{{ end_date|date:'Y-m-d' }}">
+                </div>
+
+                <div class="filter-group">
+                    <button type="submit" class="btn-generate">
+                        <span class="material-icons-sharp icon-sm">refresh</span>
+                        Generate Report
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Summary Cards -->
+    {% if summary_data %}
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="summary-label">Total Revenue</div>
+            <div class="summary-value">${{ summary_data.total_revenue|floatformat:2 }}</div>
+        </div>
+        <div class="summary-card summary-success">
+            <div class="summary-label">Transactions</div>
+            <div class="summary-value">{{ summary_data.total_transactions }}</div>
+        </div>
+        <div class="summary-card summary-warning">
+            <div class="summary-label">Avg Transaction</div>
+            <div class="summary-value">${{ summary_data.avg_transaction|floatformat:2 }}</div>
+        </div>
+        <div class="summary-card summary-primary">
+            <div class="summary-label">Unique Clients</div>
+            <div class="summary-value">{{ summary_data.unique_clients }}</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Revenue by Period Chart -->
+    {% if revenue_by_period %}
+    <div class="report-card">
+        <div class="report-header">
+            <h3 class="report-title">Revenue by {{ period|title }}</h3>
+            <button class="btn-export" onclick="exportToCSV('revenue')">
+                <span class="material-icons-sharp icon-sm">download</span>
+                Export CSV
+            </button>
+        </div>
+        <canvas id="revenueChart" height="80"></canvas>
+    </div>
+    {% endif %}
+
+    <!-- Product Performance -->
+    {% if product_performance %}
+    <div class="report-card">
+        <div class="report-header">
+            <h3 class="report-title">Top Product Performance</h3>
+            <button class="btn-export" onclick="exportToCSV('products')">
+                <span class="material-icons-sharp icon-sm">download</span>
+                Export CSV
+            </button>
+        </div>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in product_performance %}
+                <tr>
+                    <td class="text-strong">{{ product.title }}</td>
+                    <td>{{ product.category.title|default:"Uncategorized" }}</td>
+                    <td class="text-strong text-success">${{ product.price|floatformat:2 }}</td>
+                    <td>{{ product.stock|default:0 }}</td>
+                    <td><span class="status-badge completed">{{ product.product_status|title }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Client Analysis -->
+    {% if client_analysis %}
+    <div class="report-card">
+        <div class="report-header">
+            <h3 class="report-title">Top Client Analysis</h3>
+            <button class="btn-export" onclick="exportToCSV('clients')">
+                <span class="material-icons-sharp icon-sm">download</span>
+                Export CSV
+            </button>
+        </div>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Client Name</th>
+                    <th>Contact</th>
+                    <th>Total Spent</th>
+                    <th>Visit Count</th>
+                    <th>Avg Purchase</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for client in client_analysis %}
+                <tr>
+                    <td class="text-strong">{{ client.full_name }}</td>
+                    <td>{{ client.email|default:client.phone|default:"N/A" }}</td>
+                    <td class="text-strong text-success">${{ client.total_spent|floatformat:2|default:"0.00" }}</td>
+                    <td>{{ client.visit_count }}</td>
+                    <td>${{ client.avg_purchase|floatformat:2|default:"0.00" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Category Breakdown -->
+    {% if category_breakdown %}
+    <div class="report-card">
+        <div class="report-header">
+            <h3 class="report-title">Category Breakdown</h3>
+            <button class="btn-export" onclick="exportToCSV('categories')">
+                <span class="material-icons-sharp icon-sm">download</span>
+                Export CSV
+            </button>
+        </div>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Product Count</th>
+                    <th>Avg Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in category_breakdown %}
+                <tr>
+                    <td class="text-strong">{{ category.title }}</td>
+                    <td>{{ category.product_count }}</td>
+                    <td class="text-strong text-success">${{ category.avg_price|floatformat:2|default:"0.00" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if not summary_data %}
+    <div class="report-card">
+        <div class="no-data">
+            <div class="no-data-icon">📊</div>
+            <h3>No Data Available</h3>
+            <p>Select filters and generate a report to see your business insights</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock content %}

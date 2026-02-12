@@ -1,0 +1,157 @@
+{% extends "core/store/base_store_overview.html" %}
+{% load static %}
+
+{% block title %}Store Performance Overview{% endblock %}
+
+{% block style-content %}
+<link rel="stylesheet" href="{% static 'css/store/store-overview.css' %}?v=1.0">
+{% endblock %}
+
+{% block content %}
+<div class="store-overview-shell">
+  <header class="so-header">
+    <div class="so-brand">
+      <div class="so-brand-mark" aria-hidden="true">SP</div>
+      <div class="so-brand-copy">
+        <p class="so-eyebrow">Multi-store overview</p>
+        <h1>Store Performance</h1>
+        <p class="so-subtext">Track KPIs across every store and jump into details when needed.</p>
+      </div>
+    </div>
+    <div class="so-header-actions">
+      {% if can_manage %}
+      <a class="btn ghost" href="/admin/">⚙️ Admin home</a>
+      {% endif %}
+      <a class="btn ghost" href="{% url 'core:profile' %}">👤 Profile</a>
+    </div>
+  </header>
+
+  <div class="so-layout">
+    <aside class="so-sidebar">
+      <div class="so-card">
+        <div class="so-card-title">Snapshot</div>
+        <div class="so-metric">
+          <span class="label">Total stores</span>
+          <span class="value">{{ summary.count }}</span>
+        </div>
+        <div class="so-metric">
+          <span class="label">Revenue</span>
+          <span class="value">${{ summary.revenue|floatformat:2 }}</span>
+        </div>
+        <div class="so-metric">
+          <span class="label">Orders</span>
+          <span class="value">{{ summary.orders }}</span>
+        </div>
+        <div class="so-metric">
+          <span class="label">Avg order</span>
+          <span class="value">${{ summary.avg_order|floatformat:2 }}</span>
+        </div>
+        <div class="so-metric">
+          <span class="label">Last activity</span>
+          <span class="value">{% if summary.last_activity %}{{ summary.last_activity|date:"M d, Y" }}{% else %}—{% endif %}</span>
+        </div>
+      </div>
+
+      <div class="so-card">
+        <div class="so-card-title">Quick actions</div>
+        {% if can_manage %}
+        <a class="qa-link" href="{{ create_store_url }}">➕ Create store</a>
+        <a class="qa-link" href="/admin/">⚙️ Admin</a>
+        {% endif %}
+        <a class="qa-link" href="{% url 'core:dashboard' %}">📊 Dashboard</a>
+        <a class="qa-link" href="{% url 'core:analytics' %}">📈 Analytics</a>
+      </div>
+
+      <div class="so-card">
+        <div class="so-card-title">Status legend</div>
+        <div class="legend-row"><span class="legend-dot active"></span><span>Active</span></div>
+        <div class="legend-row"><span class="legend-dot inactive"></span><span>Inactive</span></div>
+        <div class="legend-row"><span class="legend-dot suspended"></span><span>Suspended</span></div>
+      </div>
+    </aside>
+
+    <section class="so-main">
+      <div class="stores-hero">
+        <div>
+          <p class="eyebrow">Multi-store visibility</p>
+          <h2>Store Performance Overview</h2>
+          <p class="lede">High-level KPIs for each store. Dive into a store for details; this page only shows summaries.</p>
+        </div>
+        {% if can_manage %}
+        <div class="hero-actions">
+          <a class="btn" href="{{ create_store_url }}">➕ Create new store</a>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="summary-row">
+        <div class="summary-card">
+          <p class="summary-label">Total stores</p>
+          <p class="summary-value">{{ summary.count }}</p>
+        </div>
+        <div class="summary-card">
+          <p class="summary-label">Total revenue</p>
+          <p class="summary-value">${{ summary.revenue|floatformat:2 }}</p>
+        </div>
+        <div class="summary-card">
+          <p class="summary-label">Orders</p>
+          <p class="summary-value">{{ summary.orders }}</p>
+        </div>
+        <div class="summary-card">
+          <p class="summary-label">Avg order</p>
+          <p class="summary-value">${{ summary.avg_order|floatformat:2 }}</p>
+        </div>
+        <div class="summary-card">
+          <p class="summary-label">Last activity</p>
+          <p class="summary-value">{% if summary.last_activity %}{{ summary.last_activity|date:"M d, Y" }}{% else %}—{% endif %}</p>
+        </div>
+      </div>
+
+      <div class="stores-grid">
+        {% for store in stores %}
+        <article class="store-card">
+          <header class="store-card__header">
+            <div>
+              <p class="store-status {{ store.status }}">{{ store.status|title }}</p>
+              <h3>{{ store.name }}</h3>
+              <p class="muted">Owner: {{ store.owner.get_full_name|default:store.owner.username }}</p>
+            </div>
+            {% if store.admin_url %}
+            <a class="pill-link" href="{{ store.admin_url }}" target="_blank" rel="noopener">Manage</a>
+            {% endif %}
+          </header>
+          <div class="kpi-row">
+            <div class="kpi">
+              <span class="kpi-label">Revenue</span>
+              <span class="kpi-value">${{ store.revenue|floatformat:2 }}</span>
+            </div>
+            <div class="kpi">
+              <span class="kpi-label">Orders</span>
+              <span class="kpi-value">{{ store.orders }}</span>
+            </div>
+            <div class="kpi">
+              <span class="kpi-label">Avg order</span>
+              <span class="kpi-value">${{ store.avg_order|floatformat:2 }}</span>
+            </div>
+            <div class="kpi">
+              <span class="kpi-label">Last activity</span>
+              <span class="kpi-value">{% if store.last_activity %}{{ store.last_activity|date:"M d, Y" }}{% else %}—{% endif %}</span>
+            </div>
+          </div>
+          <footer class="store-card__footer">
+            <span class="muted">SID: {{ store.slug }}</span>
+            <div class="actions">
+              {% if store.dashboard_url %}
+              <a class="btn ghost" href="{{ store.dashboard_url }}" target="_blank" rel="noopener">Open dashboard</a>
+              {% endif %}
+            </div>
+          </footer>
+        </article>
+        {% empty %}
+        <div class="empty-state">No stores yet. <a href="{{ create_store_url }}">Create the first store</a>.</div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

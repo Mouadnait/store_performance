@@ -1,0 +1,182 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block style-content %}
+<link rel="stylesheet" href="{% static 'css/statistics/analytics.css' %}?v=1.2">
+{% endblock style-content %}
+
+{% block title %}Analytics Dashboard | Store Performance{% endblock title %}
+
+{% block page_title %}Analytics Dashboard{% endblock page_title %}
+
+{% block content %}
+<div class="analytics-page">
+    <!-- Header -->
+    <div class="analytics-header">
+        <div>
+            <h1>📊 Analytics Dashboard</h1>
+            <p class="analytics-subtitle">Comprehensive business insights and performance metrics</p>
+        </div>
+        <div class="period-selector">
+            <a href="?days=7" class="period-btn {% if days == 7 %}active{% endif %}">7 Days</a>
+            <a href="?days=30" class="period-btn {% if days == 30 %}active{% endif %}">30 Days</a>
+            <a href="?days=90" class="period-btn {% if days == 90 %}active{% endif %}">90 Days</a>
+            <a href="?days=365" class="period-btn {% if days == 365 %}active{% endif %}">1 Year</a>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="metrics-grid kpi-grid">
+        <div class="metric-card kpi-card">
+            <div class="metric-label">
+                <span class="material-icons-sharp">attach_money</span>
+                Total Revenue
+            </div>
+            <div class="metric-value">${{ recent_revenue|floatformat:2 }}</div>
+            <div class="metric-change {% if revenue_growth >= 0 %}positive{% else %}negative{% endif %}">
+                <span class="material-icons-sharp" style="font-size: 18px;">
+                    {% if revenue_growth >= 0 %}trending_up{% else %}trending_down{% endif %}
+                </span>
+                {{ revenue_growth|floatformat:1 }}% vs previous period
+            </div>
+        </div>
+
+        <div class="metric-card kpi-card">
+            <div class="metric-label">
+                <span class="material-icons-sharp">receipt_long</span>
+                Total Bills
+            </div>
+            <div class="metric-value">{{ recent_bills }}</div>
+            <div class="metric-change {% if bills_growth >= 0 %}positive{% else %}negative{% endif %}">
+                <span class="material-icons-sharp" style="font-size: 18px;">
+                    {% if bills_growth >= 0 %}trending_up{% else %}trending_down{% endif %}
+                </span>
+                {{ bills_growth|floatformat:1 }}% vs previous period
+            </div>
+        </div>
+
+        <div class="metric-card kpi-card">
+            <div class="metric-label">
+                <span class="material-icons-sharp">shopping_cart</span>
+                Avg Order Value
+            </div>
+            <div class="metric-value">${{ avg_order_value|floatformat:2 }}</div>
+            <div class="metric-change positive">
+                <span class="material-icons-sharp" style="font-size: 18px;">insights</span>
+                Per transaction
+            </div>
+        </div>
+
+        <div class="metric-card kpi-card">
+            <div class="metric-label">
+                <span class="material-icons-sharp">people</span>
+                Total Clients
+            </div>
+            <div class="metric-value">{{ total_clients }}</div>
+            <div class="metric-change positive">
+                <span class="material-icons-sharp" style="font-size: 18px;">person_add</span>
+                Active customers
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-section chart-grid">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3 class="chart-title">Revenue Trend</h3>
+                <span class="chart-meta">Last {{ days }} days</span>
+            </div>
+            <canvas id="revenueTrendChart" height="80"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3 class="chart-title">Quick Stats</h3>
+            </div>
+            <div class="quick-stats">
+                <div class="quick-stat">
+                    <div class="quick-stat-label">Products</div>
+                    <div class="quick-stat-value is-primary">{{ total_products }}</div>
+                </div>
+                <div class="quick-stat">
+                    <div class="quick-stat-label">All-Time Revenue</div>
+                    <div class="quick-stat-value is-success">${{ total_revenue|floatformat:2 }}</div>
+                </div>
+                <div class="quick-stat">
+                    <div class="quick-stat-label">All-Time Bills</div>
+                    <div class="quick-stat-value is-primary">{{ total_bills }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Lists -->
+    <div class="lists-section chart-grid">
+        <div class="list-card table-card">
+            <h3 class="chart-title list-title">🏆 Top Products</h3>
+            {% for product in top_products %}
+            <div class="list-item">
+                <div class="item-info">
+                    <div class="item-name">{{ product.title }}</div>
+                    <div class="item-detail">Category: {{ product.category.title|default:"Uncategorized" }}</div>
+                </div>
+                <div class="item-value badge info">${{ product.price|floatformat:2 }}</div>
+            </div>
+            {% empty %}
+                <p class="empty-message">No product data available</p>
+            {% endfor %}
+        </div>
+
+        <div class="list-card table-card">
+            <h3 class="chart-title list-title">⭐ Top Clients</h3>
+            {% for client in top_clients %}
+            <div class="list-item">
+                <div class="item-info">
+                    <div class="item-name">{{ client.full_name }}</div>
+                    <div class="item-detail">{{ client.bill_count }} transaction{{ client.bill_count|pluralize }}</div>
+                </div>
+                <div class="item-value badge info">${{ client.revenue|floatformat:2|default:"0.00" }}</div>
+            </div>
+            {% empty %}
+                <p class="empty-message">No client data available</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="chart-card table-card">
+        <div class="chart-header">
+            <h3 class="chart-title list-title">Recent Transactions</h3>
+        </div>
+        <table class="transactions-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Client</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bill in recent_transactions %}
+                <tr>
+                    <td>{{ bill.date|date:"M d, Y" }}</td>
+                    <td>{{ bill.client.full_name|default:"N/A" }}</td>
+                    <td>{{ bill.description|truncatewords:5 }}</td>
+                    <td class="table-amount">${{ bill.total_price|floatformat:2 }}</td>
+                    <td><span class="status-badge completed">Completed</span></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="table-empty">No transactions found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock content %}

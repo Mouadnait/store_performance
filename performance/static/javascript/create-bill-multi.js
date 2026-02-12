@@ -238,10 +238,12 @@ function updateBillSummary(billNumber) {
 function updateSaveButton() {
     const billCount = document.querySelectorAll('.bill-tab').length;
     const saveBtn = document.querySelector('.save-all-btn');
-    saveBtn.innerHTML = `
-        <span class="material-icons-sharp">save</span>
-        Save All Bills (${billCount})
-    `;
+    if (saveBtn) {
+        saveBtn.innerHTML = `
+            <span class="material-icons-sharp">save</span>
+            Save All Bills (${billCount})
+        `;
+    }
 }
 
 // Save all bills
@@ -299,7 +301,18 @@ async function saveAllBills() {
     
     for (let i = 0; i < billsData.length; i++) {
         const formData = new FormData();
-        formData.append('csrfmiddlewaretoken', window.CSRF_TOKEN);
+        
+        // Get CSRF token from multiple possible locations
+        let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (!csrfToken) {
+            csrfToken = document.querySelector('input[name=csrfmiddlewaretoken]');
+        }
+        const tokenValue = (csrfToken) ? csrfToken.value : window.CSRF_TOKEN;
+        
+        if (tokenValue) {
+            formData.append('csrfmiddlewaretoken', tokenValue);
+        }
+        
         formData.append('clientName', billsData[i].clientName);
         formData.append('phone', billsData[i].phone);
         formData.append('email', billsData[i].email);
